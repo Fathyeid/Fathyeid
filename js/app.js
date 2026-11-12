@@ -25,10 +25,13 @@
     qsize: 1.6,
     reciter: 'ar.alafasy',
     repeat: 1,
+    translation: '',
     alerts: false,
   };
+  const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (NATIVE) DEFAULTS.alerts = true;
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
-  const saveSettings = () => store.set('settings', settings);
+  const saveSettings = () => { store.set('settings', settings); if (typeof scheduleAdhan === 'function') scheduleAdhan(); };
 
   const RECITERS = {
     'ar.alafasy': { name: 'مشاري راشد العفاسي', br: 128 },
@@ -36,6 +39,17 @@
     'ar.minshawi': { name: 'محمد صديق المنشاوي', br: 128 },
     'ar.abdulbasitmurattal': { name: 'عبد الباسط عبد الصمد', br: 192 },
     'ar.mahermuaiqly': { name: 'ماهر المعيقلي', br: 128 },
+  };
+
+  const TRANSLATIONS = {
+    '': 'بدون ترجمة',
+    'en.sahih': 'English — Saheeh International',
+    'fr.hamidullah': 'Français — Hamidullah',
+    'de.bubenheim': 'Deutsch — Bubenheim',
+    'es.cortes': 'Español — Cortés',
+    'tr.diyanet': 'Türkçe — Diyanet',
+    'id.indonesian': 'Bahasa Indonesia',
+    'ur.jalandhry': 'اردو — جالندھری',
   };
 
   const PRAYERS = [
@@ -433,7 +447,14 @@
             <button class="btn ghost" data-a="bm">${bmLabel()}</button>
             <button class="btn ghost" data-a="share">📤 مشاركة</button>
           </div>
+          ${settings.translation ? `<div class="tafsir"><h4>الترجمة · ${esc(TRANSLATIONS[settings.translation] || '')}</h4><div class="trans-body" dir="${settings.translation.startsWith('ur') ? 'rtl' : 'ltr'}"><div class="loader" style="margin:16px auto"></div></div></div>` : ''}
           <div class="tafsir"><h4>التفسير الميسر</h4><div class="tafsir-body"><div class="loader" style="margin:16px auto"></div></div></div>`);
+        if (settings.translation) {
+          const trb = $('.trans-body', sh.el);
+          fetchJSON(`${API}/ayah/${a.number}/${settings.translation}`, `tr:${settings.translation}:${a.number}`)
+            .then((d) => { trb.textContent = d.text; })
+            .catch(() => { trb.textContent = 'تعذّر تحميل الترجمة، تأكد من الاتصال بالإنترنت.'; });
+        }
         $('[data-a="play"]', sh.el).onclick = () => { sh.close(); playAt(i); };
         $('[data-a="bm"]', sh.el).onclick = (e) => { toggleBM({ n, name: s.name, ayah: a.numberInSurah, text: a.text.slice(0, 90) }); e.currentTarget.textContent = bmLabel(); };
         $('[data-a="share"]', sh.el).onclick = () => shareText(`﴿${a.text}﴾
@@ -650,7 +671,8 @@
         </div>
         <div class="field"><label>تنبيه عند دخول وقت الصلاة</label>
           <div class="seg" id="alerts"><button data-v="1">مفعّل</button><button data-v="0">معطّل</button></div>
-          <small class="muted">يعمل التنبيه أثناء فتح التطبيق.</small>
+          <small class="muted">${NATIVE ? `يصلك إشعار ${window.NOOR_NATIVE_ADHAN ? 'بصوت الأذان' : 'بصوت التنبيه'} عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.` : 'في نسخة المتصفح يعمل التنبيه أثناء فتح التطبيق فقط. ثبّت تطبيق أندرويد ليصلك الأذان والهاتف مقفول.'}</small>
+          ${NATIVE ? '<button class="btn ghost block" id="testAdhan" style="margin-top:8px">🔔 تجربة التنبيه بعد ١٠ ثوانٍ</button>' : ''}
         </div>
       </div>
       <div class="card">
@@ -658,11 +680,15 @@
         <div class="field"><label for="reciter">القارئ</label>
           <select id="reciter">${Object.entries(RECITERS).map(([k, r]) => `<option value="${k}" ${k === settings.reciter ? 'selected' : ''}>${r.name}</option>`).join('')}</select>
         </div>
+        <div class="field" style="margin:0"><label for="translation">ترجمة معاني القرآن (تظهر عند الضغط على الآية)</label>
+          <select id="translation">${Object.entries(TRANSLATIONS).map(([k, v]) => `<option value="${k}" ${k === settings.translation ? 'selected' : ''}>${v}</option>`).join('')}</select>
+        </div>
       </div>
       <div class="card">
         <h3>🎨 المظهر</h3>
         <div class="seg" id="theme"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></div>
       </div>
+      ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/noor.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
       <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
       <p class="center muted" style="font-size:.8rem">نور - رفيق المسلم · الإصدار ٢٫٠</p>`;
 
@@ -679,8 +705,10 @@
     seg('theme', 'theme', String);
     seg('alerts', 'alerts', (v) => v === '1' || v === true);
 
+    if ($('#testAdhan')) $('#testAdhan').onclick = () => testAdhan();
     $('#method').onchange = (e) => { settings.method = e.target.value; saveSettings(); toast('تم الحفظ'); };
     $('#reciter').onchange = (e) => { settings.reciter = e.target.value; saveSettings(); toast('تم الحفظ'); };
+    $('#translation').onchange = (e) => { settings.translation = e.target.value; saveSettings(); toast('تم الحفظ'); };
     $('#city').onchange = (e) => {
       const c = CITIES[+e.target.value];
       if (!c) return;
@@ -999,10 +1027,77 @@
     $$('[data-del]', view).forEach((b) => b.addEventListener('click', () => { bm.splice(+b.dataset.del, 1); store.set('bookmarks', bm); renderBookmarks(); }));
   }
 
+
+  // ---------- الأذان في تطبيق أندرويد (إشعارات مجدولة تعمل والهاتف مقفول) ----------
+  const LN = NATIVE && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+  const ADHAN_CHANNEL = window.NOOR_NATIVE_ADHAN ? 'adhan-voice' : 'adhan-alert';
+  let channelReady = false;
+  async function ensureNotify() {
+    if (!LN) return false;
+    let perm = await LN.checkPermissions();
+    if (perm.display !== 'granted') perm = await LN.requestPermissions();
+    if (perm.display !== 'granted') return false;
+    if (!channelReady) {
+      await LN.createChannel({
+        id: ADHAN_CHANNEL,
+        name: 'الأذان ومواقيت الصلاة',
+        description: 'تنبيه عند دخول وقت كل صلاة',
+        importance: 5,
+        visibility: 1,
+        vibration: true,
+        lights: true,
+        ...(window.NOOR_NATIVE_ADHAN ? { sound: 'adhan.mp3' } : {}),
+      });
+      channelReady = true;
+    }
+    return true;
+  }
+  let scheduling = null;
+  function scheduleAdhan() {
+    if (!LN) return;
+    clearTimeout(scheduling);
+    scheduling = setTimeout(async () => {
+      try {
+        const pending = await LN.getPending();
+        const old = pending.notifications.filter((n) => n.id < 1000);
+        if (old.length) await LN.cancel({ notifications: old.map((n) => ({ id: n.id })) });
+        if (!settings.alerts) return;
+        if (!(await ensureNotify())) { toast('فعّل الإشعارات للتطبيق ليصلك الأذان'); return; }
+        const now = Date.now();
+        const list = [];
+        for (let day = 0; day < 14; day++) {
+          const t = timesFor(new Date(now + day * 86400000));
+          PRAY5.forEach((p, i) => {
+            const at = t[p.key];
+            if (at.getTime() <= now + 5000) return;
+            list.push({
+              id: day * 10 + i + 1,
+              title: `حان الآن موعد صلاة ${p.name} ${p.ic}`,
+              body: `${fmtTime(at)} · ${settings.location.name}\nحيّ على الصلاة، حيّ على الفلاح`,
+              channelId: ADHAN_CHANNEL,
+              schedule: { at, allowWhileIdle: true },
+              autoCancel: true,
+            });
+          });
+        }
+        await LN.schedule({ notifications: list });
+      } catch (e) { console.warn('adhan schedule', e); }
+    }, 400);
+  }
+  async function testAdhan() {
+    if (!(await ensureNotify())) { toast('الإشعارات غير مفعّلة للتطبيق'); return; }
+    await LN.schedule({ notifications: [{ id: 5000, title: 'تجربة تنبيه الأذان 🕌', body: 'هكذا سيصلك التنبيه عند دخول وقت الصلاة', channelId: ADHAN_CHANNEL, schedule: { at: new Date(Date.now() + 10000), allowWhileIdle: true } }] });
+    toast('سيصلك التنبيه بعد ١٠ ثوانٍ، يمكنك قفل الهاتف');
+  }
+  if (LN) {
+    scheduleAdhan();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') scheduleAdhan(); });
+  }
+
   // ---------- تنبيه الأذان ----------
   let lastAlert = store.get('lastAlert', 0);
   setInterval(() => {
-    if (!settings.alerts) return;
+    if (!settings.alerts || LN) return;
     const now = new Date();
     const t = timesFor(now);
     for (const p of PRAYERS) {
@@ -1023,7 +1118,7 @@
   // ---------- التشغيل ----------
   applyTheme();
   router();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') {
     const hadController = !!navigator.serviceWorker.controller;
     let reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {

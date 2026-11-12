@@ -350,3 +350,5 @@ mark { background: var(--gold-soft); color: inherit; border-radius: 4px; padding
 .player .icon-btn { width: 36px; height: 36px; flex-shrink: 0; box-shadow: none; border: 1px solid var(--border); }
 .p-info { flex: 1; min-width: 0; font-size: .8rem; display: flex; flex-direction: column; line-height: 1.4; }
 .p-info > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trans-body { font-size: 1.02rem; line-height: 1.8; }
+a.btn { text-decoration: none; }

@@ -1,0 +1,13 @@
+{
+  "appId": "com.fathyeid.noor",
+  "appName": "نور",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0d3b2e"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#b8913a"
+    }
+  }
+}
