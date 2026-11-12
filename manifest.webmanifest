@@ -1,0 +1,16 @@
+{
+  "name": "نور - رفيق المسلم",
+  "short_name": "نور",
+  "description": "مواقيت الصلاة، القرآن الكريم، الأذكار، السبحة، القبلة وأسماء الله الحسنى",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f1e6",
+  "theme_color": "#0d3b2e",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
