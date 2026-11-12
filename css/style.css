@@ -352,3 +352,89 @@ mark { background: var(--gold-soft); color: inherit; border-radius: 4px; padding
 .p-info > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .trans-body { font-size: 1.02rem; line-height: 1.8; }
 a.btn { text-decoration: none; }
+
+/* ===== المرحلة ١: المكتبة الصوتية والأكاديمية ===== */
+/* المشغّل المصغّر */
+.mini { position: fixed; inset-inline: 0; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); z-index: 29; max-width: 640px; margin: 0 auto; padding: 0 8px; }
+.mini-prog { height: 3px; background: var(--border); border-radius: 3px 3px 0 0; overflow: hidden; margin: 0 6px; }
+.mini-prog > div { height: 100%; width: 0; background: var(--gold); transition: width .3s linear; }
+.mini-row { display: flex; align-items: center; gap: 6px; padding: 8px; background: var(--primary); color: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+:root[data-theme="dark"] .mini-row { background: #1a3a2f; }
+.mini-btn { width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; display: grid; place-items: center; flex-shrink: 0; }
+.mini-btn svg { width: 20px; height: 20px; }
+.mini-info { flex: 1; min-width: 0; border: 0; background: none; color: #fff; text-align: right; display: flex; flex-direction: column; line-height: 1.35; padding: 0 4px; }
+.mini-info b, .mini-info small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-info small { opacity: .8; font-size: .75rem; }
+body.has-mini .app { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+body.has-mini .toast { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
+
+/* قوائم القراء والسور */
+.aud-rec, .aud-row, .book-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; border-bottom: 1px solid var(--border); background: none; text-align: right; color: inherit; font: inherit; }
+.aud-rec:last-child, .aud-row:last-child, .book-row:last-child { border-bottom: 0; }
+.aud-rec.playing, .aud-row.playing { background: var(--gold-soft); border-radius: 12px; }
+.aud-av { width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--primary); font-weight: 800; font-family: 'Amiri', serif; font-size: 1.2rem; }
+:root[data-theme="dark"] .aud-av { color: var(--gold); }
+.aud-av.big { width: 58px; height: 58px; font-size: 1.6rem; }
+.aud-info { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.5; }
+.aud-info b { font-size: .98rem; }
+.aud-info small { color: var(--muted); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.aud-star { color: var(--gold); }
+.aud-play { width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; border: 0; background: var(--primary); color: #fff; display: grid; place-items: center; }
+.aud-play svg { width: 18px; height: 18px; }
+.aud-ic { min-width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); display: grid; place-items: center; font-size: .82rem; font-weight: 700; padding: 0 4px; text-decoration: none; }
+.aud-ic svg { width: 18px; height: 18px; }
+.aud-ic.ok { color: var(--primary-2); border-color: var(--primary-2); }
+.rec-head { display: flex; align-items: center; gap: 12px; }
+.dl-summary { padding: 12px 14px; }
+.dl-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .9rem; }
+.dl-line .btn { padding: 6px 12px; font-size: .8rem; }
+.chk { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+.chk input { width: 18px; height: 18px; accent-color: var(--primary); }
+.btn:disabled { opacity: .5; }
+
+/* المشغّل الكامل */
+.player-hero { text-align: center; }
+.pl-art { width: 96px; height: 96px; margin: 0 auto 10px; border-radius: 28px; display: grid; place-items: center; font-size: 3rem; background: rgba(255,255,255,.12); }
+.seek { width: 100%; margin-top: 16px; accent-color: #d8b45e; }
+.p-times { display: flex; justify-content: space-between; direction: ltr; font-size: .85rem; opacity: .85; font-variant-numeric: tabular-nums; }
+.p-ctrl { direction: ltr; display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 8px; }
+.p-btn { width: 52px; height: 52px; border-radius: 50%; border: 0; background: rgba(255,255,255,.14); color: #fff; display: grid; place-items: center; }
+.p-btn.big { width: 70px; height: 70px; background: #d8b45e; color: #0d3b2e; }
+.p-btn svg { width: 24px; height: 24px; }
+.seg button { font-size: .85rem; padding: 9px 4px; }
+
+/* الأكاديمية */
+.acad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.acad-track { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; box-shadow: var(--shadow); color: inherit; font: inherit; }
+.acad-track .ic { font-size: 1.6rem; }
+.acad-track b { font-size: .86rem; line-height: 1.4; min-height: 2.4em; display: flex; align-items: center; }
+.mini-progress { display: block; width: 100%; height: 6px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.mini-progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--primary-2)); border-radius: 6px; }
+.acad-note { margin-top: 16px; }
+.acad-note p { margin: 6px 0 0; font-size: .88rem; color: var(--muted); line-height: 1.9; }
+.roadmap { position: relative; display: flex; flex-direction: column; gap: 14px; padding-inline-start: 6px; }
+.roadmap::before { content: ''; position: absolute; top: 20px; bottom: 20px; inset-inline-start: 25px; width: 3px; background: var(--border); border-radius: 3px; }
+.rm-step { position: relative; display: flex; gap: 12px; align-items: flex-start; }
+.rm-dot { position: relative; z-index: 1; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: var(--surface); border: 3px solid var(--border); color: var(--muted); margin-top: 10px; }
+.rm-step.open .rm-dot { border-color: var(--gold); color: var(--gold); }
+.rm-step.done .rm-dot { background: var(--primary-2); border-color: var(--primary-2); color: #fff; }
+.rm-card { flex: 1; min-width: 0; text-align: right; margin: 0; color: inherit; font: inherit; display: flex; flex-direction: column; gap: 6px; }
+.rm-card p { margin: 0; font-size: .88rem; }
+.rm-step.locked .rm-card { opacity: .6; }
+.rm-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rm-head small { color: var(--gold); font-weight: 800; }
+.rm-cert { align-self: flex-start; background: var(--gold-soft); color: var(--text); border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 700; }
+.lesson-link { font-size: .78rem; color: var(--gold); text-decoration: none; font-weight: 600; }
+.quiz-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-weight: 700; font-size: .9rem; }
+.quiz-q { font-size: 1.2rem; font-weight: 800; margin: 0 0 14px; line-height: 1.7; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { padding: 14px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface); color: inherit; font: inherit; font-weight: 600; text-align: right; }
+.quiz-opt.right { border-color: var(--primary-2); background: color-mix(in srgb, var(--primary-2) 14%, var(--surface)); }
+.quiz-opt.wrong { border-color: #c0392b; background: color-mix(in srgb, #c0392b 12%, var(--surface)); }
+.quiz-fb { font-weight: 800; margin: 14px 0 6px; }
+.quiz-fb.ok { color: var(--primary-2); }
+.quiz-fb.no { color: #c0392b; }
+.quiz-note { font-size: .88rem; margin: 0 0 12px; }
+.cert-wrap { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+.cert-wrap canvas { display: block; width: 100%; height: auto; }
+@media (max-width: 380px) { .acad-grid { grid-template-columns: repeat(2, 1fr); } }

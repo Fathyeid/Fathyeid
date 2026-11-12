@@ -1,7 +1,8 @@
 /* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
-const VERSION = 'noor-v7';
+const VERSION = 'noor-v8';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
+  'js/native-flags.js', 'js/quran-meta.js', 'js/academy-data.js', 'js/audio-lib.js', 'js/academy.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/father.jpg',
 ];
 
@@ -15,7 +16,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION && !k.startsWith('noor-audio')).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -33,7 +34,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   // لا نخزّن ملفات الصوت لكبر حجمها
-  if (url.hostname.includes('islamic.network') || req.headers.has('range')) return;
+  if (/islamic\.network|mp3quran\.net|everyayah\.com/.test(url.hostname) || req.headers.has('range')) return;
 
   if (url.origin === self.location.origin) {
     // ملفات التطبيق: الشبكة أولاً (بدون ذاكرة المتصفح) ثم النسخة المحفوظة

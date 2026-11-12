@@ -145,7 +145,7 @@
     $('#pageTitle').textContent = route.title;
     $('#backBtn').hidden = !route.back;
     $('#backBtn').onclick = () => history.length > 1 ? history.back() : go(route.back);
-    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar' }[name] || name;
+    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran' }[name] || name;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.route === tab));
     view.innerHTML = '';
     view.className = 'fade-in';
@@ -190,6 +190,8 @@
 
       <div class="grid">
         <button class="tile" data-go="quran"><span class="ic">📖</span>القرآن</button>
+        <button class="tile" data-go="audio"><span class="ic">🎧</span>المكتبة الصوتية</button>
+        <button class="tile" data-go="academy"><span class="ic">🎓</span>الأكاديمية</button>
         <button class="tile" data-go="zikr/${zikrKey}"><span class="ic">${AZKAR[zikrKey].icon}</span>${AZKAR[zikrKey].title}</button>
         <button class="tile" data-go="prayers"><span class="ic">🕌</span>المواقيت</button>
         <button class="tile" data-go="tasbih"><span class="ic">📿</span>السبحة</button>
@@ -203,12 +205,15 @@
         <button class="tile" data-go="bookmarks"><span class="ic">🔖</span>العلامات</button>
       </div>
 
+      <div id="homeExtras"></div>
+
       ${last ? `<div class="card continue"><div><small class="muted">متابعة القراءة</small><br><b>${esc(last.name)}</b> <small class="muted">— الآية ${ar(last.ayah)}</small></div><button class="btn" data-go="surah/${last.n}">متابعة</button></div>` : ''}
 
       <div class="card"><h3>📖 آية اليوم</h3><p class="ayah-text">﴿${ayah.text}﴾</p><div class="ref">${ayah.ref}</div></div>
       <div class="card"><h3>💬 حديث اليوم</h3><p class="hadith-text">«${hadith.text}»</p><div class="ref">${hadith.ref}</div></div>
     `;
     $$('[data-go]', view).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+    (window.Noor.homeExtras || []).forEach((fn) => { try { fn($('#homeExtras')); } catch (e) { console.error(e); } });
 
     let np = nextPrayer();
     const tick = () => {
@@ -369,6 +374,8 @@
     let alive = true;
     const audio = new Audio();
     audio.preload = 'auto';
+    const onExclusive = (e) => { if (e.detail !== 'surah') audio.pause(); };
+    window.addEventListener('noor:audio', onExclusive);
 
     fetchJSON(`${API}/surah/${n}/quran-uthmani`, `surah:${n}`).then((s) => {
       if (!alive) return;
@@ -430,7 +437,8 @@
         if (rep < (settings.repeat || 1)) { audio.currentTime = 0; audio.play().catch(() => {}); $('#pState').textContent = `الآية ${ar(ayahs[cur].numberInSurah)} · تكرار ${ar(rep + 1)}`; return; }
         playAt(cur + 1);
       };
-      audio.onplay = audio.onpause = setBtn;
+      audio.onpause = setBtn;
+      audio.onplay = () => { setBtn(); window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'surah' })); };
       $('#play').onclick = () => {
         if (cur < 0) playAt(0);
         else if (audio.paused) audio.play(); else audio.pause();
@@ -475,7 +483,7 @@
       }
     }).catch(() => alive && errorBox(() => renderSurah(arg)));
 
-    return () => { alive = false; audio.pause(); audio.src = ''; };
+    return () => { alive = false; audio.pause(); audio.src = ''; window.removeEventListener('noor:audio', onExclusive); };
   }
 
   // ---------- الأذكار ----------
@@ -1126,6 +1134,15 @@
       }
     }
   }, 20000);
+
+  // ---------- واجهة الوحدات الإضافية (المكتبة الصوتية، الأكاديمية، ...) ----------
+  window.Noor = {
+    $, $$, view, store, toast, go, ar, arG, toAr, esc, routes, settings, saveSettings,
+    fetchJSON, API, sheet, shareText, todayKey, ymdIn, tz, hijri, greg, NATIVE,
+    setTitle: (t) => { $('#pageTitle').textContent = t; },
+    homeExtras: [],
+  };
+  (window.NoorModules || []).forEach((m) => { try { m(window.Noor); } catch (e) { console.error('module', e); } });
 
   // ---------- التشغيل ----------
   applyTheme();
