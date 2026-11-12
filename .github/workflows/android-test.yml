@@ -1,0 +1,71 @@
+name: نسخة تجربة أندرويد (dev)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-test
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: تثبيت الحزم
+        run: npm ci
+
+      - name: تجهيز ملفات التطبيق
+        run: npm run build:web
+
+      - name: صوت الأذان المخصص (إن وُجد)
+        run: |
+          if [ -f adhan/adhan.mp3 ]; then
+            mkdir -p android/app/src/main/res/raw
+            cp adhan/adhan.mp3 android/app/src/main/res/raw/adhan.mp3
+            echo "تم إضافة صوت الأذان"
+          fi
+
+      - name: مزامنة Capacitor
+        run: npx cap sync android
+
+      - name: بناء APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk ../noor.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: noor-apk
+          path: noor.apk
+
+      - name: نشر نسخة التجربة (لا تؤثر على الرابط العام)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test-${{ github.run_number }}
+          name: "نسخة تجربة ${{ github.run_number }} (غير منشورة للعامة)"
+          body: |
+            نسخة تجربة من فرع dev قبل الاعتماد.
+            لا تؤثر على رابط التحميل العام.
+          files: noor.apk
+          prerelease: true
+          make_latest: false
