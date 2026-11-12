@@ -30,7 +30,7 @@
     const overall = ACADEMY.reduce((a, T) => a + trackPct(T.id), 0) / ACADEMY.length;
     N.view.innerHTML = `
       <section class="hero acad-hero">
-        <div class="next-label">أكاديمية نور للعلوم الشرعية</div>
+        <div class="next-label">أكاديمية أثر للعلوم الشرعية</div>
         <div class="next-name" style="font-size:1.5rem">تسعة مسارات من البداية إلى التمكّن</div>
         <div class="progress on-dark"><div style="width:${overall * 100}%"></div></div>
         <div class="loc">إنجازك الكلي: ${pctTxt(overall)}</div>
@@ -189,7 +189,7 @@
       <div class="field"><label for="cn">الاسم كما سيظهر في الشهادة</label><input class="search" id="cn" value="${esc(name)}" placeholder="اكتب اسمك" maxlength="40"></div>
       <div class="cert-wrap"><canvas id="cv" width="1400" height="990"></canvas></div>
       <div style="display:flex;gap:8px;margin-top:12px"><button class="btn block" id="cShare">📤 مشاركة / حفظ</button></div>
-      <p class="muted center" style="font-size:.82rem">شهادة تحفيزية لإتمام المحتوى داخل تطبيق نور، وليست شهادة علمية معتمدة.</p>`;
+      <p class="muted center" style="font-size:.82rem">شهادة تحفيزية لإتمام المحتوى داخل تطبيق أثر، وليست شهادة علمية معتمدة.</p>`;
     const cv = $('#cv'); const ctx = cv.getContext('2d');
     const draw = () => {
       const W = cv.width, H = cv.height;
@@ -201,7 +201,7 @@
       const t = (txt, y, font, color) => { ctx.font = font; ctx.fillStyle = color; ctx.fillText(txt, W / 2, y); };
       t('بسم الله الرحمن الرحيم', 150, '42px Amiri, serif', '#0d3b2e');
       t('شهادة إتمام', 270, 'bold 96px Amiri, serif', '#b8913a');
-      t('تشهد أكاديمية نور للعلوم الشرعية بأن', 370, '40px Tajawal, sans-serif', '#33443c');
+      t('تشهد أكاديمية أثر للعلوم الشرعية بأن', 370, '40px Tajawal, sans-serif', '#33443c');
       t(name || '................................', 480, 'bold 76px Amiri, serif', '#0d3b2e');
       t(`قد أتمّ المستوى ${['الأول', 'الثاني', 'الثالث'][l]} (${ACADEMY_LEVELS[l]}) في مسار «${T.title}»`, 580, '42px Tajawal, sans-serif', '#33443c');
       t(`بنسبة ${pctTxt(st.quiz)} في اختبار المستوى`, 645, '36px Tajawal, sans-serif', '#33443c');

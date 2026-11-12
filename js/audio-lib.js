@@ -183,7 +183,7 @@
   function mediaMeta(it) {
     if (!('mediaSession' in navigator)) return;
     try {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: it.title, artist: it.sub, album: 'نور - المكتبة الصوتية' });
+      navigator.mediaSession.metadata = new MediaMetadata({ title: it.title, artist: it.sub, album: 'أثر - المكتبة الصوتية' });
       navigator.mediaSession.setActionHandler('play', () => audio.play());
       navigator.mediaSession.setActionHandler('pause', () => audio.pause());
       navigator.mediaSession.setActionHandler('nexttrack', next);

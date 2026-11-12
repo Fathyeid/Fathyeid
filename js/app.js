@@ -1,4 +1,4 @@
-/* نور - رفيق المسلم | المنطق الرئيسي للتطبيق */
+/* أثر - رفيق المسلم | المنطق الرئيسي للتطبيق */
 (() => {
   'use strict';
 
@@ -120,7 +120,7 @@
 
   // ---------- الموجّه (Router) ----------
   const routes = {
-    home: { title: 'نور', render: renderHome },
+    home: { title: 'أثر', render: renderHome },
     prayers: { title: 'مواقيت الصلاة', render: renderPrayers },
     quran: { title: 'القرآن الكريم', render: renderQuran },
     surah: { title: 'القرآن الكريم', render: renderSurah, back: 'quran' },
@@ -357,7 +357,7 @@
     try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(text); toast('تم نسخ النص'); } catch { toast('تعذّر النسخ'); }
   }
-  const APP_SIGN = () => `\n\nمن تطبيق نور - صدقة جارية على روح المرحوم عيد فتحي أبو طالب\n${location.origin}${location.pathname}`;
+  const APP_SIGN = () => `\n\nمن تطبيق أثر - صدقة جارية على روح المرحوم عيد فتحي أبو طالب\n${location.origin}${location.pathname}`;
   function sheet(html) {
     const bd = document.createElement('div');
     bd.className = 'sheet-backdrop';
@@ -700,7 +700,7 @@
       ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/noor.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
       ${NATIVE ? `<div class="card"><h3>🔄 التحديثات</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">رقم النسخة الحالية: ${arG(BUILD.code || 0)}. يتحقق التطبيق من التحديثات تلقائياً.</p><button class="btn ghost block" id="chkUpd">التحقق من وجود تحديث</button></div>` : ''}
       <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
-      <p class="center muted" style="font-size:.8rem">نور - رفيق المسلم · الإصدار ٢٫٠</p>`;
+      <p class="center muted" style="font-size:.8rem">أثر - رفيق المسلم · الإصدار ٢٫١</p>`;
 
     const seg = (id, key, cast) => {
       const sync = () => $$(`#${id} button`).forEach((b) => b.classList.toggle('active', cast(b.dataset.v) === settings[key]));
@@ -1143,7 +1143,7 @@
   function showUpdate(url, latest) {
     const sh = sheet(`
       <div class="center"><p style="font-size:2.6rem;margin:0">🎉</p>
-      <div class="sheet-title" style="font-size:1.15rem">يوجد تحديث جديد لتطبيق نور</div>
+      <div class="sheet-title" style="font-size:1.15rem">يوجد تحديث جديد لتطبيق أثر</div>
       <p class="muted" style="line-height:1.9">اضغط «تحديث الآن» لتنزيل النسخة الجديدة، ثم افتح الملف بعد اكتمال التنزيل واضغط «تثبيت».<br>كل بياناتك ستبقى كما هي.</p></div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <a class="btn block" id="updGo" href="${url}" target="_blank" rel="noopener">⬇️ تحديث الآن</a>
@@ -1174,7 +1174,7 @@
         const msg = `حان الآن موعد صلاة ${p.name}`;
         toast('🕌 ' + msg);
         if ('Notification' in window && Notification.permission === 'granted') {
-          try { new Notification('نور', { body: msg, icon: 'icons/icon.svg' }); } catch { /* تجاهل */ }
+          try { new Notification('أثر', { body: msg, icon: 'icons/icon.svg' }); } catch { /* تجاهل */ }
         }
       }
     }

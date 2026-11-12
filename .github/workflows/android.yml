@@ -86,9 +86,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
-          name: "نور - تطبيق أندرويد (إصدار ${{ github.run_number }})"
+          name: "أثر - تطبيق أندرويد (إصدار ${{ github.run_number }})"
           body: |
-            تطبيق نور - رفيق المسلم
+            تطبيق أثر - رفيق المسلم
             صدقة جارية على روح المرحوم عيد فتحي أبو طالب
 
             حمّل ملف noor.apk وثبّته على هاتفك.
