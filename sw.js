@@ -1,5 +1,5 @@
 /* عامل الخدمة: يتيح عمل التطبيق دون اتصال */
-const VERSION = 'noor-v1';
+const VERSION = 'noor-v2';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
   'manifest.webmanifest', 'icons/icon.svg',

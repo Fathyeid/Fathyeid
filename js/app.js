@@ -155,6 +155,13 @@
         <div class="loc"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>${esc(settings.location.name)}</div>
       </section>
 
+      <section class="dedication">
+        <div class="ded-label">صدقة جارية على روح</div>
+        <div class="ded-name">المرحوم بإذن الله<br>عيد فتحي أبو طالب</div>
+        <p class="ded-dua">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ، وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ</p>
+        <button class="btn ded-btn" data-go="surah/1">📖 اقرأ الفاتحة على روحه</button>
+      </section>
+
       <div class="grid">
         <button class="tile" data-go="quran"><span class="ic">📖</span>القرآن</button>
         <button class="tile" data-go="zikr/${zikrKey}"><span class="ic">${AZKAR[zikrKey].icon}</span>${AZKAR[zikrKey].title}</button>
@@ -539,7 +546,8 @@
         <h3>🎨 المظهر</h3>
         <div class="seg" id="theme"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></div>
       </div>
-      <p class="center muted" style="font-size:.8rem">نور - رفيق المسلم · الإصدار ١٫٠</p>`;
+      <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
+      <p class="center muted" style="font-size:.8rem">نور - رفيق المسلم · الإصدار ١٫١</p>`;
 
     const seg = (id, key, cast) => {
       const sync = () => $$(`#${id} button`).forEach((b) => b.classList.toggle('active', cast(b.dataset.v) === settings[key]));
