@@ -183,8 +183,7 @@
         <div class="ded-name">المرحوم بإذن الله<br>عيد فتحي أبو طالب</div>
         <p class="ded-dua">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ، وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ</p>
         <div class="ded-actions">
-          <button class="btn ded-btn" data-go="surah/1">📖 اقرأ الفاتحة على روحه</button>
-          <button class="btn ghost ded-btn" data-go="zikr/deceased">🤲 أدعية للمتوفى</button>
+          <button class="btn ded-btn" data-go="zikr/deceased">🤲 أدعية للمتوفى</button>
         </div>
       </section>
 
