@@ -156,6 +156,7 @@
       </section>
 
       <section class="dedication">
+        <img class="ded-photo" src="icons/father.jpg" alt="المرحوم عيد فتحي أبو طالب" width="112" height="112">
         <div class="ded-label">صدقة جارية على روح</div>
         <div class="ded-name">المرحوم بإذن الله<br>عيد فتحي أبو طالب</div>
         <p class="ded-dua">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ، وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ</p>

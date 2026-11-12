@@ -1,8 +1,8 @@
 /* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
-const VERSION = 'noor-v3';
+const VERSION = 'noor-v4';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
-  'manifest.webmanifest', 'icons/icon.svg',
+  'manifest.webmanifest', 'icons/icon.svg', 'icons/father.jpg',
 ];
 
 self.addEventListener('install', (e) => {
