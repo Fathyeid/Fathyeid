@@ -9,5 +9,8 @@ for (const f of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'ic
 }
 // هل يوجد ملف أذان مخصص؟
 const hasAdhan = fs.existsSync(path.join(root, 'adhan', 'adhan.mp3'));
-fs.writeFileSync(path.join(out, 'js', 'native-flags.js'), `window.NOOR_NATIVE_ADHAN = ${hasAdhan};\n`);
+const code = parseInt(process.env.NOOR_VERSION_CODE || '0', 10);
+const kind = process.env.NOOR_BUILD_KIND || 'local';
+fs.writeFileSync(path.join(out, 'js', 'native-flags.js'),
+  `window.NOOR_NATIVE_ADHAN = ${hasAdhan};\nwindow.NOOR_BUILD = ${JSON.stringify({ code, kind })};\n`);
 console.log('www جاهز', hasAdhan ? '(مع صوت أذان مخصص)' : '');

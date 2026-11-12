@@ -696,6 +696,7 @@
         <div class="seg" id="theme"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></div>
       </div>
       ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/noor.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
+      ${NATIVE ? `<div class="card"><h3>🔄 التحديثات</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">رقم النسخة الحالية: ${arG(BUILD.code || 0)}. يتحقق التطبيق من التحديثات تلقائياً.</p><button class="btn ghost block" id="chkUpd">التحقق من وجود تحديث</button></div>` : ''}
       <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
       <p class="center muted" style="font-size:.8rem">نور - رفيق المسلم · الإصدار ٢٫٠</p>`;
 
@@ -713,6 +714,7 @@
     seg('alerts', 'alerts', (v) => v === '1' || v === true);
 
     if ($('#testAdhan')) $('#testAdhan').onclick = () => testAdhan();
+    if ($('#chkUpd')) $('#chkUpd').onclick = () => checkUpdate(true);
     if ($('#exactBtn')) {
       exactAllowed().then((ok) => { if ($('#exactBtn')) $('#exactBtn').hidden = ok; });
       $('#exactBtn').onclick = async () => {
@@ -1111,6 +1113,48 @@
   if (LN) {
     scheduleAdhan();
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') scheduleAdhan(); });
+  }
+
+
+  // ---------- التنبيه بالتحديثات (تطبيق أندرويد المثبّت من الرابط) ----------
+  const RELEASES_API = 'https://api.github.com/repos/Fathyeid/Fathyeid/releases/latest';
+  const BUILD = window.NOOR_BUILD || { code: 0, kind: 'local' };
+  async function checkUpdate(manual) {
+    if (!NATIVE || !BUILD.code) { if (manual) toast('التحقق من التحديثات متاح في تطبيق أندرويد فقط'); return; }
+    if (!manual && Date.now() - store.get('upd:checked', 0) < 6 * 3600000) return;
+    if (manual) toast('جارٍ التحقق من التحديثات...');
+    try {
+      const res = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } });
+      if (!res.ok) throw new Error(res.status);
+      const rel = await res.json();
+      store.set('upd:checked', Date.now());
+      const m = /VERSION_CODE=(\d+)/.exec(rel.body || '');
+      const apk = (rel.assets || []).find((a) => a.name === 'noor.apk');
+      const latest = m ? +m[1] : 0;
+      if (!apk || latest <= BUILD.code) { if (manual) toast('أنت تستخدم أحدث نسخة ✓'); return; }
+      if (!manual && store.get('upd:skip', 0) === latest) return;
+      showUpdate(apk.browser_download_url, latest);
+    } catch {
+      if (manual) toast('تعذّر التحقق، تأكد من الاتصال بالإنترنت');
+    }
+  }
+  function showUpdate(url, latest) {
+    const sh = sheet(`
+      <div class="center"><p style="font-size:2.6rem;margin:0">🎉</p>
+      <div class="sheet-title" style="font-size:1.15rem">يوجد تحديث جديد لتطبيق نور</div>
+      <p class="muted" style="line-height:1.9">اضغط «تحديث الآن» لتنزيل النسخة الجديدة، ثم افتح الملف بعد اكتمال التنزيل واضغط «تثبيت».<br>كل بياناتك ستبقى كما هي.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a class="btn block" id="updGo" href="${url}" target="_blank" rel="noopener">⬇️ تحديث الآن</a>
+        <button class="btn ghost block" id="updLater">لاحقاً</button>
+        <button class="btn ghost block" id="updSkip" style="font-size:.85rem">تخطي هذه النسخة</button>
+      </div>`);
+    $('#updGo', sh.el).addEventListener('click', () => { setTimeout(sh.close, 300); toast('بعد اكتمال التنزيل افتح الملف واضغط «تثبيت»'); });
+    $('#updLater', sh.el).onclick = sh.close;
+    $('#updSkip', sh.el).onclick = () => { store.set('upd:skip', latest); sh.close(); };
+  }
+  if (NATIVE) {
+    setTimeout(() => checkUpdate(false), 4000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(false); });
   }
 
   // ---------- تنبيه الأذان ----------

@@ -32,6 +32,12 @@ jobs:
       - name: تثبيت الحزم
         run: npm ci
 
+      - name: رقم الإصدار
+        run: |
+          # رقم يزيد دائماً (بالدقائق منذ ٢٠٢٦) ليُثبَّت كل تحديث فوق النسخة السابقة
+          echo "NOOR_VERSION_CODE=$(( ($(date +%s) - 1767225600) / 60 ))" >> "$GITHUB_ENV"
+          echo "NOOR_BUILD_KIND=test" >> "$GITHUB_ENV"
+
       - name: تجهيز ملفات التطبيق
         run: npm run build:web
 
@@ -49,9 +55,6 @@ jobs:
       - name: بناء APK
         working-directory: android
         run: |
-          # رقم إصدار يزيد دائماً (بالدقائق منذ ٢٠٢٦) ليُثبَّت التحديث فوق أي نسخة سابقة
-          export NOOR_VERSION_CODE=$(( ($(date +%s) - 1767225600) / 60 ))
-          echo "NOOR_VERSION_CODE=$NOOR_VERSION_CODE" >> "$GITHUB_ENV"
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace
           cp app/build/outputs/apk/release/app-release.apk ../noor.apk
@@ -69,6 +72,8 @@ jobs:
           body: |
             نسخة تجربة من فرع dev قبل الاعتماد.
             لا تؤثر على رابط التحميل العام.
+
+            VERSION_CODE=${{ env.NOOR_VERSION_CODE }}
           files: noor.apk
           prerelease: true
           make_latest: false
