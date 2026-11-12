@@ -1,12 +1,16 @@
-/* عامل الخدمة: يتيح عمل التطبيق دون اتصال */
-const VERSION = 'noor-v2';
+/* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
+const VERSION = 'noor-v3';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
   'manifest.webmanifest', 'icons/icon.svg',
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(VERSION)
+      .then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -16,6 +20,14 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+const put = (req, res) => {
+  if (res && (res.ok || res.type === 'opaque')) {
+    const copy = res.clone();
+    caches.open(VERSION).then((c) => c.put(req, copy));
+  }
+  return res;
+};
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -23,17 +35,17 @@ self.addEventListener('fetch', (e) => {
   // لا نخزّن ملفات الصوت لكبر حجمها
   if (url.hostname.includes('islamic.network') || req.headers.has('range')) return;
 
-  // الخطوط وملفات التطبيق: من الذاكرة أولاً ثم الشبكة
+  if (url.origin === self.location.origin) {
+    // ملفات التطبيق: الشبكة أولاً (بدون ذاكرة المتصفح) ثم النسخة المحفوظة
+    e.respondWith(
+      fetch(req, { cache: 'no-cache' }).then((res) => put(req, res))
+        .catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match('./')))
+    );
+    return;
+  }
+
+  // الخطوط وبيانات القرآن: من الذاكرة أولاً ثم الشبكة
   e.respondWith(
-    caches.match(req).then((hit) => {
-      const net = fetch(req).then((res) => {
-        if (res && (res.ok || res.type === 'opaque')) {
-          const copy = res.clone();
-          caches.open(VERSION).then((c) => c.put(req, copy));
-        }
-        return res;
-      }).catch(() => hit);
-      return hit || net;
-    })
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => put(req, res)))
   );
 });
