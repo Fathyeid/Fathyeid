@@ -697,7 +697,7 @@
         <h3>🎨 المظهر</h3>
         <div class="seg" id="theme"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></div>
       </div>
-      ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/noor.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
+      ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
       ${NATIVE ? `<div class="card"><h3>🔄 التحديثات</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">رقم النسخة الحالية: ${arG(BUILD.code || 0)}. يتحقق التطبيق من التحديثات تلقائياً.</p><button class="btn ghost block" id="chkUpd">التحقق من وجود تحديث</button></div>` : ''}
       <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
       <p class="center muted" style="font-size:.8rem">أثر - رفيق المسلم · الإصدار ٢٫١</p>`;
@@ -1131,7 +1131,7 @@
       const rel = await res.json();
       store.set('upd:checked', Date.now());
       const m = /VERSION_CODE=(\d+)/.exec(rel.body || '');
-      const apk = (rel.assets || []).find((a) => a.name === 'noor.apk');
+      const apk = (rel.assets || []).find((a) => a.name === 'athar.apk') || (rel.assets || []).find((a) => a.name === 'noor.apk');
       const latest = m ? +m[1] : 0;
       if (!apk || latest <= BUILD.code) { if (manual) toast('أنت تستخدم أحدث نسخة ✓'); return; }
       if (!manual && store.get('upd:skip', 0) === latest) return;

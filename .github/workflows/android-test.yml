@@ -57,12 +57,12 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace
-          cp app/build/outputs/apk/release/app-release.apk ../noor.apk
+          cp app/build/outputs/apk/release/app-release.apk ../athar.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: noor-apk
-          path: noor.apk
+          name: athar-apk
+          path: athar.apk
 
       - name: نشر نسخة التجربة (لا تؤثر على الرابط العام)
         uses: softprops/action-gh-release@v2
@@ -74,6 +74,6 @@ jobs:
             لا تؤثر على رابط التحميل العام.
 
             VERSION_CODE=${{ env.NOOR_VERSION_CODE }}
-          files: noor.apk
+          files: athar.apk
           prerelease: true
           make_latest: false
