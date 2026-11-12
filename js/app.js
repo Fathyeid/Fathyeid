@@ -21,7 +21,7 @@
     location: { name: 'القاهرة', lat: 30.0444, lng: 31.2357, tz: 'Africa/Cairo' },
     method: 'egypt',
     asr: 1,
-    theme: 'auto',
+    theme: 'light',
     qsize: 1.6,
     reciter: 'ar.alafasy',
     repeat: 1,
@@ -31,6 +31,8 @@
   const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   if (NATIVE) DEFAULTS.alerts = true;
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+  // الثيم الفاتح هو الافتراضي؛ من لم يختر ثيماً بنفسه ينتقل إلى الفاتح
+  if (settings.theme === 'auto' && !store.get('themeChosen', false)) settings.theme = 'light';
   const saveSettings = () => { store.set('settings', settings); if (typeof scheduleAdhan === 'function') scheduleAdhan(); };
 
   const RECITERS = {
@@ -704,7 +706,7 @@
       const sync = () => $$(`#${id} button`).forEach((b) => b.classList.toggle('active', cast(b.dataset.v) === settings[key]));
       $$(`#${id} button`).forEach((b) => b.addEventListener('click', () => {
         settings[key] = cast(b.dataset.v); saveSettings(); sync();
-        if (key === 'theme') applyTheme();
+        if (key === 'theme') { store.set('themeChosen', true); applyTheme(); }
         if (key === 'alerts' && settings.alerts && 'Notification' in window && Notification.permission === 'default') Notification.requestPermission();
       }));
       sync();
