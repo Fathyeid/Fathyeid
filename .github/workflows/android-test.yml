@@ -49,6 +49,9 @@ jobs:
       - name: بناء APK
         working-directory: android
         run: |
+          # رقم إصدار يزيد دائماً (بالدقائق منذ ٢٠٢٦) ليُثبَّت التحديث فوق أي نسخة سابقة
+          export NOOR_VERSION_CODE=$(( ($(date +%s) - 1767225600) / 60 ))
+          echo "NOOR_VERSION_CODE=$NOOR_VERSION_CODE" >> "$GITHUB_ENV"
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace
           cp app/build/outputs/apk/release/app-release.apk ../noor.apk
