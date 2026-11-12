@@ -24,6 +24,7 @@
     theme: 'auto',
     qsize: 1.6,
     reciter: 'ar.alafasy',
+    repeat: 1,
     alerts: false,
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
@@ -113,22 +114,29 @@
     qibla: { title: 'اتجاه القبلة', render: renderQibla, back: 'home' },
     names: { title: 'أسماء الله الحسنى', render: renderNames, back: 'home' },
     settings: { title: 'الإعدادات', render: renderSettings, back: 'home' },
+    juz: { title: 'القرآن الكريم', render: renderJuz, back: 'quran' },
+    khatma: { title: 'ختمة القرآن', render: renderKhatma, back: 'home' },
+    tracker: { title: 'متابعة الصلوات', render: renderTracker, back: 'home' },
+    calendar: { title: 'التقويم الهجري', render: renderCalendar, back: 'home' },
+    zakat: { title: 'حاسبة الزكاة', render: renderZakat, back: 'home' },
+    bookmarks: { title: 'العلامات المحفوظة', render: renderBookmarks, back: 'home' },
   };
 
   let cleanup = null;
   function router() {
-    const [name, arg] = (location.hash.slice(2) || 'home').split('/');
+    const [name, arg, arg2] = (location.hash.slice(2) || 'home').split('/');
     const route = routes[name] || routes.home;
     if (cleanup) { cleanup(); cleanup = null; }
+    $$('.sheet-backdrop').forEach((e) => e.remove());
     $('#pageTitle').textContent = route.title;
     $('#backBtn').hidden = !route.back;
     $('#backBtn').onclick = () => history.length > 1 ? history.back() : go(route.back);
-    const tab = { surah: 'quran', zikr: 'azkar' }[name] || name;
+    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar' }[name] || name;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.route === tab));
     view.innerHTML = '';
     view.className = 'fade-in';
     void view.offsetWidth;
-    cleanup = route.render(arg) || null;
+    cleanup = route.render(arg, arg2) || null;
     window.scrollTo(0, 0);
   }
   const go = (r) => { location.hash = '#/' + r; };
@@ -160,7 +168,10 @@
         <div class="ded-label">صدقة جارية على روح</div>
         <div class="ded-name">المرحوم بإذن الله<br>عيد فتحي أبو طالب</div>
         <p class="ded-dua">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ، وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ</p>
-        <button class="btn ded-btn" data-go="surah/1">📖 اقرأ الفاتحة على روحه</button>
+        <div class="ded-actions">
+          <button class="btn ded-btn" data-go="surah/1">📖 اقرأ الفاتحة على روحه</button>
+          <button class="btn ghost ded-btn" data-go="zikr/deceased">🤲 أدعية للمتوفى</button>
+        </div>
       </section>
 
       <div class="grid">
@@ -170,6 +181,12 @@
         <button class="tile" data-go="tasbih"><span class="ic">📿</span>السبحة</button>
         <button class="tile" data-go="qibla"><span class="ic">🧭</span>القبلة</button>
         <button class="tile" data-go="names"><span class="ic">✨</span>الأسماء الحسنى</button>
+        <button class="tile" data-go="khatma"><span class="ic">📗</span>ختمة القرآن</button>
+        <button class="tile" data-go="tracker"><span class="ic">✅</span>متابعة الصلوات</button>
+        <button class="tile" data-go="calendar"><span class="ic">📅</span>التقويم الهجري</button>
+        <button class="tile" data-go="zikr/duas"><span class="ic">🤲</span>أدعية قرآنية</button>
+        <button class="tile" data-go="zakat"><span class="ic">💰</span>حاسبة الزكاة</button>
+        <button class="tile" data-go="bookmarks"><span class="ic">🔖</span>العلامات</button>
       </div>
 
       ${last ? `<div class="card continue"><div><small class="muted">متابعة القراءة</small><br><b>${esc(last.name)}</b> <small class="muted">— الآية ${ar(last.ayah)}</small></div><button class="btn" data-go="surah/${last.n}">متابعة</button></div>` : ''}
@@ -238,6 +255,8 @@
     $('#retry').onclick = retry;
   };
 
+  const normAr = (t) => t.replace(/[ً-ٰٟۖ-ۭ]/g, '').replace(/[ٱأإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+  let quranMode = 'surah';
   function renderQuran() {
     view.innerHTML = '<div class="loader"></div>';
     let alive = true;
@@ -246,25 +265,91 @@
       const last = store.get('lastRead');
       view.innerHTML = `
         ${last ? `<div class="card continue"><div><small class="muted">آخر قراءة</small><br><b>${esc(last.name)}</b> <small class="muted">— الآية ${ar(last.ayah)}</small></div><button class="btn" id="cont">متابعة</button></div>` : ''}
-        <input class="search" id="q" type="search" placeholder="ابحث عن سورة بالاسم أو الرقم...">
-        <div class="card" style="padding:4px 4px" id="list"></div>`;
-      if (last) $('#cont').onclick = () => go(`surah/${last.n}`);
-      const draw = (q = '') => {
-        const norm = (s) => s.replace(/[ً-ٰٟۖ-ۭ]/g, '').replace(/[ٱأإآ]/g, 'ا');
-        const nq = norm(q.trim());
-        $('#list').innerHTML = list
-          .filter((s) => !nq || norm(s.name).includes(nq) || String(s.number) === q.trim() || ar(s.number) === q.trim())
-          .map((s) => `<button class="surah-item" data-n="${s.number}"><span class="surah-num">${ar(s.number)}</span><span class="surah-info"><b>${s.name}</b><small>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · ${ar(s.numberOfAyahs)} آية</small></span></button>`)
-          .join('') || '<p class="center muted">لا توجد نتائج</p>';
-        $$('.surah-item').forEach((b) => b.addEventListener('click', () => go(`surah/${b.dataset.n}`)));
+        <div class="seg" id="qmode" style="margin-bottom:14px"><button data-m="surah">السور</button><button data-m="juz">الأجزاء</button><button data-m="search">بحث في الآيات</button></div>
+        <div id="qbody"></div>`;
+      if (last) $('#cont').onclick = () => go(`surah/${last.n}/${last.ayah}`);
+      const body = $('#qbody');
+
+      const surahMode = () => {
+        body.innerHTML = `<input class="search" id="q" type="search" placeholder="ابحث عن سورة بالاسم أو الرقم..."><div class="card" style="padding:4px" id="list"></div>`;
+        const draw = (q = '') => {
+          const nq = normAr(q.trim());
+          $('#list').innerHTML = list
+            .filter((s) => !nq || normAr(s.name).includes(nq) || String(s.number) === q.trim() || ar(s.number) === q.trim())
+            .map((s) => `<button class="surah-item" data-n="${s.number}"><span class="surah-num">${ar(s.number)}</span><span class="surah-info"><b>${s.name}</b><small>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · ${ar(s.numberOfAyahs)} آية</small></span></button>`)
+            .join('') || '<p class="center muted">لا توجد نتائج</p>';
+          $$('.surah-item', body).forEach((b) => b.addEventListener('click', () => go(`surah/${b.dataset.n}`)));
+        };
+        draw();
+        $('#q').addEventListener('input', (e) => draw(e.target.value));
       };
-      draw();
-      $('#q').addEventListener('input', (e) => draw(e.target.value));
+
+      const juzMode = () => {
+        const k = khatmaState();
+        body.innerHTML = `<div class="card" style="padding:4px">${JUZ_NAMES.map((nm, i) => `<button class="surah-item" data-j="${i + 1}"><span class="surah-num">${ar(i + 1)}</span><span class="surah-info"><b>${nm}</b><small>الجزء ${ar(i + 1)}${k.done[i] ? ' · ✓ مقروء في الختمة' : ''}</small></span></button>`).join('')}</div>`;
+        $$('[data-j]', body).forEach((b) => b.addEventListener('click', () => go(`juz/${b.dataset.j}`)));
+      };
+
+      const searchMode = () => {
+        body.innerHTML = `<form id="sf" style="display:flex;gap:8px"><input class="search" id="sq" type="search" placeholder="اكتب كلمة من الآية... مثال: الصبر" style="margin:0"><button class="btn" type="submit">بحث</button></form><div id="sres" style="margin-top:14px"></div>`;
+        $('#sf').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const q = normAr($('#sq').value.trim());
+          if (q.length < 2) return toast('اكتب كلمتين أو حرفين على الأقل');
+          const out = $('#sres');
+          out.innerHTML = '<div class="loader"></div>';
+          try {
+            const res = await fetch(`${API}/search/${encodeURIComponent(q)}/all/quran-simple-clean`);
+            const json = res.ok ? await res.json() : null;
+            const m = (json && json.data && json.data.matches) || [];
+            if (!m.length) { out.innerHTML = '<p class="center muted">لا توجد نتائج</p>'; return; }
+            const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+            out.innerHTML = `<p class="muted" style="font-size:.85rem">${arG(m.length)} نتيجة${m.length > 100 ? ' (أول ١٠٠)' : ''}</p>` + m.slice(0, 100).map((x) =>
+              `<button class="card result" data-s="${x.surah.number}" data-a="${x.numberInSurah}"><p>${esc(x.text).replace(re, '<mark>$&</mark>')}</p><small class="muted">${x.surah.name} · الآية ${ar(x.numberInSurah)}</small></button>`).join('');
+            $$('.result', out).forEach((b) => b.addEventListener('click', () => go(`surah/${b.dataset.s}/${b.dataset.a}`)));
+          } catch { out.innerHTML = '<p class="center muted">تعذّر البحث، تأكد من الاتصال بالإنترنت.</p>'; }
+        });
+        $('#sq').focus();
+      };
+
+      const setMode = (m) => {
+        quranMode = m;
+        $$('#qmode button').forEach((b) => b.classList.toggle('active', b.dataset.m === m));
+        ({ surah: surahMode, juz: juzMode, search: searchMode })[m]();
+      };
+      $$('#qmode button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
+      setMode(quranMode);
     }).catch(() => alive && errorBox(renderQuran));
     return () => { alive = false; };
   }
 
-  function renderSurah(arg) {
+  // ---------- أدوات الآيات: العلامات والمشاركة ونافذة الخيارات ----------
+  const getBM = () => store.get('bookmarks', []);
+  const isBM = (n, a) => getBM().some((b) => b.n === n && b.ayah === a);
+  function toggleBM(item) {
+    const bm = getBM();
+    const i = bm.findIndex((b) => b.n === item.n && b.ayah === item.ayah);
+    if (i >= 0) { bm.splice(i, 1); toast('أُزيلت العلامة'); } else { bm.unshift({ ...item, t: Date.now() }); toast('تم حفظ العلامة 🔖'); }
+    store.set('bookmarks', bm);
+    return i < 0;
+  }
+  async function shareText(text) {
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text); toast('تم نسخ النص'); } catch { toast('تعذّر النسخ'); }
+  }
+  const APP_SIGN = () => `\n\nمن تطبيق نور - صدقة جارية على روح المرحوم عيد فتحي أبو طالب\n${location.origin}${location.pathname}`;
+  function sheet(html) {
+    const bd = document.createElement('div');
+    bd.className = 'sheet-backdrop';
+    bd.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-handle"></div>${html}</div>`;
+    document.body.appendChild(bd);
+    requestAnimationFrame(() => bd.classList.add('open'));
+    const close = () => { bd.classList.remove('open'); setTimeout(() => bd.remove(), 250); };
+    bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
+    return { el: $('.sheet', bd), close };
+  }
+
+  function renderSurah(arg, arg2) {
     const n = Math.min(114, Math.max(1, parseInt(arg, 10) || 1));
     view.innerHTML = '<div class="loader"></div>';
     let alive = true;
@@ -283,7 +368,8 @@
       view.innerHTML = `
         <div class="player">
           <button class="icon-btn" id="play" aria-label="تشغيل"></button>
-          <div style="flex:1;font-size:.85rem"><b id="pState">استماع للسورة</b><br><small class="muted">${RECITERS[settings.reciter].name}</small></div>
+          <div class="p-info"><b id="pState">استماع</b><small class="muted">${RECITERS[settings.reciter].name}</small></div>
+          <select id="rep" class="rep" aria-label="تكرار الآية للحفظ">${[1, 3, 5, 10].map((v) => `<option value="${v}" ${v === settings.repeat ? 'selected' : ''}>${v === 1 ? 'بدون تكرار' : 'تكرار ×' + ar(v)}</option>`).join('')}</select>
           <button class="icon-btn" id="fminus" aria-label="تصغير الخط">ـأ</button>
           <button class="icon-btn" id="fplus" aria-label="تكبير الخط">أ+</button>
         </div>
@@ -313,7 +399,10 @@
         if (el) { el.classList.add('active'); if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         store.set('lastRead', { n, name: s.name, ayah: ayahs[i].numberInSurah });
       };
+      let rep = 0;
+      $('#rep').onchange = (e) => { settings.repeat = +e.target.value; saveSettings(); toast(settings.repeat > 1 ? `وضع الحفظ: كل آية ${ar(settings.repeat)} مرات` : 'تم إلغاء التكرار'); };
       const playAt = (i) => {
+        rep = 0;
         if (i >= ayahs.length) { cur = -1; $('#pState').textContent = 'انتهت التلاوة'; setBtn(); return; }
         cur = i;
         const r = RECITERS[settings.reciter];
@@ -322,16 +411,43 @@
         $('#pState').textContent = `الآية ${ar(ayahs[i].numberInSurah)}`;
         mark(i, true);
       };
-      audio.onended = () => playAt(cur + 1);
+      audio.onended = () => {
+        rep++;
+        if (rep < (settings.repeat || 1)) { audio.currentTime = 0; audio.play().catch(() => {}); $('#pState').textContent = `الآية ${ar(ayahs[cur].numberInSurah)} · تكرار ${ar(rep + 1)}`; return; }
+        playAt(cur + 1);
+      };
       audio.onplay = audio.onpause = setBtn;
       $('#play').onclick = () => {
         if (cur < 0) playAt(0);
         else if (audio.paused) audio.play(); else audio.pause();
       };
-      $$('.ayah').forEach((el) => el.addEventListener('click', () => playAt(+el.dataset.i)));
+      const openAyah = (i) => {
+        const a = ayahs[i];
+        const ref = `${s.name} - الآية ${ar(a.numberInSurah)}`;
+        const bmLabel = () => (isBM(n, a.numberInSurah) ? '🔖 إزالة العلامة' : '🔖 حفظ علامة');
+        const sh = sheet(`
+          <div class="sheet-title">${esc(ref)}</div>
+          <p class="sheet-ayah">${a.text}</p>
+          <div class="sheet-actions">
+            <button class="btn" data-a="play">▶ استماع من هنا</button>
+            <button class="btn ghost" data-a="bm">${bmLabel()}</button>
+            <button class="btn ghost" data-a="share">📤 مشاركة</button>
+          </div>
+          <div class="tafsir"><h4>التفسير الميسر</h4><div class="tafsir-body"><div class="loader" style="margin:16px auto"></div></div></div>`);
+        $('[data-a="play"]', sh.el).onclick = () => { sh.close(); playAt(i); };
+        $('[data-a="bm"]', sh.el).onclick = (e) => { toggleBM({ n, name: s.name, ayah: a.numberInSurah, text: a.text.slice(0, 90) }); e.currentTarget.textContent = bmLabel(); };
+        $('[data-a="share"]', sh.el).onclick = () => shareText(`﴿${a.text}﴾
+[${ref}]` + APP_SIGN());
+        const tb = $('.tafsir-body', sh.el);
+        fetchJSON(`${API}/ayah/${a.number}/ar.muyassar`, `tafsir:${a.number}`)
+          .then((d) => { tb.textContent = d.text; })
+          .catch(() => { tb.textContent = 'تعذّر تحميل التفسير، تأكد من الاتصال بالإنترنت.'; });
+      };
+      $$('.ayah').forEach((el) => el.addEventListener('click', () => openAyah(+el.dataset.i)));
 
-      if (last && last.n === n && last.ayah > 1) {
-        const i = ayahs.findIndex((a) => a.numberInSurah === last.ayah);
+      const target = arg2 ? +arg2 : (last && last.n === n ? last.ayah : 1);
+      if (target > 1) {
+        const i = ayahs.findIndex((a) => a.numberInSurah === target);
         if (i > 0) setTimeout(() => mark(i, true), 150);
       } else {
         store.set('lastRead', { n, name: s.name, ayah: 1 });
@@ -548,7 +664,7 @@
         <div class="seg" id="theme"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></div>
       </div>
       <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
-      <p class="center muted" style="font-size:.8rem">نور - رفيق المسلم · الإصدار ١٫١</p>`;
+      <p class="center muted" style="font-size:.8rem">نور - رفيق المسلم · الإصدار ٢٫٠</p>`;
 
     const seg = (id, key, cast) => {
       const sync = () => $$(`#${id} button`).forEach((b) => b.classList.toggle('active', cast(b.dataset.v) === settings[key]));
@@ -585,6 +701,302 @@
         renderSettings();
       }, () => toast('تعذّر تحديد الموقع، اختر مدينة يدوياً'), { enableHighAccuracy: false, timeout: 15000 });
     };
+  }
+
+  // ---------- قراءة جزء كامل ----------
+  function renderJuz(arg) {
+    const j = Math.min(30, Math.max(1, parseInt(arg, 10) || 1));
+    $('#pageTitle').textContent = `الجزء ${ar(j)} · ${JUZ_NAMES[j - 1]}`;
+    view.innerHTML = '<div class="loader"></div>';
+    let alive = true;
+    fetchJSON(`${API}/juz/${j}/quran-uthmani`, `juz:${j}`).then((d) => {
+      if (!alive) return;
+      let html = '';
+      let curS = 0;
+      d.ayahs.forEach((a) => {
+        if (a.surah.number !== curS) {
+          if (curS) html += '</p>';
+          curS = a.surah.number;
+          if (a.numberInSurah === 1) {
+            html += `<div class="surah-header small"><h2>${a.surah.name}</h2></div>`;
+            if (curS !== 1 && curS !== 9) html += '<div class="basmala">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>';
+          } else {
+            html += `<div class="juz-surah">${a.surah.name}</div>`;
+          }
+          html += '<p class="quran-text">';
+        }
+        let t = a.text;
+        if (a.numberInSurah === 1 && curS !== 1 && curS !== 9 && /^بِسْمِ|^بِسۡمِ/.test(t)) t = t.split(' ').slice(4).join(' ');
+        html += `<span class="ayah" data-s="${curS}" data-a="${a.numberInSurah}">${t}</span> <span class="ayah-num">${ar(a.numberInSurah)}</span> `;
+      });
+      html += '</p>';
+      const k = khatmaState();
+      view.innerHTML = `
+        <p class="muted center" style="font-size:.85rem;margin:0 0 10px">اضغط على أي آية لفتح السورة والاستماع والتفسير</p>
+        <article class="mushaf">${html}</article>
+        <button class="btn block" id="doneJuz" style="margin-top:14px">${k.done[j - 1] ? '✓ هذا الجزء مُسجَّل في ختمتك' : '✓ أتممت قراءة هذا الجزء'}</button>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          ${j > 1 ? `<button class="btn ghost block" data-go="juz/${j - 1}">→ الجزء السابق</button>` : ''}
+          ${j < 30 ? `<button class="btn ghost block" data-go="juz/${j + 1}">الجزء التالي ←</button>` : ''}
+        </div>`;
+      document.documentElement.style.setProperty('--qsize', settings.qsize + 'rem');
+      $$('[data-go]', view).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+      $$('.ayah', view).forEach((el) => el.addEventListener('click', () => go(`surah/${el.dataset.s}/${el.dataset.a}`)));
+      $('#doneJuz').onclick = () => {
+        const s = khatmaState();
+        s.done[j - 1] = true;
+        saveKhatma(s);
+        toast(`بارك الله فيك، أتممت الجزء ${ar(j)}`);
+        go('khatma');
+      };
+    }).catch(() => alive && errorBox(() => renderJuz(arg)));
+    return () => { alive = false; };
+  }
+
+  // ---------- ختمة القرآن ----------
+  function khatmaState() {
+    const k = Object.assign({ days: 30, start: todayKey(), done: [], completed: 0 }, store.get('khatma', {}));
+    if (!Array.isArray(k.done) || k.done.length !== 30) k.done = Array(30).fill(false);
+    return k;
+  }
+  const saveKhatma = (k) => store.set('khatma', k);
+  const dayNumber = (key) => { const [y, m, d] = key.split('-').map(Number); return Math.floor(Date.UTC(y, m - 1, d) / 86400000); };
+
+  function renderKhatma() {
+    const k = khatmaState();
+    const doneN = k.done.filter(Boolean).length;
+    const elapsed = Math.max(0, dayNumber(todayKey()) - dayNumber(k.start));
+    const daysLeft = Math.max(1, k.days - elapsed);
+    const pagesPerDay = Math.ceil(((30 - doneN) * 20) / daysLeft);
+    const nextJ = k.done.indexOf(false);
+    view.innerHTML = `
+      <section class="hero">
+        <div class="next-label">الختمة رقم ${ar(k.completed + 1)}${k.completed ? ` · أتممت ${ar(k.completed)} ختمة من قبل` : ''}</div>
+        <div class="next-name">${ar(doneN)} من ٣٠ جزءاً</div>
+        <div class="progress on-dark"><div style="width:${(doneN / 30) * 100}%"></div></div>
+        <div class="loc">${doneN === 30 ? 'ختمت القرآن الكريم، تقبّل الله منك' : `وردك اليومي: ${ar(pagesPerDay)} صفحة تقريباً · متبقٍ ${ar(daysLeft)} يوم`}</div>
+      </section>
+      ${doneN === 30 ? `
+        <div class="card center" style="margin-top:14px"><h3 style="justify-content:center">🎉 مبارك ختم القرآن</h3>
+          <p class="hadith-text" style="font-size:1.15rem">اللَّهُمَّ اجْعَلْ ثَوَابَ هَذِهِ الْخَتْمَةِ فِي مِيزَانِ حَسَنَاتِ عَبْدِكَ عِيد فَتْحِي أَبُو طَالِب، وَارْحَمْهُ وَاغْفِرْ لَهُ</p>
+          <button class="btn block" id="newK">ابدأ ختمة جديدة</button></div>` : `
+        <button class="btn block" style="margin-top:14px" data-go="juz/${nextJ + 1}">📖 تابع القراءة: الجزء ${ar(nextJ + 1)} (${JUZ_NAMES[nextJ]})</button>`}
+      <div class="section-title">مدة الختمة</div>
+      <div class="seg" id="kdays">${[7, 15, 30, 60].map((v) => `<button data-v="${v}">${ar(v)} يوم</button>`).join('')}</div>
+      <div class="section-title">الأجزاء <small class="muted" style="font-weight:500">(اضغط على الدائرة لتسجيل القراءة)</small></div>
+      <div class="card" style="padding:4px">
+        ${JUZ_NAMES.map((nm, i) => `
+          <div class="juz-row ${k.done[i] ? 'done' : ''}">
+            <button class="check" data-t="${i}" aria-label="تسجيل الجزء ${i + 1}">${k.done[i] ? '✓' : ''}</button>
+            <button class="juz-open" data-go="juz/${i + 1}"><b>الجزء ${ar(i + 1)}</b><small class="muted">${nm}</small></button>
+          </div>`).join('')}
+      </div>
+      <button class="btn ghost block" id="resetK" style="margin-top:10px">إعادة ضبط الختمة الحالية</button>`;
+    $$('[data-go]', view).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+    $$('#kdays button').forEach((b) => {
+      b.classList.toggle('active', +b.dataset.v === k.days);
+      b.addEventListener('click', () => { k.days = +b.dataset.v; k.start = todayKey(); saveKhatma(k); renderKhatma(); });
+    });
+    $$('[data-t]', view).forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.t; k.done[i] = !k.done[i]; saveKhatma(k); renderKhatma(); }));
+    if ($('#newK')) $('#newK').onclick = () => { k.completed++; k.done = Array(30).fill(false); k.start = todayKey(); saveKhatma(k); toast('بدأت ختمة جديدة، وفقك الله'); renderKhatma(); };
+    $('#resetK').onclick = (e) => {
+      if (e.currentTarget.dataset.sure) { k.done = Array(30).fill(false); k.start = todayKey(); saveKhatma(k); renderKhatma(); return; }
+      e.currentTarget.dataset.sure = '1';
+      e.currentTarget.textContent = 'اضغط مرة أخرى للتأكيد';
+    };
+  }
+
+  // ---------- متابعة الصلوات وقضاء الفوائت ----------
+  const PRAY5 = PRAYERS.filter((p) => !p.sun);
+  function renderTracker() {
+    const all = store.get('tracker', {});
+    const qada = Object.assign({ fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }, store.get('qada', {}));
+    const keyOf = (d) => ymdIn(d, tz()).join('-');
+    const today = keyOf(new Date());
+    const day = all[today] || {};
+    const days = Array.from({ length: 7 }, (_, i) => new Date(Date.now() - (6 - i) * 86400000));
+    let streak = 0;
+    for (let i = 0; i < 400; i++) {
+      const d = all[keyOf(new Date(Date.now() - i * 86400000))] || {};
+      if (PRAY5.every((p) => d[p.key])) streak++;
+      else if (i > 0) break;
+    }
+    const doneToday = PRAY5.filter((p) => day[p.key]).length;
+    view.innerHTML = `
+      <div class="stats">
+        <div class="stat"><b>${ar(doneToday)} / ٥</b><small>صلوات اليوم</small></div>
+        <div class="stat"><b>${ar(streak)}</b><small>أيام متتالية كاملة</small></div>
+      </div>
+      <div class="section-title">صلوات اليوم</div>
+      <div class="prayer-list">
+        ${PRAY5.map((p) => `<button class="prayer-row track ${day[p.key] ? 'on' : ''}" data-p="${p.key}"><span class="p-ic">${p.ic}</span><span class="p-name">${p.name}</span><span class="check">${day[p.key] ? '✓' : ''}</span></button>`).join('')}
+      </div>
+      <div class="section-title">آخر ٧ أيام</div>
+      <div class="card week">
+        <div class="week-grid">
+          <span></span>${days.map((d) => `<span class="wd">${d.toLocaleDateString('ar-EG', { weekday: 'short', timeZone: tz() })}</span>`).join('')}
+          ${PRAY5.map((p) => `<span class="wp">${p.name}</span>${days.map((d) => `<span class="dot ${(all[keyOf(d)] || {})[p.key] ? 'on' : ''}"></span>`).join('')}`).join('')}
+        </div>
+      </div>
+      <div class="section-title">الصلوات الفائتة (القضاء)</div>
+      <div class="card">
+        ${PRAY5.map((p) => `<div class="qada-row"><span>${p.name}</span><div class="qada-ctrl"><button class="icon-btn" data-q="${p.key}" data-d="-1" aria-label="قضيت صلاة">−</button><b>${arG(qada[p.key])}</b><button class="icon-btn" data-q="${p.key}" data-d="1" aria-label="إضافة فائتة">+</button></div></div>`).join('')}
+        <small class="muted">أضف عدد الصلوات الفائتة بزر (+)، واضغط (−) كلما قضيت صلاة منها.</small>
+      </div>`;
+    $$('[data-p]', view).forEach((b) => b.addEventListener('click', () => {
+      day[b.dataset.p] = !day[b.dataset.p];
+      all[today] = day;
+      store.set('tracker', all);
+      if (day[b.dataset.p]) navigator.vibrate && navigator.vibrate(15);
+      if (PRAY5.every((p) => day[p.key])) toast('ما شاء الله، أتممت صلوات اليوم 🤍');
+      renderTracker();
+    }));
+    $$('[data-q]', view).forEach((b) => b.addEventListener('click', () => {
+      qada[b.dataset.q] = Math.max(0, qada[b.dataset.q] + +b.dataset.d);
+      store.set('qada', qada);
+      renderTracker();
+    }));
+  }
+
+  // ---------- التقويم الهجري والمناسبات ----------
+  function hijriParts(d) {
+    const p = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: tz() }).formatToParts(d);
+    const g = (t) => parseInt(p.find((x) => x.type === t).value, 10);
+    return { d: g('day'), m: g('month'), y: g('year') };
+  }
+  const HIJRI_EVENTS = [
+    { m: 1, d: 1, name: 'رأس السنة الهجرية', ic: '🌙' },
+    { m: 1, d: 10, name: 'يوم عاشوراء', ic: '🤲', note: 'يُستحب صيامه مع يوم قبله' },
+    { m: 9, d: 1, name: 'أول أيام شهر رمضان', ic: '🏮' },
+    { m: 9, d: 21, name: 'العشر الأواخر من رمضان', ic: '✨', note: 'تُتحرّى فيها ليلة القدر' },
+    { m: 10, d: 1, name: 'عيد الفطر المبارك', ic: '🎉' },
+    { m: 12, d: 1, name: 'العشر الأوائل من ذي الحجة', ic: '🕋', note: 'أفضل أيام الدنيا' },
+    { m: 12, d: 9, name: 'يوم عرفة', ic: '⛰️', note: 'صيامه يكفّر السنة الماضية والباقية' },
+    { m: 12, d: 10, name: 'عيد الأضحى المبارك', ic: '🐑' },
+  ];
+  function renderCalendar() {
+    const DAY = 86400000;
+    const now = Date.now();
+    const found = [];
+    let white = null;
+    for (let i = 0; i < 390 && found.length < HIJRI_EVENTS.length; i++) {
+      const d = new Date(now + i * DAY);
+      const h = hijriParts(d);
+      HIJRI_EVENTS.forEach((e) => { if (e.m === h.m && e.d === h.d && !found.some((f) => f.e === e)) found.push({ e, d, i }); });
+      if (!white && h.d >= 13 && h.d <= 15) white = { d, i, h };
+    }
+    found.sort((a, b) => a.i - b.i);
+
+    let anchor = new Date(now);
+    const drawMonth = () => {
+      const h0 = hijriParts(anchor);
+      const first = new Date(anchor.getTime() - (h0.d - 1) * DAY);
+      const cells = [];
+      for (let i = 0; i < 31; i++) {
+        const d = new Date(first.getTime() + i * DAY);
+        const h = hijriParts(d);
+        if (h.m !== h0.m) break;
+        cells.push({ d, h });
+      }
+      const lead = (first.getDay() + 1) % 7; // السبت أول الأسبوع
+      const todayK = ymdIn(new Date(), tz()).join('-');
+      const title = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-arab', { month: 'long', year: 'numeric', timeZone: tz() }).format(first);
+      $('#cal').innerHTML = `
+        <div class="date-nav"><button class="icon-btn" id="cp" aria-label="الشهر السابق"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+          <div class="d"><b>${title}</b><small>${first.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric', timeZone: tz() })}</small></div>
+          <button class="icon-btn" id="cn" aria-label="الشهر التالي"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+        <div class="cal-grid">
+          ${['سبت', 'أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة'].map((w) => `<span class="cw">${w}</span>`).join('')}
+          ${'<span></span>'.repeat(lead)}
+          ${cells.map(({ d, h }) => {
+            const ev = HIJRI_EVENTS.some((e) => e.m === h.m && e.d === h.d);
+            const wh = h.d >= 13 && h.d <= 15;
+            const isToday = ymdIn(d, tz()).join('-') === todayK;
+            return `<span class="cd ${isToday ? 'today' : ''} ${ev ? 'ev' : ''} ${wh ? 'white' : ''}"><b>${ar(h.d)}</b><small>${ar(ymdIn(d, tz())[2])}</small></span>`;
+          }).join('')}
+        </div>
+        <div class="cal-legend"><span><i class="lg ev"></i>مناسبة</span><span><i class="lg white"></i>الأيام البيض</span><span><i class="lg today"></i>اليوم</span></div>`;
+      $('#cp').onclick = () => { anchor = new Date(first.getTime() - 2 * DAY); drawMonth(); };
+      $('#cn').onclick = () => { anchor = new Date(cells[cells.length - 1].d.getTime() + 2 * DAY); drawMonth(); };
+    };
+
+    const inDays = (i) => (i === 0 ? 'اليوم' : i === 1 ? 'غداً' : `بعد ${arG(i)} يوم`);
+    view.innerHTML = `
+      <div class="card" id="cal"></div>
+      <div class="section-title">المناسبات القادمة</div>
+      <div class="prayer-list">
+        ${white ? `<div class="prayer-row"><span class="p-ic">🌕</span><span class="p-name">الأيام البيض (صيام ١٣ و١٤ و١٥)<br><small class="muted">${white.d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', timeZone: tz() })}</small></span><span class="p-time ev-in">${inDays(white.i)}</span></div>` : ''}
+        ${found.map(({ e, d, i }) => `<div class="prayer-row"><span class="p-ic">${e.ic}</span><span class="p-name">${e.name}<br><small class="muted">${d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz() })}${e.note ? ' · ' + e.note : ''}</small></span><span class="p-time ev-in">${inDays(i)}</span></div>`).join('')}
+      </div>
+      <p class="muted center" style="font-size:.8rem;margin-top:14px">التواريخ حسب تقويم أم القرى، وقد تختلف يوماً حسب رؤية الهلال في بلدك.</p>`;
+    drawMonth();
+  }
+
+  // ---------- حاسبة الزكاة ----------
+  function renderZakat() {
+    const z = Object.assign({ cash: '', g24: '', g21: '', g18: '', silver: '', gp: '', sp: '', debts: '' }, store.get('zakat', {}));
+    const F = [
+      ['cash', 'النقود والمدخرات وأرصدة البنوك', 'المبلغ'],
+      ['g24', 'ذهب عيار ٢٤', 'جرام'],
+      ['g21', 'ذهب عيار ٢١', 'جرام'],
+      ['g18', 'ذهب عيار ١٨', 'جرام'],
+      ['silver', 'الفضة', 'جرام'],
+      ['debts', 'ديون عليك مستحقة الآن', 'المبلغ'],
+    ];
+    view.innerHTML = `
+      <div class="card">
+        <h3>💰 أسعار اليوم</h3>
+        <div class="field"><label for="z-gp">سعر جرام الذهب عيار ٢٤ (بعملتك)</label><input class="search" id="z-gp" inputmode="decimal" value="${esc(z.gp)}" placeholder="مثال: 4500"></div>
+        <div class="field" style="margin:0"><label for="z-sp">سعر جرام الفضة (اختياري)</label><input class="search" id="z-sp" inputmode="decimal" value="${esc(z.sp)}" placeholder="مثال: 55"></div>
+      </div>
+      <div class="card">
+        <h3>📋 أموالك</h3>
+        ${F.map(([k, l, u]) => `<div class="field"><label for="z-${k}">${l}</label><input class="search" id="z-${k}" inputmode="decimal" value="${esc(z[k])}" placeholder="${u}"></div>`).join('')}
+      </div>
+      <div class="card zakat-result" id="zres"></div>
+      <div class="card"><h3>📌 شروط وجوب الزكاة</h3>
+        <ul class="muted" style="margin:0;padding-inline-start:20px;font-size:.9rem;line-height:1.9">
+          <li>بلوغ النصاب: قيمة ٨٥ جراماً من الذهب عيار ٢٤.</li>
+          <li>مرور عام هجري كامل على بلوغ المال النصاب.</li>
+          <li>مقدار الزكاة: ربع العشر (٢٫٥٪) من إجمالي المال.</li>
+          <li>ذهب الزينة المستعمل فيه خلاف بين العلماء، فاسأل أهل العلم في بلدك.</li>
+        </ul></div>`;
+    const num = (v) => { const n = parseFloat(String(v).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,]/g, '.')); return isNaN(n) ? 0 : n; };
+    const money = (n) => n.toLocaleString('ar-EG', { maximumFractionDigits: 2 });
+    const calc = () => {
+      ['gp', 'sp', ...F.map((f) => f[0])].forEach((k) => { z[k] = $(`#z-${k}`).value; });
+      store.set('zakat', z);
+      const gp = num(z.gp);
+      const goldEq = num(z.g24) + (num(z.g21) * 21) / 24 + (num(z.g18) * 18) / 24;
+      const total = num(z.cash) + goldEq * gp + num(z.silver) * num(z.sp) - num(z.debts);
+      const res = $('#zres');
+      if (!gp) { res.innerHTML = '<p class="center muted" style="margin:0">أدخل سعر جرام الذهب عيار ٢٤ لحساب النصاب.</p>'; return; }
+      const nisab = 85 * gp;
+      const due = total >= nisab;
+      res.innerHTML = `
+        <div class="z-line"><span>إجمالي أموالك الزكوية</span><b>${money(Math.max(0, total))}</b></div>
+        <div class="z-line"><span>النصاب (٨٥ جرام ذهب)</span><b>${money(nisab)}</b></div>
+        <div class="z-total ${due ? 'due' : ''}">${due ? `<small>الزكاة الواجبة</small><b>${money(total * 0.025)}</b>` : '<b style="font-size:1.1rem">لم يبلغ مالك النصاب، فلا زكاة عليك</b>'}</div>`;
+    };
+    $$('input', view).forEach((i) => i.addEventListener('input', calc));
+    calc();
+  }
+
+  // ---------- العلامات المحفوظة ----------
+  function renderBookmarks() {
+    const bm = getBM();
+    if (!bm.length) {
+      view.innerHTML = `<div class="card center"><p style="font-size:2.5rem;margin:0">🔖</p><p>لا توجد علامات بعد.</p><p class="muted" style="font-size:.9rem">أثناء القراءة اضغط على أي آية ثم اختر «حفظ علامة».</p><button class="btn" data-go="quran">افتح المصحف</button></div>`;
+      $('[data-go]', view).onclick = () => go('quran');
+      return;
+    }
+    view.innerHTML = bm.map((b, i) => `
+      <div class="card bm">
+        <button class="bm-open" data-i="${i}"><p class="bm-text">${b.text}${b.text.length >= 90 ? '…' : ''}</p><small class="muted">${b.name} · الآية ${ar(b.ayah)}</small></button>
+        <button class="icon-btn" data-del="${i}" aria-label="حذف العلامة"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      </div>`).join('');
+    $$('[data-i]', view).forEach((b) => b.addEventListener('click', () => { const x = bm[+b.dataset.i]; go(`surah/${x.n}/${x.ayah}`); }));
+    $$('[data-del]', view).forEach((b) => b.addEventListener('click', () => { bm.splice(+b.dataset.del, 1); store.set('bookmarks', bm); renderBookmarks(); }));
   }
 
   // ---------- تنبيه الأذان ----------
