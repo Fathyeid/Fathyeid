@@ -672,7 +672,7 @@
         <div class="field"><label>تنبيه عند دخول وقت الصلاة</label>
           <div class="seg" id="alerts"><button data-v="1">مفعّل</button><button data-v="0">معطّل</button></div>
           <small class="muted">${NATIVE ? `يصلك إشعار ${window.NOOR_NATIVE_ADHAN ? 'بصوت الأذان' : 'بصوت التنبيه'} عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.` : 'في نسخة المتصفح يعمل التنبيه أثناء فتح التطبيق فقط. ثبّت تطبيق أندرويد ليصلك الأذان والهاتف مقفول.'}</small>
-          ${NATIVE ? '<button class="btn ghost block" id="testAdhan" style="margin-top:8px">🔔 تجربة التنبيه بعد ١٠ ثوانٍ</button>' : ''}
+          ${NATIVE ? '<button class="btn block" id="exactBtn" style="margin-top:8px" hidden>⏰ السماح بالتنبيه في الوقت بالضبط</button><button class="btn ghost block" id="testAdhan" style="margin-top:8px">🔔 تجربة التنبيه بعد ١٠ ثوانٍ</button>' : ''}
         </div>
       </div>
       <div class="card">
@@ -706,6 +706,15 @@
     seg('alerts', 'alerts', (v) => v === '1' || v === true);
 
     if ($('#testAdhan')) $('#testAdhan').onclick = () => testAdhan();
+    if ($('#exactBtn')) {
+      exactAllowed().then((ok) => { if ($('#exactBtn')) $('#exactBtn').hidden = ok; });
+      $('#exactBtn').onclick = async () => {
+        try { await LN.changeExactNotificationSetting(); } catch { /* تجاهل */ }
+        const ok = await exactAllowed();
+        if ($('#exactBtn')) $('#exactBtn').hidden = ok;
+        if (ok) { toast('تم، سيصلك الأذان في وقته بالضبط'); scheduleAdhan(); }
+      };
+    }
     $('#method').onchange = (e) => { settings.method = e.target.value; saveSettings(); toast('تم الحفظ'); };
     $('#reciter').onchange = (e) => { settings.reciter = e.target.value; saveSettings(); toast('تم الحفظ'); };
     $('#translation').onchange = (e) => { settings.translation = e.target.value; saveSettings(); toast('تم الحفظ'); };
@@ -1083,6 +1092,9 @@
         await LN.schedule({ notifications: list });
       } catch (e) { console.warn('adhan schedule', e); }
     }, 400);
+  }
+  async function exactAllowed() {
+    try { const r = await LN.checkExactNotificationSetting(); return r.exact_alarm !== 'denied'; } catch { return true; }
   }
   async function testAdhan() {
     if (!(await ensureNotify())) { toast('الإشعارات غير مفعّلة للتطبيق'); return; }

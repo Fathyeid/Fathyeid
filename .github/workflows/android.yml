@@ -53,10 +53,28 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
           cp app/build/outputs/apk/release/app-release.apk ../noor.apk
 
+      - name: بناء حزمة Google Play (AAB)
+        working-directory: android
+        env:
+          UPLOAD_B64: ${{ secrets.NOOR_UPLOAD_KEYSTORE_B64 }}
+          NOOR_UPLOAD_PASSWORD: ${{ secrets.NOOR_UPLOAD_PASSWORD }}
+        run: |
+          if [ -z "$UPLOAD_B64" ]; then
+            echo "::warning::لم تتم إضافة مفتاح الرفع إلى أسرار GitHub، لن تُبنى حزمة Google Play"
+            exit 0
+          fi
+          echo "$UPLOAD_B64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+          export NOOR_UPLOAD_KEYSTORE="$RUNNER_TEMP/upload.keystore"
+          ./gradlew bundleRelease --no-daemon
+          cp app/build/outputs/bundle/release/app-release.aab ../noor-play.aab
+          rm -f "$RUNNER_TEMP/upload.keystore"
+
       - uses: actions/upload-artifact@v4
         with:
           name: noor-apk
-          path: noor.apk
+          path: |
+            noor.apk
+            noor-play.aab
 
       - name: نشر الإصدار
         uses: softprops/action-gh-release@v2
@@ -68,5 +86,8 @@ jobs:
             صدقة جارية على روح المرحوم عيد فتحي أبو طالب
 
             حمّل ملف noor.apk وثبّته على هاتفك.
-          files: noor.apk
+          files: |
+            noor.apk
+            noor-play.aab
+          fail_on_unmatched_files: false
           make_latest: true

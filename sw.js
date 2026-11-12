@@ -1,5 +1,5 @@
 /* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
-const VERSION = 'noor-v6';
+const VERSION = 'noor-v7';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/father.jpg',

@@ -17,6 +17,13 @@ android {
         }
     }
     signingConfigs {
+        upload {
+            // مفتاح الرفع على Google Play: يُقرأ من أسرار GitHub فقط ولا يُحفظ في المستودع
+            storeFile file(System.getenv("NOOR_UPLOAD_KEYSTORE") ?: 'noor.keystore')
+            storePassword System.getenv("NOOR_UPLOAD_PASSWORD") ?: 'noorapp'
+            keyAlias System.getenv("NOOR_UPLOAD_KEYSTORE") ? 'upload' : 'noor'
+            keyPassword System.getenv("NOOR_UPLOAD_PASSWORD") ?: 'noorapp'
+        }
         noor {
             storeFile file('noor.keystore')
             storePassword 'noorapp'
@@ -29,7 +36,7 @@ android {
             signingConfig signingConfigs.noor
         }
         release {
-            signingConfig signingConfigs.noor
+            signingConfig System.getenv("NOOR_UPLOAD_KEYSTORE") ? signingConfigs.upload : signingConfigs.noor
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
