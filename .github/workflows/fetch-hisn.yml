@@ -1,0 +1,42 @@
+name: جلب نصوص حصن المسلم (مصدر رسمي)
+
+# يجلب فهرس وأذكار «حصن المسلم» من واجهة hisnmuslim.com الرسمية ويحفظها في scripts/src
+# لتُبنى منها موسوعة الأذكار محلياً (النص يُخزَّن داخل التطبيق ليعمل بلا إنترنت).
+on:
+  push:
+    branches: [dev]
+    paths: [.github/workflows/fetch-hisn.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch
+        run: |
+          set -e
+          mkdir -p scripts/src
+          curl -fsSL --retry 4 https://www.hisnmuslim.com/api/ar/husn_ar.json | sed '1s/^\xEF\xBB\xBF//' > /tmp/index.json
+          jq -c '.["العربية"][]' /tmp/index.json > /tmp/ch.jsonl
+          echo '[' > /tmp/out.json; first=1
+          while read -r ch; do
+            id=$(echo "$ch" | jq -r .ID); url=$(echo "$ch" | jq -r .TEXT | sed 's#^http://#https://#')
+            curl -fsSL --retry 4 "$url" | sed '1s/^\xEF\xBB\xBF//' > /tmp/c.json
+            item=$(jq -c --argjson ch "$ch" '{id:$ch.ID, title:$ch.TITLE, audio:$ch.AUDIO_URL, items:[to_entries[0].value[] | {id:.ID, text:.ARABIC_TEXT, repeat:.REPEAT, audio:.AUDIO}]}' /tmp/c.json)
+            [ $first = 1 ] || echo ',' >> /tmp/out.json; first=0
+            echo "$item" >> /tmp/out.json
+          done < /tmp/ch.jsonl
+          echo ']' >> /tmp/out.json
+          jq . /tmp/out.json > scripts/src/hisn-api.json
+          jq 'length' scripts/src/hisn-api.json
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/src/hisn-api.json
+          git diff --cached --quiet || git commit -m "بيانات حصن المسلم من المصدر الرسمي"
+          git push
