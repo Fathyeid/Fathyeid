@@ -30,6 +30,13 @@ const HIDDEN = new Set(['Private video', 'Deleted video']);
 Deno.serve(async () => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { data: key } = await sb.rpc('athar_get_yt_key');
+  // تحديث أسبوعي للسلاسل حتى تُضاف الحلقات الجديدة إلى سلاسلها
+  const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
+  const { data: stale } = await sb.from('athar_channels').select('channel_id').eq('active', true).eq('playlists_done', true).lt('playlists_refreshed_at', weekAgo);
+  for (const s of stale ?? []) {
+    await sb.from('athar_channels').update({ playlists_done: false, playlists_token: null, playlists_refreshed_at: new Date().toISOString() }).eq('channel_id', s.channel_id);
+    await sb.from('athar_playlists').update({ items_done: false, items_token: null }).eq('channel_id', s.channel_id);
+  }
   const { data: channels, error } = await sb.from('athar_channels').select('*').eq('active', true);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   const report: Record<string, unknown>[] = [];
