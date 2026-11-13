@@ -1,0 +1,31 @@
+name: جلب صوت الأذان (ترخيص حر CC0 من ويكيميديا)
+on:
+  push:
+    branches: [dev]
+    paths: [.github/workflows/fetch-adhan.yml]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -e
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          mkdir -p adhan
+          curl -fsSL -A "AtharApp/1.0 (educational)" -o /tmp/src.ogg "https://upload.wikimedia.org/wikipedia/commons/b/b0/Beautiful_adhan.ogg"
+          ffprobe -v error -show_entries format=duration:format_tags -of default=nw=1 /tmp/src.ogg || true
+          ffmpeg -loglevel error -y -i /tmp/src.ogg -ac 1 -ar 44100 -b:a 96k adhan/adhan.mp3
+          ffprobe -v error -show_entries format=duration,size -of default=nw=1 adhan/adhan.mp3
+          cat > adhan/CREDITS.txt <<'TXT'
+          صوت الأذان: "Beautiful adhan" — Wikimedia Commons
+          https://commons.wikimedia.org/wiki/File:Beautiful_adhan.ogg
+          المرفوع: Adam-synagda — الترخيص: CC0 (ملكية عامة، يجوز استخدامه بلا قيود)
+          حُوّل إلى MP3 أحادي القناة لاستخدامه صوتاً لإشعار الأذان في تطبيق «أثر».
+          TXT
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add adhan
+          git diff --cached --quiet || git commit -m "صوت الأذان (CC0 من ويكيميديا)"
+          git push

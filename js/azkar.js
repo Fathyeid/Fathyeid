@@ -287,22 +287,56 @@
     const ln = LN(); if (!ln) return;
     try {
       const R = store.get('az:rem', {});
-      await ln.cancel({ notifications: REM.map((r) => ({ id: r.id })) });
+      const D = dayRem();
+      await ln.cancel({ notifications: REM.map((r) => ({ id: r.id })).concat(Array.from({ length: 24 }, (_, i) => ({ id: 3110 + i }))) });
       const on = REM.filter((r) => R[r.k]);
-      if (!on.length) return;
+      const slots = daySlots(D);
+      if (N.scheduleAdhan) N.scheduleAdhan(); // أذكار ما بعد الصلاة تُجدول مع مواقيت الأذان
+      if (!on.length && !slots.length) return;
       let perm = await ln.checkPermissions(); if (perm.display !== 'granted') perm = await ln.requestPermissions(); if (perm.display !== 'granted') return;
-      await ln.createChannel({ id: 'azkar', name: 'تذكير الأذكار', description: 'أذكار الصباح والمساء والنوم', importance: 4, visibility: 1 });
-      await ln.schedule({ notifications: on.map((r) => { const [hour, minute] = R[r.k].split(':').map(Number); const sch = { hour, minute }; if (r.weekday) sch.weekday = r.weekday; return { id: r.id, title: `حان وقت ${r.t} 📿`, body: '﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾ — افتح «أثر»', channelId: 'azkar', extra: { route: r.route }, schedule: { on: sch, allowWhileIdle: true } }; }) });
+      await ln.createChannel({ id: 'azkar', name: 'تذكير الأذكار', description: 'أذكار الصباح والمساء والنوم والتذكير بالذكر خلال اليوم', importance: 4, visibility: 1 });
+      const list = on.map((r) => { const [hour, minute] = R[r.k].split(':').map(Number); const sch = { hour, minute }; if (r.weekday) sch.weekday = r.weekday; return { id: r.id, title: `حان وقت ${r.t} 📿`, body: '﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾ — افتح «أثر»', channelId: 'azkar', extra: { route: r.route }, schedule: { on: sch, allowWhileIdle: true } }; });
+      slots.forEach(([hour, minute], i) => { const z = SHORT[i % SHORT.length]; list.push({ id: 3110 + i, title: '📿 تذكير بالذكر', body: `${z.t}\n${z.f}`, channelId: 'azkar', extra: { route: 'tasbih' }, schedule: { on: { hour, minute }, allowWhileIdle: true } }); });
+      await ln.schedule({ notifications: list });
     } catch (e) { console.warn('azkar reminders', e); }
   }
+  // أذكار قصيرة صحيحة للتذكير خلال اليوم (كل ذكر بمصدره)
+  const SHORT = [
+    { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', f: '«كلمتان خفيفتان على اللسان، ثقيلتان في الميزان» — متفق عليه' },
+    { t: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ', f: '«من صلى عليّ صلاة صلى الله عليه بها عشراً» — رواه مسلم' },
+    { t: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', f: '«كنز من كنوز الجنة» — متفق عليه' },
+    { t: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ', f: '«إني لأستغفر الله وأتوب إليه في اليوم أكثر من سبعين مرة» — رواه البخاري' },
+    { t: 'سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ', f: '«أحب الكلام إلى الله أربع» — رواه مسلم' },
+    { t: 'لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ', f: 'دعاء ذي النون — سورة الأنبياء: ٨٧' },
+    { t: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ', f: 'متفق عليه' },
+    { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ وَرِضَا نَفْسِهِ وَزِنَةَ عَرْشِهِ وَمِدَادَ كَلِمَاتِهِ', f: 'رواه مسلم' },
+  ];
+  const dayRem = () => Object.assign({ every: 0, from: '09:00', to: '22:00', after: false }, store.get('az:rem2', {}));
+  function daySlots(D) {
+    if (!D.every) return [];
+    const m = (s) => { const [h, x] = s.split(':').map(Number); return h * 60 + x; };
+    const out = [];
+    for (let t = m(D.from); t <= m(D.to) && out.length < 24; t += D.every * 60) out.push([Math.floor(t / 60), t % 60]);
+    return out;
+  }
+  N.azAfterPrayer = () => dayRem().after;
   function renderSet() {
     const R = store.get('az:rem', {});
+    const D = dayRem();
     N.view.innerHTML = `<div class="card"><h3>⏰ تذكيرات الأذكار</h3>
       ${N.NATIVE ? '' : '<p class="muted" style="font-size:.9rem">التذكيرات تعمل في تطبيق أندرويد. في المتصفح تُحفظ الأوقات فقط.</p>'}
       ${REM.map((r) => `<div class="az-rem"><label><input type="checkbox" data-on="${r.k}" ${R[r.k] ? 'checked' : ''}> ${esc(r.t)}</label><input type="time" data-time="${r.k}" value="${R[r.k] || r.def}"></div>`).join('')}
+      <div class="az-rem"><label><input type="checkbox" id="afterP" ${D.after ? 'checked' : ''}> أذكار ما بعد الصلاة (بعد الأذان بـ ١٥ دقيقة)</label></div>
+      </div>
+      <div class="card"><h3>📿 تذكير بالذكر خلال اليوم</h3>
+      <p class="muted" style="font-size:.88rem;margin-top:0">يصلك إشعار بذكر قصير صحيح (مع مصدره) على فترات منتظمة.</p>
+      <div class="seg" id="every" style="flex-wrap:wrap">${[[0, 'إيقاف'], [1, 'كل ساعة'], [2, 'كل ساعتين'], [3, 'كل ٣ ساعات'], [4, 'كل ٤ ساعات']].map(([v, t]) => `<button data-v="${v}" class="${D.every === v ? 'active' : ''}">${t}</button>`).join('')}</div>
+      <div class="az-rem"><span>من الساعة</span><input type="time" id="dFrom" value="${D.from}"></div>
+      <div class="az-rem"><span>حتى الساعة</span><input type="time" id="dTo" value="${D.to}"></div>
       </div>`;
-    const save = () => { const R2 = {}; REM.forEach((r) => { if ($(`[data-on="${r.k}"]`).checked) R2[r.k] = $(`[data-time="${r.k}"]`).value || r.def; }); store.set('az:rem', R2); scheduleRem(); toast('تم حفظ التذكيرات'); };
-    $$('[data-on],[data-time]').forEach((x) => { x.onchange = save; });
+    const save = () => { const R2 = {}; REM.forEach((r) => { if ($(`[data-on="${r.k}"]`).checked) R2[r.k] = $(`[data-time="${r.k}"]`).value || r.def; }); store.set('az:rem', R2); D.after = $('#afterP').checked; D.from = $('#dFrom').value || '09:00'; D.to = $('#dTo').value || '22:00'; store.set('az:rem2', D); scheduleRem(); toast('تم حفظ التذكيرات'); };
+    $$('[data-on],[data-time],#afterP,#dFrom,#dTo').forEach((x) => { x.onchange = save; });
+    $$('#every button').forEach((b) => { b.onclick = () => { D.every = +b.dataset.v; $$('#every button').forEach((x) => x.classList.toggle('active', x === b)); save(); }; });
   }
   function renderAbout() {
     N.view.innerHTML = `<div class="card"><h3>📚 المصادر</h3><ul style="line-height:2;margin:0;padding-inline-start:18px">${DB.sources.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>

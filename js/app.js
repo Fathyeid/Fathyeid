@@ -1085,15 +1085,19 @@
         const pending = await LN.getPending();
         const old = pending.notifications.filter((n) => n.id < 1000);
         if (old.length) await LN.cancel({ notifications: old.map((n) => ({ id: n.id })) });
-        if (!settings.alerts) return;
+        const after = window.Noor && window.Noor.azAfterPrayer && window.Noor.azAfterPrayer();
+        if (!settings.alerts && !after) return;
         if (!(await ensureNotify())) { toast('فعّل الإشعارات للتطبيق ليصلك الأذان'); return; }
+        if (after) await LN.createChannel({ id: 'azkar', name: 'تذكير الأذكار', description: 'أذكار الصباح والمساء والنوم والتذكير بالذكر خلال اليوم', importance: 4, visibility: 1 });
         const now = Date.now();
         const list = [];
         for (let day = 0; day < 14; day++) {
           const t = timesFor(new Date(now + day * 86400000));
           PRAY5.forEach((p, i) => {
             const at = t[p.key];
-            if (at.getTime() <= now + 5000) return;
+            const at2 = new Date(at.getTime() + 15 * 60000);
+            if (after && at2.getTime() > now + 5000) list.push({ id: 200 + day * 10 + i + 1, title: `📿 أذكار ما بعد صلاة ${p.name}`, body: 'أستغفر الله (ثلاثاً)، اللهم أنت السلام ومنك السلام، تباركت يا ذا الجلال والإكرام — افتح «أثر» لإتمام الأذكار', channelId: 'azkar', extra: { route: 'azcat/azkar/prayer' }, schedule: { at: at2, allowWhileIdle: true }, autoCancel: true });
+            if (!settings.alerts || at.getTime() <= now + 5000) return;
             list.push({
               id: day * 10 + i + 1,
               title: `حان الآن موعد صلاة ${p.name} ${p.ic}`,
@@ -1224,7 +1228,7 @@
   // ---------- واجهة الوحدات الإضافية (المكتبة الصوتية، الأكاديمية، ...) ----------
   window.Noor = {
     $, $$, view, store, toast, go, ar, arG, toAr, esc, routes, settings, saveSettings,
-    fetchJSON, API, sheet, shareText, todayKey, ymdIn, tz, hijri, greg, NATIVE, applyTheme, AZKAR,
+    fetchJSON, API, sheet, shareText, todayKey, ymdIn, tz, hijri, greg, NATIVE, applyTheme, AZKAR, scheduleAdhan,
     setTitle: (t) => { $('#pageTitle').textContent = t; },
     homeExtras: [],
   };
