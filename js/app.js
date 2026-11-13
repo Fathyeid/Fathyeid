@@ -195,6 +195,7 @@
         <button class="tile" data-go="academy"><span class="ic">🎓</span>الأكاديمية</button>
         <button class="tile" data-go="hifz"><span class="ic">🧠</span>حفظ القرآن</button>
         <button class="tile" data-go="hadith"><span class="ic">📜</span>الحديث الشريف</button>
+        <button class="tile" data-go="dawah"><span class="ic">🎬</span>المكتبة الدعوية</button>
         <button class="tile" data-go="zikr/${zikrKey}"><span class="ic">${AZKAR[zikrKey].icon}</span>${AZKAR[zikrKey].title}</button>
         <button class="tile" data-go="prayers"><span class="ic">🕌</span>المواقيت</button>
         <button class="tile" data-go="tasbih"><span class="ic">📿</span>السبحة</button>

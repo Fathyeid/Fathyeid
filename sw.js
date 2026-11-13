@@ -1,9 +1,9 @@
 /* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
-const VERSION = 'noor-v15';
+const VERSION = 'noor-v16';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
   'js/native-flags.js', 'js/quran-meta.js', 'js/academy-data.js', 'js/audio-lib.js', 'js/academy.js',
-  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js',
+  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js', 'js/dawah.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/father.jpg',
 ];
 
@@ -35,7 +35,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   // لا نخزّن ملفات الصوت لكبر حجمها
-  if (/islamic\.network|mp3quran\.net|everyayah\.com|hadith-api/.test(url.hostname + url.pathname) || req.headers.has('range')) return;
+  if (/islamic\.network|mp3quran\.net|everyayah\.com|hadith-api|supabase\.co|ytimg\.com|youtube/.test(url.hostname + url.pathname) || req.headers.has('range')) return;
 
   if (url.origin === self.location.origin) {
     // ملفات التطبيق: الشبكة أولاً (بدون ذاكرة المتصفح) ثم النسخة المحفوظة

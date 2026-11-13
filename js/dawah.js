@@ -69,7 +69,7 @@
       <span class="dw-info"><b>${esc(v.title)}</b><small>${SHEIKHS[v.sheikh] ? SHEIKHS[v.sheikh].short : ''} — ${ago(v.published_at)}${isFav(v.video_id) ? ' — ★' : ''}</small></span>
     </button>`;
   };
-  const bindCards = (root) => $$('[data-v]', root).forEach((b) => b.addEventListener('click', () => go(`dwatch/${b.dataset.v}`)));
+  const bindCards = (root) => $$('button.dw-card[data-v]', root).forEach((b) => b.addEventListener('click', () => go(`dwatch/${b.dataset.v}`)));
   const failBox = (retry) => { N.view.innerHTML = '<div class="card center"><p>تعذّر تحميل المكتبة الدعوية. تأكد من الاتصال بالإنترنت.</p><button class="btn" id="retry">إعادة المحاولة</button></div>'; $('#retry').onclick = retry; };
   const notice = '<div class="card acad-note"><b>📌 عن المحتوى</b><p>الحلقات من القنوات الرسمية للشيخين فقط، وتُعرض بمشغّل يوتيوب الرسمي داخل التطبيق وتحتاج اتصالاً بالإنترنت. تحميل الحلقات للمشاهدة دون إنترنت سيُضاف بعد الحصول على إذن من فريق كل شيخ.</p></div>';
 
@@ -201,7 +201,7 @@
         <div class="dw-player"><iframe id="ytf" src="${src}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="مشغّل الفيديو"></iframe></div>
         ${v ? `<h2 class="dw-title">${esc(v.title)}</h2><p class="muted" style="margin:0 0 10px">${sk ? sk.name : ''} — ${ago(v.published_at)}${start ? ` — يستكمل من ${N.toAr(Math.floor(start / 60))}:${N.toAr(String(start % 60).padStart(2, '0'))}` : ''}</p>
           <div class="chips" style="justify-content:flex-start;margin-bottom:10px">${(v.topics || []).map((t) => `<button class="chip" data-t="${t}">${topicName(t)}</button>`).join('')}</div>` : '<p class="muted">يمكنك التنقل بين كل فيديوهات القناة من قائمة المشغّل.</p>'}
-        <div class="field"><label>سرعة التشغيل</label><div class="seg" id="dwRate">${[0.75, 1, 1.25, 1.5, 2].map((x) => `<button data-v="${x}" class="${x === speed ? 'active' : ''}">${ar(x)}×</button>`).join('')}</div></div>
+        <div class="field"><label>سرعة التشغيل</label><div class="seg" id="dwRate">${[0.75, 1, 1.25, 1.5, 2].map((x) => `<button data-rate="${x}" class="${x === speed ? 'active' : ''}">${ar(x)}×</button>`).join('')}</div></div>
         ${v ? `<div style="display:flex;gap:8px;margin-bottom:12px">
           <button class="btn ghost block" id="dwFav">${isFav(id) ? '★ في المفضلة' : '☆ المفضلة'}</button>
           <button class="btn ghost block" id="dwList">📃 قائمة تشغيل</button>
@@ -213,7 +213,7 @@
       bindCards(N.view);
       $$('[data-t]').forEach((b) => b.addEventListener('click', () => go(`dtopic/${b.dataset.t}`)));
       $$('#dwRate button').forEach((b) => b.addEventListener('click', () => {
-        const r = +b.dataset.v; store.set('dawah:rate', r);
+        const r = +b.dataset.rate; store.set('dawah:rate', r);
         $$('#dwRate button').forEach((x) => x.classList.toggle('active', x === b));
         frame.contentWindow.postMessage({ dst: 'athar-yt', cmd: 'rate', v: r }, '*');
       }));
