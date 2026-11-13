@@ -9,10 +9,6 @@ jobs:
     steps:
       - run: |
           A="Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36"
-          for n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 19; do
-            curl -sL --max-time 10 "https://www.maspero.eg/stream/$n" -A "$A" > /tmp/p
-            t=$(grep -oiE '<title>[^<]*' /tmp/p | head -1)
-            l=$(grep -oiE '(https?:)?//[^"'"'"' <>]*(radiojar|m3u8|\.mp3|icecast|:[0-9]{4}/)[^"'"'"' <>]*' /tmp/p | sort -u | head -5 | tr '\n' ' ')
-            q=$(grep -c 'القرآن' /tmp/p)
-            echo "[$n] $t | quran=$q | $l"
-          done
+          curl -sL --max-time 10 "https://www.maspero.eg/stream/7" -A "$A" > /tmp/p
+          grep -oiE '(src|file|source|data-[a-z-]+|url|stream)[=:][^>]{0,200}' /tmp/p | grep -viE '\.(png|jpe?g|gif|svg|css|woff2?)|google|facebook|twitter|fonts' | head -40
+          echo ---; grep -oiE '<(audio|video|iframe|source)[^>]{0,300}' /tmp/p | head
