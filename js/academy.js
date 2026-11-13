@@ -35,7 +35,7 @@
         <div class="progress on-dark"><div style="width:${overall * 100}%"></div></div>
         <div class="loc">إنجازك الكلي: ${pctTxt(overall)}</div>
       </section>
-      ${c ? `<div class="card continue" style="margin-top:14px"><div style="min-width:0"><small class="muted">الدرس الحالي</small><br><b>${esc(c.lesson)}</b><br><small class="muted">${c.T.title} · ${ACADEMY_LEVELS[c.l]}</small></div><button class="btn" data-go="level/${c.T.id}/${c.l}">متابعة</button></div>` : ''}
+      ${c ? `<div class="card continue" style="margin-top:14px"><div style="min-width:0"><small class="muted">الدرس الحالي</small><br><b>${esc(c.lesson)}</b><br><small class="muted">${c.T.title} • ${ACADEMY_LEVELS[c.l]}</small></div><button class="btn" data-go="level/${c.T.id}/${c.l}">متابعة</button></div>` : ''}
       <div class="section-title">المسارات</div>
       <div class="acad-grid">
         ${ACADEMY.map((T) => { const p = trackPct(T.id); return `
@@ -69,7 +69,7 @@
               <div class="rm-head"><b>المستوى ${['الأول', 'الثاني', 'الثالث'][l]}: ${ACADEMY_LEVELS[l]}</b><small>${pctTxt(p)}</small></div>
               <p class="muted">${L.goals}</p>
               <span class="mini-progress"><span style="width:${p * 100}%"></span></span>
-              <small class="muted">${ar(s.lessons.length)} من ${ar(L.lessons.length)} دروس · ${s.passed ? `✅ اجتاز الاختبار (${pctTxt(s.quiz)})` : open ? 'الاختبار لم يُجتز بعد' : 'يُفتح بعد اجتياز اختبار المستوى السابق'}</small>
+              <small class="muted">${ar(s.lessons.length)} من ${ar(L.lessons.length)} دروس • ${s.passed ? `✅ اجتاز الاختبار (${pctTxt(s.quiz)})` : open ? 'الاختبار لم يُجتز بعد' : 'يُفتح بعد اجتياز اختبار المستوى السابق'}</small>
               ${done ? '<span class="rm-cert">🏅 الشهادة متاحة</span>' : ''}
             </button>
           </div>`; }).join('')}
@@ -82,7 +82,7 @@
     const T = track(id); const l = +lStr;
     if (!T || !T.levels[l]) { go('academy'); return; }
     if (!unlocked(id, l)) { toast('اجتز اختبار المستوى السابق أولاً'); go(`track/${id}`); return; }
-    N.setTitle(`${T.title} · ${ACADEMY_LEVELS[l]}`);
+    N.setTitle(`${T.title} • ${ACADEMY_LEVELS[l]}`);
     const L = T.levels[l];
     const mz = store.get('acad:madhhab', '');
     const draw = () => {
@@ -103,13 +103,13 @@
         </div>
         <div class="section-title">📚 الكتب والمراجع</div>
         <div class="card" style="padding:4px">
-          ${books.map((b) => `<div class="book-row"><span class="aud-av">📘</span><div class="aud-info"><b>${esc(b.t)}</b><small>${esc(b.a)}${b.m ? ` · المذهب ${b.m}` : ''}${b.n ? ` · ${esc(b.n)}` : ''}</small></div><a class="aud-ic" href="${ytSearch(`شرح ${b.t}`)}" target="_blank" rel="noopener" aria-label="شروح مرئية">🎬</a></div>`).join('')}
+          ${books.map((b) => `<div class="book-row"><span class="aud-av">📘</span><div class="aud-info"><b>${esc(b.t)}</b><small>${esc(b.a)}${b.m ? ` • المذهب ${b.m}` : ''}${b.n ? ` • ${esc(b.n)}` : ''}</small></div><a class="aud-ic" href="${ytSearch(`شرح ${b.t}`)}" target="_blank" rel="noopener" aria-label="شروح مرئية">🎬</a></div>`).join('')}
           ${T.madhhab && !mz ? '<p class="muted center" style="font-size:.85rem">اختر مذهبك من صفحة المسار لعرض كتاب مذهبك فقط</p>' : ''}
         </div>
         <p class="muted" style="font-size:.8rem">روابط 🎬 تفتح بحثاً في يوتيوب عن شروح الدرس أو الكتاب، فاختر منها ما كان لأهل علم موثوقين.</p>
         <div class="card center">
           <b>📝 اختبار المستوى</b>
-          <p class="muted" style="margin:6px 0 12px">${ar(L.quiz.length)} أسئلة · النجاح من ${ar(PASS * 100)}٪ ${s.quiz ? `· أفضل نتيجة: ${pctTxt(s.quiz)}` : ''}</p>
+          <p class="muted" style="margin:6px 0 12px">${ar(L.quiz.length)} أسئلة • النجاح من ${ar(PASS * 100)}٪ ${s.quiz ? `• أفضل نتيجة: ${pctTxt(s.quiz)}` : ''}</p>
           <button class="btn block" data-go="quiz/${id}/${l}">${s.passed ? 'إعادة الاختبار' : 'ابدأ الاختبار'}</button>
           ${levelDone(id, l) ? `<button class="btn ghost block" style="margin-top:8px" data-go="cert/${id}/${l}">🏅 عرض شهادة الإتمام</button>` : ''}
         </div>`;
@@ -128,7 +128,7 @@
   function renderQuiz(id, lStr) {
     const T = track(id); const l = +lStr;
     if (!T || !T.levels[l] || !unlocked(id, l)) { go('academy'); return; }
-    N.setTitle(`اختبار ${T.title} · ${ACADEMY_LEVELS[l]}`);
+    N.setTitle(`اختبار ${T.title} • ${ACADEMY_LEVELS[l]}`);
     const Q = T.levels[l].quiz;
     const order = Q.map((_, i) => i).sort(() => Math.random() - 0.5);
     let i = 0, score = 0;
@@ -238,7 +238,7 @@
     const c = current();
     if (!c) return;
     const d = document.createElement('div');
-    d.innerHTML = `<div class="card continue"><div style="min-width:0"><small class="muted">🎓 درسك الحالي</small><br><b>${esc(c.lesson)}</b><br><small class="muted">${c.T.title} · ${ACADEMY_LEVELS[c.l]}</small></div><button class="btn">متابعة</button></div>`;
+    d.innerHTML = `<div class="card continue"><div style="min-width:0"><small class="muted">🎓 درسك الحالي</small><br><b>${esc(c.lesson)}</b><br><small class="muted">${c.T.title} • ${ACADEMY_LEVELS[c.l]}</small></div><button class="btn">متابعة</button></div>`;
     $('button', d).onclick = () => go(`level/${c.T.id}/${c.l}`);
     root.appendChild(d);
   });

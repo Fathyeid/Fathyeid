@@ -44,7 +44,7 @@
   }
   const surahsOf = (m) => m.list.split(',').map(Number).filter(Boolean);
   const getR = (rid) => reciters && reciters.find((r) => r.id === rid);
-  const itemFor = (r, m, s) => ({ kind: 'surah', url: `${m.server}${pad3(s)}.mp3`, title: sName(s), sub: `${r.name} · ${rewaya(m)}`, rid: r.id, mid: m.id, s });
+  const itemFor = (r, m, s) => ({ kind: 'surah', url: `${m.server}${pad3(s)}.mp3`, title: sName(s), sub: `${r.name} • ${rewaya(m)}`, rid: r.id, mid: m.id, s });
 
   // ================= التحميل دون اتصال =================
   const dlIndex = () => store.get('audio:dl', {});
@@ -308,7 +308,7 @@
       const body = $('#abody');
       const recRow = (r) => {
         const ms = r.moshaf.filter((m) => !rwFilter || rewaya(m) === rwFilter);
-        return `<button class="aud-rec" data-r="${r.id}"><span class="aud-av">${esc(r.name.replace(/^(الشيخ\s+)/, '').trim().charAt(0))}</span><span class="aud-info"><b>${esc(r.name)}</b><small>${ms.map((m) => esc(m.name)).join(' · ') || esc(r.moshaf.map((m) => m.name).join(' · '))}</small></span>${favR().includes(r.id) ? '<span class="aud-star">★</span>' : ''}</button>`;
+        return `<button class="aud-rec" data-r="${r.id}"><span class="aud-av">${esc(r.name.replace(/^(الشيخ\s+)/, '').trim().charAt(0))}</span><span class="aud-info"><b>${esc(r.name)}</b><small>${ms.map((m) => esc(m.name)).join(' • ') || esc(r.moshaf.map((m) => m.name).join(' • '))}</small></span>${favR().includes(r.id) ? '<span class="aud-star">★</span>' : ''}</button>`;
       };
       const tabReciters = (q) => {
         const nq = normAr(q || '');
@@ -360,7 +360,7 @@
         body.innerHTML = `
           <div class="card"><div class="z-line"><span>الملفات المحمّلة</span><b>${arG(entries.length)}</b></div><div class="z-line"><span>المساحة المستخدمة</span><b>${fmtSize(total)}</b></div><div class="z-line" style="border:0"><span>المساحة المتاحة للتطبيق</span><b id="quota">…</b></div></div>
           ${entries.length ? `<button class="btn block" id="playDl" style="margin-bottom:10px">▶ تشغيل المحمّلات</button>` : ''}
-          <div class="card" style="padding:4px">${entries.map(([url, v]) => `<div class="aud-row"><button class="aud-play" data-u="${esc(url)}">${PLAY_I}</button><div class="aud-info"><b>${esc(v.title)}</b><small>${esc(v.sub)} · ${fmtSize(v.size)}</small></div><button class="aud-ic" data-del="${esc(url)}" aria-label="حذف"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>`).join('') || '<p class="muted center">لم تحمّل أي سورة بعد. اضغط ⬇ بجانب السورة في صفحة القارئ.</p>'}</div>`;
+          <div class="card" style="padding:4px">${entries.map(([url, v]) => `<div class="aud-row"><button class="aud-play" data-u="${esc(url)}">${PLAY_I}</button><div class="aud-info"><b>${esc(v.title)}</b><small>${esc(v.sub)} • ${fmtSize(v.size)}</small></div><button class="aud-ic" data-del="${esc(url)}" aria-label="حذف"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>`).join('') || '<p class="muted center">لم تحمّل أي سورة بعد. اضغط ⬇ بجانب السورة في صفحة القارئ.</p>'}</div>`;
         if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then((e) => { const q = $('#quota'); if (q) q.textContent = fmtSize(Math.max(0, e.quota - e.usage)); }).catch(() => {});
         const items = entries.map(([url, v]) => ({ kind: 'surah', url, title: v.title, sub: v.sub, rid: v.rid, mid: v.mid, s: v.s }));
         $$('[data-u]', body).forEach((b) => b.addEventListener('click', () => playQueue(items, items.findIndex((x) => x.url === b.dataset.u))));
@@ -465,7 +465,7 @@
             d.textContent = st.done ? '✔' : st.active ? `${ar(Math.round(st.pct * 100))}٪` : st.queued ? '…' : '⬇';
             d.classList.toggle('ok', !!st.done);
             const playing = cur() && cur().url === it.url;
-            s.textContent = playing ? (audio.paused ? 'متوقفة' : '▶ يتم التشغيل الآن') : st.done ? 'محمّلة · تعمل دون إنترنت' : st.active ? `جارٍ التحميل ${st.got ? fmtSize(st.got) : ''}` : st.queued ? 'في طابور التحميل' : '';
+            s.textContent = playing ? (audio.paused ? 'متوقفة' : '▶ يتم التشغيل الآن') : st.done ? 'محمّلة • تعمل دون إنترنت' : st.active ? `جارٍ التحميل ${st.got ? fmtSize(st.got) : ''}` : st.queued ? 'في طابور التحميل' : '';
             $(`[data-row="${i}"]`).classList.toggle('playing', !!playing);
           });
         };
@@ -537,7 +537,7 @@
 
   function renderCompare(arg) {
     const s = Math.min(114, Math.max(1, parseInt(arg, 10) || 1));
-    N.setTitle(`مقارنة التلاوات · ${SURAH_NAMES[s - 1]}`);
+    N.setTitle(`مقارنة التلاوات • ${SURAH_NAMES[s - 1]}`);
     loading();
     let alive = true;
     const subs = [];
@@ -552,7 +552,7 @@
         N.view.innerHTML = `
           <p class="muted" style="margin-top:0">استمع لسورة ${SURAH_NAMES[s - 1]} بأصوات عدة قراء، وانتقل بينهم بضغطة.</p>
           <label class="chk"><input type="checkbox" id="same" ${samePos ? 'checked' : ''}> عند التبديل ابدأ من نفس الموضع تقريباً</label>
-          <div class="card" style="padding:4px;margin-top:10px">${opts.map((it, i) => `<div class="aud-row" data-row="${i}"><button class="aud-play" data-p="${i}">${PLAY_I}</button><div class="aud-info"><b>${esc(it.sub.split(' · ')[0])}</b><small>${esc(it.sub.split(' · ').slice(1).join(' · '))}</small></div></div>`).join('')}</div>`;
+          <div class="card" style="padding:4px;margin-top:10px">${opts.map((it, i) => `<div class="aud-row" data-row="${i}"><button class="aud-play" data-p="${i}">${PLAY_I}</button><div class="aud-info"><b>${esc(it.sub.split(' • ')[0])}</b><small>${esc(it.sub.split(' • ').slice(1).join(' • '))}</small></div></div>`).join('')}</div>`;
         $('#same').onchange = (e) => { samePos = e.target.checked; store.set('audio:cmpSame', samePos); };
         $$('[data-p]').forEach((b) => b.addEventListener('click', () => {
           const it = opts[+b.dataset.p];
@@ -627,7 +627,7 @@
         st.from = Math.min(Math.max(1, st.from | 0), max); st.to = Math.min(Math.max(st.from, st.to | 0), max);
         $('#rF').value = st.from; $('#rT').value = st.to; $('#rF').max = max; $('#rT').max = max;
         const ay = (n) => `${ar(n)} ${n >= 3 && n <= 10 ? 'آيات' : 'آية'}`;
-        $('#rInfo').textContent = `سورة ${SURAH_NAMES[st.s - 1]} (${ay(max)}) · ${ay(st.to - st.from + 1)} × ${ar(st.each)} مرات${st.range ? ` × ${ar(st.range)} للمقطع` : ' · المقطع بلا توقف'}`;
+        $('#rInfo').textContent = `سورة ${SURAH_NAMES[st.s - 1]} (${ay(max)}) • ${ay(st.to - st.from + 1)} × ${ar(st.each)} مرات${st.range ? ` × ${ar(st.range)} للمقطع` : ' • المقطع بلا توقف'}`;
         store.set('audio:repeatCfg', st);
       };
       const segs = () => {
@@ -646,7 +646,7 @@
         const one = [];
         for (let a = st.from; a <= st.to; a++) {
           const g = offsets[st.s - 1] + a;
-          for (let k = 0; k < st.each; k++) one.push({ kind: 'ayah', url: `https://cdn.islamic.network/quran/audio/${br}/${st.ed}/${g}.mp3`, title: `${SURAH_NAMES[st.s - 1]} · الآية ${ar(a)}${st.each > 1 ? ` (${ar(k + 1)}/${ar(st.each)})` : ''}`, sub: `${rn} · تكرار للحفظ`, s: st.s });
+          for (let k = 0; k < st.each; k++) one.push({ kind: 'ayah', url: `https://cdn.islamic.network/quran/audio/${br}/${st.ed}/${g}.mp3`, title: `${SURAH_NAMES[st.s - 1]} • الآية ${ar(a)}${st.each > 1 ? ` (${ar(k + 1)}/${ar(st.each)})` : ''}`, sub: `${rn} • تكرار للحفظ`, s: st.s });
         }
         let q = one;
         if (st.range > 1) { q = []; for (let i = 0; i < st.range; i++) q = q.concat(one); }
@@ -676,5 +676,5 @@
     bindResume(d);
   });
 
-  N.audioLib = { playQueue, enqueue, loadReciters, dlIndex, removeDl, cur: () => cur(), audio };
+  N.audioLib = { playQueue, enqueue, loadReciters, dlIndex, removeDl, cur: () => cur(), audio, VERSE_RECITERS };
 });

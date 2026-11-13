@@ -438,3 +438,51 @@ body.has-mini .toast { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
 .cert-wrap { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
 .cert-wrap canvas { display: block; width: 100%; height: auto; }
 @media (max-width: 380px) { .acad-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ===== المرحلة ٢: الحفظ والحديث ===== */
+.hd .hd-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.hd .hd-head b { color: var(--gold); font-size: .9rem; }
+.hd-text { font-family: 'Amiri', serif; font-size: 1.22rem; line-height: 2.05; margin: 0 0 10px; }
+.hd-grades { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.hd-grade { font-size: .76rem; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-weight: 600; }
+.hd-grade.ok { background: color-mix(in srgb, var(--primary-2) 14%, var(--surface)); color: var(--primary-2); }
+.hd-grade.weak { background: color-mix(in srgb, #c0392b 12%, var(--surface)); color: #b03a2e; }
+.hd-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.hd-actions .btn { padding: 6px 12px; font-size: .82rem; }
+.hd.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 40% { box-shadow: 0 0 0 3px var(--gold); } 100% { box-shadow: var(--shadow); } }
+
+.hifz-task { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.hifz-task p { margin: 4px 0 0; font-size: .86rem; }
+.bars { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.bar { flex: 1; width: 100%; max-width: 30px; background: var(--surface-2); border-radius: 8px; display: flex; flex-direction: column-reverse; overflow: hidden; }
+.bar span { display: block; width: 100%; }
+.b-new { background: var(--primary-2); }
+.b-rev { background: var(--gold); }
+.bar-col small { font-size: .66rem; color: var(--muted); }
+.legend { display: flex; gap: 14px; justify-content: center; margin-top: 10px; font-size: .75rem; color: var(--muted); }
+.lg.new { background: var(--primary-2); }
+.lg.rev { background: var(--gold); }
+
+.hz-bar { padding: 12px; }
+.hz-ayah { padding: 10px 4px; border-bottom: 1px dashed var(--border); border-radius: 10px; transition: background .2s; }
+.hz-ayah:last-of-type { border-bottom: 0; }
+.hz-ayah.active { background: var(--gold-soft); }
+.hz-ayah.memorized .hz-text { border-inline-start: 3px solid var(--primary-2); padding-inline-start: 8px; }
+.hz-ayah.mastered .hz-text { border-inline-start: 3px solid var(--gold); padding-inline-start: 8px; }
+.hz-text { font-family: var(--quran-font); font-size: var(--qsize, 1.6rem); line-height: 2.3; margin: 0 0 6px; cursor: default; }
+.hz-text.hidden { cursor: pointer; }
+.hz-text.hidden .hz-rest { filter: blur(9px); user-select: none; }
+.hz-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.hz-tools small { flex: 1; min-width: 90px; }
+.hz-page-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.hz-grade { display: flex; gap: 8px; margin-top: 12px; }
+
+.juz-block { border-bottom: 1px solid var(--border); }
+.juz-block:last-child { border-bottom: 0; }
+.juz-line { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; background: none; color: inherit; font: inherit; text-align: right; }
+.juz-line .aud-info { gap: 4px; }
+.rub-list { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+.rub-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.rub-row .aud-ic { padding: 0 10px; }

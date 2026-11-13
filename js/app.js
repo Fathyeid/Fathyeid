@@ -147,7 +147,7 @@
     $('#pageTitle').textContent = route.title;
     $('#backBtn').hidden = !route.back;
     $('#backBtn').onclick = () => history.length > 1 ? history.back() : go(route.back);
-    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran' }[name] || name;
+    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran', hifz: 'quran', hifzs: 'quran', hifzp: 'quran', hifzplan: 'quran' }[name] || name;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.route === tab));
     view.innerHTML = '';
     view.className = 'fade-in';
@@ -193,6 +193,8 @@
         <button class="tile" data-go="quran"><span class="ic">📖</span>القرآن</button>
         <button class="tile" data-go="audio"><span class="ic">🎧</span>المكتبة الصوتية</button>
         <button class="tile" data-go="academy"><span class="ic">🎓</span>الأكاديمية</button>
+        <button class="tile" data-go="hifz"><span class="ic">🧠</span>حفظ القرآن</button>
+        <button class="tile" data-go="hadith"><span class="ic">📜</span>الحديث الشريف</button>
         <button class="tile" data-go="zikr/${zikrKey}"><span class="ic">${AZKAR[zikrKey].icon}</span>${AZKAR[zikrKey].title}</button>
         <button class="tile" data-go="prayers"><span class="ic">🕌</span>المواقيت</button>
         <button class="tile" data-go="tasbih"><span class="ic">📿</span>السبحة</button>
@@ -249,7 +251,7 @@
           }).join('')}
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="muted" style="font-size:.85rem">📍 ${esc(settings.location.name)} · ${PrayTimes.METHODS[settings.method].name} · العصر: ${settings.asr === 2 ? 'الحنفي' : 'الجمهور'}</div>
+          <div class="muted" style="font-size:.85rem">📍 ${esc(settings.location.name)} • ${PrayTimes.METHODS[settings.method].name} • العصر: ${settings.asr === 2 ? 'الحنفي' : 'الجمهور'}</div>
           <button class="btn ghost block" style="margin-top:10px" id="toSettings">تغيير الموقع وطريقة الحساب</button>
         </div>`;
       $('#prev').onclick = () => { offset--; draw(); };
@@ -296,7 +298,7 @@
           const nq = normAr(q.trim());
           $('#list').innerHTML = list
             .filter((s) => !nq || normAr(s.name).includes(nq) || String(s.number) === q.trim() || ar(s.number) === q.trim())
-            .map((s) => `<button class="surah-item" data-n="${s.number}"><span class="surah-num">${ar(s.number)}</span><span class="surah-info"><b>${s.name}</b><small>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · ${ar(s.numberOfAyahs)} آية</small></span></button>`)
+            .map((s) => `<button class="surah-item" data-n="${s.number}"><span class="surah-num">${ar(s.number)}</span><span class="surah-info"><b>${s.name}</b><small>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}، ${ar(s.numberOfAyahs)} آية</small></span></button>`)
             .join('') || '<p class="center muted">لا توجد نتائج</p>';
           $$('.surah-item', body).forEach((b) => b.addEventListener('click', () => go(`surah/${b.dataset.n}`)));
         };
@@ -306,7 +308,7 @@
 
       const juzMode = () => {
         const k = khatmaState();
-        body.innerHTML = `<div class="card" style="padding:4px">${JUZ_NAMES.map((nm, i) => `<button class="surah-item" data-j="${i + 1}"><span class="surah-num">${ar(i + 1)}</span><span class="surah-info"><b>${nm}</b><small>الجزء ${ar(i + 1)}${k.done[i] ? ' · ✓ مقروء في الختمة' : ''}</small></span></button>`).join('')}</div>`;
+        body.innerHTML = `<div class="card" style="padding:4px">${JUZ_NAMES.map((nm, i) => `<button class="surah-item" data-j="${i + 1}"><span class="surah-num">${ar(i + 1)}</span><span class="surah-info"><b>${nm}</b><small>الجزء ${ar(i + 1)}${k.done[i] ? ' • ✓ مقروء في الختمة' : ''}</small></span></button>`).join('')}</div>`;
         $$('[data-j]', body).forEach((b) => b.addEventListener('click', () => go(`juz/${b.dataset.j}`)));
       };
 
@@ -325,7 +327,7 @@
             if (!m.length) { out.innerHTML = '<p class="center muted">لا توجد نتائج</p>'; return; }
             const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
             out.innerHTML = `<p class="muted" style="font-size:.85rem">${arG(m.length)} نتيجة${m.length > 100 ? ' (أول ١٠٠)' : ''}</p>` + m.slice(0, 100).map((x) =>
-              `<button class="card result" data-s="${x.surah.number}" data-a="${x.numberInSurah}"><p>${esc(x.text).replace(re, '<mark>$&</mark>')}</p><small class="muted">${x.surah.name} · الآية ${ar(x.numberInSurah)}</small></button>`).join('');
+              `<button class="card result" data-s="${x.surah.number}" data-a="${x.numberInSurah}"><p>${esc(x.text).replace(re, '<mark>$&</mark>')}</p><small class="muted">${x.surah.name} • الآية ${ar(x.numberInSurah)}</small></button>`).join('');
             $$('.result', out).forEach((b) => b.addEventListener('click', () => go(`surah/${b.dataset.s}/${b.dataset.a}`)));
           } catch { out.innerHTML = '<p class="center muted">تعذّر البحث، تأكد من الاتصال بالإنترنت.</p>'; }
         });
@@ -396,7 +398,7 @@
           <button class="icon-btn" id="fplus" aria-label="تكبير الخط">أ+</button>
         </div>
         <article class="mushaf">
-          <div class="surah-header"><h2>${s.name}</h2><small>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} · ${ar(s.numberOfAyahs)} آية</small></div>
+          <div class="surah-header"><h2>${s.name}</h2><small>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}، ${ar(s.numberOfAyahs)} آية</small></div>
           ${n !== 1 && n !== 9 ? '<div class="basmala">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>' : ''}
           <p class="quran-text" id="qt">${ayahs.map((a, i) => `<span class="ayah" data-i="${i}">${a.text}</span> <span class="ayah-num">${ar(a.numberInSurah)}</span> `).join('')}</p>
         </article>
@@ -435,7 +437,7 @@
       };
       audio.onended = () => {
         rep++;
-        if (rep < (settings.repeat || 1)) { audio.currentTime = 0; audio.play().catch(() => {}); $('#pState').textContent = `الآية ${ar(ayahs[cur].numberInSurah)} · تكرار ${ar(rep + 1)}`; return; }
+        if (rep < (settings.repeat || 1)) { audio.currentTime = 0; audio.play().catch(() => {}); $('#pState').textContent = `الآية ${ar(ayahs[cur].numberInSurah)} • تكرار ${ar(rep + 1)}`; return; }
         playAt(cur + 1);
       };
       audio.onpause = setBtn;
@@ -456,7 +458,7 @@
             <button class="btn ghost" data-a="bm">${bmLabel()}</button>
             <button class="btn ghost" data-a="share">📤 مشاركة</button>
           </div>
-          ${settings.translation ? `<div class="tafsir"><h4>الترجمة · ${esc(TRANSLATIONS[settings.translation] || '')}</h4><div class="trans-body" dir="${settings.translation.startsWith('ur') ? 'rtl' : 'ltr'}"><div class="loader" style="margin:16px auto"></div></div></div>` : ''}
+          ${settings.translation ? `<div class="tafsir"><h4>الترجمة • ${esc(TRANSLATIONS[settings.translation] || '')}</h4><div class="trans-body" dir="${settings.translation.startsWith('ur') ? 'rtl' : 'ltr'}"><div class="loader" style="margin:16px auto"></div></div></div>` : ''}
           <div class="tafsir"><h4>التفسير الميسر</h4><div class="tafsir-body"><div class="loader" style="margin:16px auto"></div></div></div>`);
         if (settings.translation) {
           const trb = $('.trans-body', sh.el);
@@ -511,7 +513,7 @@
       ${z.items.map((it, i) => `
         <div class="card zikr" data-i="${i}">
           <p>${it.text}</p>
-          <div class="meta"><small>${it.ref}${it.count > 1 ? ` · التكرار: ${ar(it.count)}` : ''}</small>
+          <div class="meta"><small>${it.ref}${it.count > 1 ? ` • التكرار: ${ar(it.count)}` : ''}</small>
             <button class="counter-btn"></button></div>
         </div>`).join('')}
       <button class="btn ghost block" id="resetAz">إعادة تعيين</button>`;
@@ -700,7 +702,7 @@
       ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
       ${NATIVE ? `<div class="card"><h3>🔄 التحديثات</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">رقم النسخة الحالية: ${arG(BUILD.code || 0)}. يتحقق التطبيق من التحديثات تلقائياً.</p><button class="btn ghost block" id="chkUpd">التحقق من وجود تحديث</button></div>` : ''}
       <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
-      <p class="center muted" style="font-size:.8rem">أثر - رفيق المسلم · الإصدار ٢٫١</p>`;
+      <p class="center muted" style="font-size:.8rem">أثر - رفيق المسلم • الإصدار ٢٫١</p>`;
 
     const seg = (id, key, cast) => {
       const sync = () => $$(`#${id} button`).forEach((b) => b.classList.toggle('active', cast(b.dataset.v) === settings[key]));
@@ -754,7 +756,7 @@
   // ---------- قراءة جزء كامل ----------
   function renderJuz(arg) {
     const j = Math.min(30, Math.max(1, parseInt(arg, 10) || 1));
-    $('#pageTitle').textContent = `الجزء ${ar(j)} · ${JUZ_NAMES[j - 1]}`;
+    $('#pageTitle').textContent = `الجزء ${ar(j)} • ${JUZ_NAMES[j - 1]}`;
     view.innerHTML = '<div class="loader"></div>';
     let alive = true;
     fetchJSON(`${API}/juz/${j}/quran-uthmani`, `juz:${j}`).then((d) => {
@@ -819,10 +821,10 @@
     const nextJ = k.done.indexOf(false);
     view.innerHTML = `
       <section class="hero">
-        <div class="next-label">الختمة رقم ${ar(k.completed + 1)}${k.completed ? ` · أتممت ${ar(k.completed)} ختمة من قبل` : ''}</div>
+        <div class="next-label">الختمة رقم ${ar(k.completed + 1)}${k.completed ? ` • أتممت ${ar(k.completed)} ختمة من قبل` : ''}</div>
         <div class="next-name">${ar(doneN)} من ٣٠ جزءاً</div>
         <div class="progress on-dark"><div style="width:${(doneN / 30) * 100}%"></div></div>
-        <div class="loc">${doneN === 30 ? 'ختمت القرآن الكريم، تقبّل الله منك' : `وردك اليومي: ${ar(pagesPerDay)} صفحة تقريباً · متبقٍ ${ar(daysLeft)} يوم`}</div>
+        <div class="loc">${doneN === 30 ? 'ختمت القرآن الكريم، تقبّل الله منك' : `وردك اليومي: ${ar(pagesPerDay)} صفحة تقريباً • متبقٍ ${ar(daysLeft)} يوم`}</div>
       </section>
       ${doneN === 30 ? `
         <div class="card center" style="margin-top:14px"><h3 style="justify-content:center">🎉 مبارك ختم القرآن</h3>
@@ -974,7 +976,7 @@
       <div class="section-title">المناسبات القادمة</div>
       <div class="prayer-list">
         ${white ? `<div class="prayer-row"><span class="p-ic">🌕</span><span class="p-name">الأيام البيض (صيام ١٣ و١٤ و١٥)<br><small class="muted">${white.d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', timeZone: tz() })}</small></span><span class="p-time ev-in">${inDays(white.i)}</span></div>` : ''}
-        ${found.map(({ e, d, i }) => `<div class="prayer-row"><span class="p-ic">${e.ic}</span><span class="p-name">${e.name}<br><small class="muted">${d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz() })}${e.note ? ' · ' + e.note : ''}</small></span><span class="p-time ev-in">${inDays(i)}</span></div>`).join('')}
+        ${found.map(({ e, d, i }) => `<div class="prayer-row"><span class="p-ic">${e.ic}</span><span class="p-name">${e.name}<br><small class="muted">${d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz() })}${e.note ? ' • ' + e.note : ''}</small></span><span class="p-time ev-in">${inDays(i)}</span></div>`).join('')}
       </div>
       <p class="muted center" style="font-size:.8rem;margin-top:14px">التواريخ حسب تقويم أم القرى، وقد تختلف يوماً حسب رؤية الهلال في بلدك.</p>`;
     drawMonth();
@@ -1040,7 +1042,7 @@
     }
     view.innerHTML = bm.map((b, i) => `
       <div class="card bm">
-        <button class="bm-open" data-i="${i}"><p class="bm-text">${b.text}${b.text.length >= 90 ? '…' : ''}</p><small class="muted">${b.name} · الآية ${ar(b.ayah)}</small></button>
+        <button class="bm-open" data-i="${i}"><p class="bm-text">${b.text}${b.text.length >= 90 ? '…' : ''}</p><small class="muted">${b.name} • الآية ${ar(b.ayah)}</small></button>
         <button class="icon-btn" data-del="${i}" aria-label="حذف العلامة"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
       </div>`).join('');
     $$('[data-i]', view).forEach((b) => b.addEventListener('click', () => { const x = bm[+b.dataset.i]; go(`surah/${x.n}/${x.ayah}`); }));
@@ -1093,7 +1095,7 @@
             list.push({
               id: day * 10 + i + 1,
               title: `حان الآن موعد صلاة ${p.name} ${p.ic}`,
-              body: `${fmtTime(at)} · ${settings.location.name}\nحيّ على الصلاة، حيّ على الفلاح`,
+              body: `${fmtTime(at)} • ${settings.location.name}\nحيّ على الصلاة، حيّ على الفلاح`,
               channelId: ADHAN_CHANNEL,
               schedule: { at, allowWhileIdle: true },
               autoCancel: true,
