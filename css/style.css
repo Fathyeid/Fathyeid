@@ -502,3 +502,4 @@ body.has-mini .toast { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
 .dw-player { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 12px; box-shadow: var(--shadow); }
 .dw-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .dw-title { font-size: 1.1rem; line-height: 1.6; margin: 0 0 4px; }
+.dw-dur { position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,.78); color: #fff; font-size: .7rem; padding: 1px 6px; border-radius: 6px; font-weight: 700; direction: ltr; }
