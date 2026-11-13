@@ -44,6 +44,7 @@ jobs:
           npm run build:web
           # حزمة المحتوى للتحديث في الخلفية داخل التطبيق
           (cd www && zip -qr ../web.zip .)
+          echo "NOOR_WEB_SHA256=$(sha256sum web.zip | cut -d' ' -f1)" >> "$GITHUB_ENV"
 
       - name: صوت الأذان المخصص (إن وُجد)
         run: |
@@ -101,6 +102,7 @@ jobs:
             VERSION_CODE=${{ env.NOOR_VERSION_CODE }}
             WEB_CODE=${{ env.NOOR_VERSION_CODE }}
             NATIVE_LEVEL=${{ env.NOOR_NATIVE_LEVEL }}
+            WEB_SHA256=${{ env.NOOR_WEB_SHA256 }}
           files: |
             athar.apk
             noor.apk

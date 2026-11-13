@@ -1153,10 +1153,19 @@
         const web = num('WEB_CODE'); const zip = asset('web.zip');
         if (zip && web > BUILD.code) {
           if (store.get('upd:pendingWeb', 0) === web) { if (manual) toast('التحديث جاهز، وسيعمل عند فتح التطبيق المرة القادمة'); return; }
-          const bundle = await UPD.download({ url: zip.browser_download_url, version: String(web) });
-          await UPD.next({ id: bundle.id });
-          store.set('upd:pendingWeb', web);
-          if (manual) toast('تم تنزيل التحديث ✓ سيعمل تلقائياً عند فتح التطبيق المرة القادمة');
+          // بصمة SHA-256 للملف (تحسبها GitHub لكل ملف منشور) وتشترطها أداة التحديث للتحقق من سلامته
+          const shaM = /WEB_SHA256=([0-9a-f]{64})/.exec(rel.body || '');
+          const checksum = (zip.digest || '').replace(/^sha256:/, '') || (shaM ? shaM[1] : '');
+          try {
+            const bundle = await UPD.download({ url: zip.browser_download_url, version: String(web), checksum });
+            await UPD.next({ id: bundle.id });
+            store.set('upd:pendingWeb', web);
+            if (manual) toast('تم تنزيل التحديث ✓ سيعمل تلقائياً عند فتح التطبيق المرة القادمة');
+          } catch (err) {
+            console.warn('web update', err);
+            // عند تعذّر التحديث في الخلفية نعرض تثبيت النسخة الكاملة حتى لا يبقى المستخدم على نسخة قديمة
+            if (apk && (manual || store.get('upd:skip', 0) !== web)) showUpdate(apk.browser_download_url, web);
+          }
           return;
         }
         if (manual) toast('أنت تستخدم أحدث نسخة ✓');
