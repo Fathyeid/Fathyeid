@@ -530,3 +530,21 @@ body.has-mini .toast { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
 .az-rem { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .az-rem:last-child { border-bottom: 0; }
 .az-rem input[type=time] { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+
+/* ---------- إذاعات القرآن ---------- */
+.rd-hero { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: linear-gradient(135deg, var(--primary), #1d7a5c); color: #fff; border: 0; }
+.rd-hero h2 { margin: 4px 0 0; font-size: 1.15rem; }
+.rd-hero small { opacity: .85; }
+.rd-hero .btn { background: #fff; color: var(--primary); white-space: nowrap; }
+.rd-hero.on .btn { background: var(--gold); color: #fff; }
+.rd-search { width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; margin-bottom: 12px; }
+.rd-seg { flex-wrap: wrap; margin-bottom: 12px; }
+.rd-seg button { font-size: .82rem; flex: 1 1 45%; }
+.rd-h { font-size: 1rem; color: var(--gold); margin: 6px 0 10px; }
+.rd-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 8px; }
+.rd-row.on { border-color: var(--primary); }
+.rd-play { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--primary); color: #fff; font-size: 1rem; flex: none; }
+.rd-row.on .rd-play { background: var(--gold); }
+.rd-name { flex: 1; min-width: 0; font-weight: 700; }
+.rd-name small { display: block; color: var(--primary); font-size: .78rem; }
+.rd-fav { border: 0; background: none; font-size: 1.3rem; color: var(--gold); }

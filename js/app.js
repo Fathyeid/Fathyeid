@@ -192,6 +192,7 @@
       <div class="grid">
         <button class="tile" data-go="quran"><span class="ic">📖</span>القرآن</button>
         <button class="tile" data-go="audio"><span class="ic">🎧</span>المكتبة الصوتية</button>
+        <button class="tile" data-go="radio"><span class="ic">📻</span>إذاعة القرآن</button>
         <button class="tile" data-go="academy"><span class="ic">🎓</span>الأكاديمية</button>
         <button class="tile" data-go="hifz"><span class="ic">🧠</span>حفظ القرآن</button>
         <button class="tile" data-go="hadith"><span class="ic">📜</span>الحديث الشريف</button>

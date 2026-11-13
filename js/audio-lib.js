@@ -174,7 +174,7 @@
   let lastSave = 0;
   function saveLast(force) {
     const it = cur();
-    if (!it || (!force && Date.now() - lastSave < 5000)) return;
+    if (!it || it.live || (!force && Date.now() - lastSave < 5000)) return;
     lastSave = Date.now();
     store.set('audio:last', { item: it, time: audio.currentTime || 0, t: Date.now() });
   }
