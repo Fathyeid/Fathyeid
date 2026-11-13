@@ -1,9 +1,9 @@
 /* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
-const VERSION = 'noor-v17';
+const VERSION = 'noor-v18';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
   'js/native-flags.js', 'js/quran-meta.js', 'js/academy-data.js', 'js/audio-lib.js', 'js/academy.js',
-  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js', 'js/dawah.js',
+  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js', 'js/dawah.js', 'js/azkar-data.js', 'js/azkar.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/father.jpg',
 ];
 

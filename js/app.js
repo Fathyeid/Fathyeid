@@ -147,7 +147,7 @@
     $('#pageTitle').textContent = route.title;
     $('#backBtn').hidden = !route.back;
     $('#backBtn').onclick = () => history.length > 1 ? history.back() : go(route.back);
-    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran', hifz: 'quran', hifzs: 'quran', hifzp: 'quran', hifzplan: 'quran' }[name] || name;
+    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran', hifz: 'quran', hifzs: 'quran', hifzp: 'quran', hifzplan: 'quran', azcat: 'azkar', azsearch: 'azkar', azfav: 'azkar', azlists: 'azkar', azlist: 'azkar', azset: 'azkar', azabout: 'azkar' }[name] || name;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.route === tab));
     view.innerHTML = '';
     view.className = 'fade-in';
@@ -1223,7 +1223,7 @@
   // ---------- واجهة الوحدات الإضافية (المكتبة الصوتية، الأكاديمية، ...) ----------
   window.Noor = {
     $, $$, view, store, toast, go, ar, arG, toAr, esc, routes, settings, saveSettings,
-    fetchJSON, API, sheet, shareText, todayKey, ymdIn, tz, hijri, greg, NATIVE,
+    fetchJSON, API, sheet, shareText, todayKey, ymdIn, tz, hijri, greg, NATIVE, applyTheme, AZKAR,
     setTitle: (t) => { $('#pageTitle').textContent = t; },
     homeExtras: [],
   };
