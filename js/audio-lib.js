@@ -138,7 +138,17 @@
     audio.src = src;
     audio.playbackRate = P.speed;
     if (startAt > 1) audio.addEventListener('loadedmetadata', () => { try { audio.currentTime = startAt; } catch { /* تجاهل */ } }, { once: true });
-    try { await audio.play(); } catch (e) { if (e.name !== 'AbortError') toast(navigator.onLine === false && !objUrl ? 'لا يوجد اتصال، حمّل السورة للاستماع دون إنترنت' : 'تعذّر تشغيل التلاوة'); }
+    try { await audio.play(); } catch (e) {
+      if (it.live && e.name !== 'AbortError' && cur() === it) {
+        // البث المباشر قد يفشل في أول اتصال: إعادة المحاولة مرة بعد ثانيتين
+        await new Promise((r) => setTimeout(r, 2000));
+        if (cur() !== it) return;
+        try { audio.src = it.url + (it.url.includes('?') ? '&' : '?') + 't=' + Date.now(); await audio.play(); mediaMeta(it); render(); return; } catch (e2) { if (e2.name === 'AbortError') return; }
+        toast('تعذّر الاتصال بهذه الإذاعة الآن، جرّب إذاعة أخرى أو تأكد من الإنترنت');
+        render();
+        return;
+      }
+      if (e.name !== 'AbortError') toast(navigator.onLine === false && !objUrl ? 'لا يوجد اتصال، حمّل السورة للاستماع دون إنترنت' : 'تعذّر تشغيل التلاوة'); }
     mediaMeta(it);
     saveLast(true);
     render();
