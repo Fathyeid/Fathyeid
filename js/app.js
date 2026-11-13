@@ -700,7 +700,7 @@
         <div class="seg" id="theme"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></div>
       </div>
       ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
-      ${NATIVE ? `<div class="card"><h3>🔄 التحديثات</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">رقم النسخة الحالية: ${arG(BUILD.code || 0)}. يتحقق التطبيق من التحديثات تلقائياً.</p><button class="btn ghost block" id="chkUpd">التحقق من وجود تحديث</button></div>` : ''}
+      ${NATIVE ? `<div class="card"><h3>🔄 التحديثات</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">رقم النسخة الحالية: ${arG(BUILD.code || 0)}. تصل التحديثات تلقائياً في الخلفية وتعمل عند فتح التطبيق.</p><button class="btn ghost block" id="chkUpd">التحقق من وجود تحديث</button></div>` : ''}
       <p class="center muted" style="font-size:.85rem">هذا التطبيق صدقة جارية على روح المرحوم عيد فتحي أبو طالب<br>نسألكم الدعاء له بالرحمة والمغفرة 🤍</p>
       <p class="center muted" style="font-size:.8rem">أثر - رفيق المسلم • الإصدار ٢٫١</p>`;
 
@@ -1120,21 +1120,49 @@
   }
 
 
-  // ---------- التنبيه بالتحديثات (تطبيق أندرويد المثبّت من الرابط) ----------
+  // ---------- التحديثات (تطبيق أندرويد المثبّت من الرابط) ----------
+  // المحتوى يُحدَّث في الخلفية تلقائياً (web.zip)، ولا يُطلب تثبيت APK إلا عند تغيير في التطبيق الأصلي
   const RELEASES_API = 'https://api.github.com/repos/Fathyeid/Fathyeid/releases/latest';
   const BUILD = window.NOOR_BUILD || { code: 0, kind: 'local' };
+  const PLUG = (NATIVE && window.Capacitor.Plugins) || {};
+  const UPD = PLUG.CapacitorUpdater;
+  if (UPD) UPD.notifyAppReady().catch(() => {});
+  async function nativeLevel() {
+    try { const i = await PLUG.App.getInfo(); const m = /^\d+\.(\d+)\./.exec(i.version || ''); return m ? +m[1] : 1; } catch { return 1; }
+  }
   async function checkUpdate(manual) {
     if (!NATIVE || !BUILD.code) { if (manual) toast('التحقق من التحديثات متاح في تطبيق أندرويد فقط'); return; }
-    if (!manual && Date.now() - store.get('upd:checked', 0) < 6 * 3600000) return;
+    if (!manual && Date.now() - store.get('upd:checked', 0) < 3600000) return;
     if (manual) toast('جارٍ التحقق من التحديثات...');
     try {
       const res = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } });
       if (!res.ok) throw new Error(res.status);
       const rel = await res.json();
       store.set('upd:checked', Date.now());
-      const m = /VERSION_CODE=(\d+)/.exec(rel.body || '');
-      const apk = (rel.assets || []).find((a) => a.name === 'athar.apk') || (rel.assets || []).find((a) => a.name === 'noor.apk');
-      const latest = m ? +m[1] : 0;
+      const num = (k) => { const m = new RegExp(`${k}=(\\d+)`).exec(rel.body || ''); return m ? +m[1] : 0; };
+      const asset = (n) => (rel.assets || []).find((x) => x.name === n);
+      const apk = asset('athar.apk') || asset('noor.apk');
+      if (UPD) {
+        const need = num('NATIVE_LEVEL');
+        if (apk && need > (await nativeLevel())) {
+          if (!manual && store.get('upd:skip', 0) === need) return;
+          showUpdate(apk.browser_download_url, need);
+          return;
+        }
+        const web = num('WEB_CODE'); const zip = asset('web.zip');
+        if (zip && web > BUILD.code) {
+          if (store.get('upd:pendingWeb', 0) === web) { if (manual) toast('التحديث جاهز، وسيعمل عند فتح التطبيق المرة القادمة'); return; }
+          const bundle = await UPD.download({ url: zip.browser_download_url, version: String(web) });
+          await UPD.next({ id: bundle.id });
+          store.set('upd:pendingWeb', web);
+          if (manual) toast('تم تنزيل التحديث ✓ سيعمل تلقائياً عند فتح التطبيق المرة القادمة');
+          return;
+        }
+        if (manual) toast('أنت تستخدم أحدث نسخة ✓');
+        return;
+      }
+      // نسخ قديمة بلا أداة التحديث في الخلفية
+      const latest = num('VERSION_CODE');
       if (!apk || latest <= BUILD.code) { if (manual) toast('أنت تستخدم أحدث نسخة ✓'); return; }
       if (!manual && store.get('upd:skip', 0) === latest) return;
       showUpdate(apk.browser_download_url, latest);

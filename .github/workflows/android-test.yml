@@ -36,6 +36,7 @@ jobs:
         run: |
           # رقم يزيد دائماً (بالدقائق منذ ٢٠٢٦) ليُثبَّت كل تحديث فوق النسخة السابقة
           echo "NOOR_VERSION_CODE=$(( ($(date +%s) - 1767225600) / 60 ))" >> "$GITHUB_ENV"
+          echo "NOOR_NATIVE_LEVEL=$(cat android/native-level.txt | tr -d '[:space:]')" >> "$GITHUB_ENV"
           echo "NOOR_BUILD_KIND=test" >> "$GITHUB_ENV"
 
       - name: تجهيز ملفات التطبيق

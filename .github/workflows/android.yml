@@ -36,10 +36,14 @@ jobs:
         run: |
           # رقم يزيد دائماً (بالدقائق منذ ٢٠٢٦) ليُثبَّت كل تحديث فوق النسخة السابقة
           echo "NOOR_VERSION_CODE=$(( ($(date +%s) - 1767225600) / 60 ))" >> "$GITHUB_ENV"
+          echo "NOOR_NATIVE_LEVEL=$(cat android/native-level.txt | tr -d '[:space:]')" >> "$GITHUB_ENV"
           echo "NOOR_BUILD_KIND=public" >> "$GITHUB_ENV"
 
       - name: تجهيز ملفات التطبيق
-        run: npm run build:web
+        run: |
+          npm run build:web
+          # حزمة المحتوى للتحديث في الخلفية داخل التطبيق
+          (cd www && zip -qr ../web.zip .)
 
       - name: صوت الأذان المخصص (إن وُجد)
         run: |
@@ -95,9 +99,12 @@ jobs:
             حمّل ملف athar.apk وثبّته على هاتفك.
 
             VERSION_CODE=${{ env.NOOR_VERSION_CODE }}
+            WEB_CODE=${{ env.NOOR_VERSION_CODE }}
+            NATIVE_LEVEL=${{ env.NOOR_NATIVE_LEVEL }}
           files: |
             athar.apk
             noor.apk
+            web.zip
             noor-play.aab
           fail_on_unmatched_files: false
           make_latest: true

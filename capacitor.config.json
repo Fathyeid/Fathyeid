@@ -8,6 +8,16 @@
   "plugins": {
     "LocalNotifications": {
       "iconColor": "#b8913a"
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "updateUrl": "",
+      "statsUrl": "",
+      "channelUrl": "",
+      "resetWhenUpdate": true,
+      "autoDeleteFailed": true,
+      "autoDeletePrevious": true,
+      "appReadyTimeout": 15000
     }
   }
 }
