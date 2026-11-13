@@ -548,3 +548,4 @@ body.has-mini .toast { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
 .rd-name { flex: 1; min-width: 0; font-weight: 700; }
 .rd-name small { display: block; color: var(--primary); font-size: .78rem; }
 .rd-fav { border: 0; background: none; font-size: 1.3rem; color: var(--gold); }
+.rd-link { display: inline-block; margin-top: 6px; color: #fff; opacity: .85; font-size: .8rem; text-decoration: underline; }

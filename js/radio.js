@@ -5,6 +5,10 @@
   const { $, $$, store, toast, go, ar, esc, routes } = N;
   const API = 'https://www.mp3quran.net/api/v3/radios?language=ar';
   const MAIN_ID = 109082; // إذاعة القرآن الكريم - السعودية
+  // إذاعة القرآن الكريم من القاهرة: بث صوتي مباشر على radiojar (محطة quran-radio-cairo)؛
+  // موقع ماسبيرو الرسمي يعرضها بمشغّل فيديو فقط، فنضع رابطه للمشاهدة الرسمية أيضاً
+  const EGYPT = { id: 900001, name: 'إذاعة القرآن الكريم من القاهرة', url: 'https://stream.radiojar.com/8s5u5tpdtwzuv' };
+  const MASPERO = 'https://www.maspero.eg/stream/7';
   // نسخة احتياطية عند تعذّر تحميل القائمة (من نفس الواجهة الرسمية)
   const FALLBACK = [
     { id: 109082, name: 'إذاعة القرآن الكريم - السعودية', url: 'https://stream.radiojar.com/0tpy1h0kxtzuv' },
@@ -28,7 +32,7 @@
   function groupOf(r) {
     if (/translation/i.test(r.url)) return 'tr';
     if (/tafseer|tafsir|tabri|gareeb|siyra|sahabah|saheh|riyad|alanbiya|shmaeel|fatwa|alaikhtiarat|ramadan/i.test(r.url)) return 'ilm';
-    if (/\/(mix|salma|tarateel|sakeenah|albaqarah|Surah_Al-Mulk|roqiah|athkar_sabah|athkar_masa|eid)$/.test(r.url) || r.id === MAIN_ID) return 'general';
+    if (/\/(mix|salma|tarateel|sakeenah|albaqarah|Surah_Al-Mulk|roqiah|athkar_sabah|athkar_masa|eid)$/.test(r.url) || r.id === MAIN_ID || r.id === EGYPT.id) return 'general';
     return 'reciters';
   }
   const norm = (t) => t.replace(/[ً-ْ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
@@ -91,23 +95,24 @@
     N.view.innerHTML = '<div class="card center muted">جارٍ تحميل الإذاعات…</div>';
     const list = await load();
     if (!location.hash.startsWith('#/radio')) return;
+    if (!list.some((r) => r.id === EGYPT.id)) list.unshift(EGYPT);
     const byId = Object.fromEntries(list.map((r) => [r.id, r]));
     const main = byId[MAIN_ID] || clean(FALLBACK[0]);
+    const heroes = [[EGYPT, '🇪🇬'], [main, '🇸🇦']];
     let q = '';
     let group = store.get('radio:group', 'reciters');
     paint = () => {
       if (!location.hash.startsWith('#/radio')) return;
-      const mainOn = playingId() === main.id;
       N.view.innerHTML = `
-        <div class="card rd-hero ${mainOn ? 'on' : ''}">
-          <div><small>📻 بث مباشر على مدار الساعة</small><h2>${esc(main.name)}</h2></div>
-          <button class="btn" id="rdMain">${mainOn ? '⏸ إيقاف' : '▶ استمع الآن'}</button>
-        </div>
+        ${heroes.map(([r, flag]) => { const on = playingId() === r.id; return `<div class="card rd-hero ${on ? 'on' : ''}">
+          <div><small>${flag} بث مباشر على مدار الساعة</small><h2>${esc(r.name)}</h2>${r.id === EGYPT.id ? `<a class="rd-link" href="${MASPERO}" target="_blank" rel="noopener">البث الرسمي على ماسبيرو ↗</a>` : ''}</div>
+          <button class="btn" data-hero="${r.id}">${on ? '⏸ إيقاف' : '▶ استمع الآن'}</button>
+        </div>`; }).join('')}
         <div class="chips" style="margin-bottom:12px">${FEATURED.map((id) => byId[id]).filter(Boolean).map((r) => `<button class="chip ${playingId() === r.id ? 'active' : ''}" data-p="${r.id}">${esc(r.name)}</button>`).join('')}</div>
         <input id="rdQ" class="rd-search" type="search" placeholder="ابحث باسم القارئ أو الإذاعة…" value="${esc(q)}">
         <div id="rdBody"></div>
         <p class="center muted" style="font-size:.8rem">${ar(list.length)} إذاعة • المصدر: mp3quran.net • تحتاج اتصالاً بالإنترنت، ويمكن ضبط مؤقت النوم من شاشة المشغّل</p>`;
-      $('#rdMain').onclick = () => { if (playingId() === main.id) { N.audioLib.audio.pause(); setTimeout(paint, 100); } else play(main); };
+      $$('[data-hero]').forEach((b) => { b.onclick = () => { const r = byId[+b.dataset.hero]; if (playingId() === r.id) { N.audioLib.audio.pause(); setTimeout(paint, 100); } else play(r); }; });
       bind($('.chips', N.view), list);
       const inp = $('#rdQ');
       inp.oninput = () => { q = inp.value; paintList(); };
