@@ -9,9 +9,10 @@ jobs:
     steps:
       - run: |
           A="Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36"
-          echo "=== radiojar 8s5u5tpdtwzuv"; curl -sS -D - -o /tmp/b --max-time 5 -L https://stream.radiojar.com/8s5u5tpdtwzuv -A "$A" 2>&1 | grep -iE '^(HTTP|location|content-type|icy|curl)' || true
-          echo "=== radiojar station info"; curl -s --max-time 8 "https://www.radiojar.com/api/stations/8s5u5tpdtwzuv" | head -c 800; echo
-          for p in https://www.maspero.eg/radio https://maspero.eg/radio https://www.maspero.eg/live-radio https://www.maspero.eg; do
-            echo "=== $p"; curl -sL --max-time 10 "$p" -A "$A" | grep -oiE '(https?:)?//[^"'"'"' ]*(stream|radiojar|m3u8|mp3|aac|live|icecast)[^"'"'"' <]*' | sort -u | head -30
+          for n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 19; do
+            curl -sL --max-time 10 "https://www.maspero.eg/stream/$n" -A "$A" > /tmp/p
+            t=$(grep -oiE '<title>[^<]*' /tmp/p | head -1)
+            l=$(grep -oiE '(https?:)?//[^"'"'"' <>]*(radiojar|m3u8|\.mp3|icecast|:[0-9]{4}/)[^"'"'"' <>]*' /tmp/p | sort -u | head -5 | tr '\n' ' ')
+            q=$(grep -c 'القرآن' /tmp/p)
+            echo "[$n] $t | quran=$q | $l"
           done
-          echo "=== maspero quran search"; curl -sL --max-time 10 https://www.maspero.eg -A "$A" | grep -oiE '[^"]{0,80}(القرآن|quran)[^"]{0,120}' | head -20
