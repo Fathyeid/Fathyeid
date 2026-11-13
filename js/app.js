@@ -686,6 +686,8 @@
           <div class="seg" id="alerts"><button data-v="1">مفعّل</button><button data-v="0">معطّل</button></div>
           <small class="muted">${NATIVE ? `يصلك إشعار ${window.NOOR_NATIVE_ADHAN ? 'بصوت الأذان' : 'بصوت التنبيه'} عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.` : 'في نسخة المتصفح يعمل التنبيه أثناء فتح التطبيق فقط. ثبّت تطبيق أندرويد ليصلك الأذان والهاتف مقفول.'}</small>
           ${NATIVE ? '<button class="btn block" id="exactBtn" style="margin-top:8px" hidden>⏰ السماح بالتنبيه في الوقت بالضبط</button><button class="btn ghost block" id="testAdhan" style="margin-top:8px">🔔 تجربة التنبيه بعد ١٠ ثوانٍ</button>' : ''}
+          <button class="btn ghost block" id="hearAdhan" style="margin-top:8px">🔊 استمع لصوت الأذان</button>
+          <small class="muted" style="display:block;margin-top:6px">تسجيل الأذان: «Beautiful adhan» من ويكيميديا كومنز (ترخيص حر CC0).</small>
         </div>
       </div>
       <div class="card">
@@ -720,6 +722,7 @@
     seg('alerts', 'alerts', (v) => v === '1' || v === true);
 
     if ($('#testAdhan')) $('#testAdhan').onclick = () => testAdhan();
+    $('#hearAdhan').onclick = () => { const a = adhanAudio(); if (!a.paused) { a.pause(); a.currentTime = 0; $('#hearAdhan').textContent = '🔊 استمع لصوت الأذان'; return; } window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'adhan' })); a.play().then(() => { $('#hearAdhan').textContent = '⏹ إيقاف الأذان'; }).catch(() => toast('تعذّر تشغيل صوت الأذان')); a.onended = () => { if ($('#hearAdhan')) $('#hearAdhan').textContent = '🔊 استمع لصوت الأذان'; }; };
     if ($('#chkUpd')) $('#chkUpd').onclick = () => checkUpdate(true);
     if ($('#exactBtn')) {
       exactAllowed().then((ok) => { if ($('#exactBtn')) $('#exactBtn').hidden = ok; });
@@ -1205,6 +1208,9 @@
   }
 
   // ---------- تنبيه الأذان ----------
+  let adhanEl = null;
+  const adhanAudio = () => (adhanEl = adhanEl || new Audio('adhan/adhan.mp3'));
+  window.addEventListener('noor:audio', (e) => { if (e.detail !== 'adhan' && adhanEl && !adhanEl.paused) adhanEl.pause(); });
   let lastAlert = store.get('lastAlert', 0);
   setInterval(() => {
     if (!settings.alerts || LN) return;
@@ -1218,6 +1224,7 @@
         store.set('lastAlert', lastAlert);
         const msg = `حان الآن موعد صلاة ${p.name}`;
         toast('🕌 ' + msg);
+        try { window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'adhan' })); adhanAudio().play().catch(() => {}); } catch { /* تجاهل */ }
         if ('Notification' in window && Notification.permission === 'granted') {
           try { new Notification('أثر', { body: msg, icon: 'icons/icon.svg' }); } catch { /* تجاهل */ }
         }

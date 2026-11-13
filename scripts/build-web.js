@@ -9,6 +9,7 @@ for (const f of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'ic
 }
 // هل يوجد ملف أذان مخصص؟
 const hasAdhan = fs.existsSync(path.join(root, 'adhan', 'adhan.mp3'));
+if (hasAdhan) fs.cpSync(path.join(root, 'adhan'), path.join(out, 'adhan'), { recursive: true });
 const code = parseInt(process.env.NOOR_VERSION_CODE || '0', 10);
 const kind = process.env.NOOR_BUILD_KIND || 'local';
 fs.writeFileSync(path.join(out, 'js', 'native-flags.js'),
