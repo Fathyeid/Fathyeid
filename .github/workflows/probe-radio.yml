@@ -1,0 +1,15 @@
+name: فحص روابط الإذاعة
+on:
+  push:
+    branches: [dev]
+    paths: [.github/workflows/probe-radio.yml]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in https://stream.radiojar.com/0tpy1h0kxtzuv https://backup.qurango.net/radio/mishary_alafasi https://backup.qurango.net/radio/ibrahim_alakdar; do
+            echo "=== $u"
+            curl -sS -D - -o /tmp/b -r 0-2000 --max-time 6 -L "$u" -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36" | grep -iE '^(HTTP|location|content-type|access-control|icy-)' || true
+            head -c 16 /tmp/b | xxd | head -2
+          done
