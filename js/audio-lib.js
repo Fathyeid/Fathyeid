@@ -143,7 +143,7 @@
         // البث المباشر قد يفشل في أول اتصال: إعادة المحاولة مرة بعد ثانيتين
         await new Promise((r) => setTimeout(r, 2000));
         if (cur() !== it) return;
-        try { audio.src = it.url + (it.url.includes('?') ? '&' : '?') + 't=' + Date.now(); await audio.play(); mediaMeta(it); render(); return; } catch (e2) { if (e2.name === 'AbortError') return; }
+        try { const u = it.resolve ? await it.resolve() : (it.alt || it.url); if (cur() !== it) return; audio.src = it.resolve ? u : u + (u.includes('?') ? '&' : '?') + 't=' + Date.now(); await audio.play(); mediaMeta(it); render(); return; } catch (e2) { if (e2.name === 'AbortError') return; }
         toast('تعذّر الاتصال بهذه الإذاعة الآن، جرّب إذاعة أخرى أو تأكد من الإنترنت');
         render();
         return;

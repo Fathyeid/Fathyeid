@@ -50,11 +50,21 @@
   }
 
   const favs = () => store.get('radio:fav', []);
-  function play(r) {
+  // بث radiojar يعيد التوجيه إلى http فيحجبه أندرويد؛ خدمة صغيرة على Supabase تعيد الرابط النهائي بصيغة https
+  const RESOLVER = 'https://movodjdwghharkfrgqtv.supabase.co/functions/v1/athar-radio?id=';
+  async function resolveJar(url) {
+    const m = /^https:\/\/stream\.radiojar\.com\/([a-z0-9]+)/i.exec(url);
+    if (!m) return url;
+    try { const j = await (await fetch(RESOLVER + m[1], { cache: 'no-store' })).json(); return j.url || url; } catch { return url; }
+  }
+  async function play(r) {
     const lib = N.audioLib;
     if (!lib) { toast('المشغّل غير متاح'); return; }
     if (navigator.onLine === false) { toast('الإذاعة تحتاج اتصالاً بالإنترنت'); return; }
-    lib.playQueue([{ url: r.url, title: r.name, sub: '📻 بث مباشر', live: true, radio: r.id }], 0);
+    // خادم backup.qurango.net متوقف حالياً؛ الخادم الأساسي qurango.net يعمل بنفس المسارات
+    const jar = /stream\.radiojar\.com/.test(r.url);
+    const url = jar ? await resolveJar(r.url) : r.url.replace('//backup.qurango.net/', '//qurango.net/');
+    lib.playQueue([{ url, alt: url !== r.url && !jar ? r.url : null, resolve: jar ? () => resolveJar(r.url) : null, title: r.name, sub: '📻 بث مباشر', live: true, radio: r.id }], 0);
     store.set('radio:last', r);
     toast(`جارٍ تشغيل: ${r.name}`);
     setTimeout(paint, 300);
