@@ -2,7 +2,7 @@ name: جلب تصنيفات ومواد IslamHouse
 on:
   push:
     branches: [dev]
-    paths: [scripts/ih-*.py, .github/workflows/fetch-ih.yml]
+    paths: [scripts/ih-index.py, .github/workflows/fetch-ih.yml]
   workflow_dispatch:
 permissions:
   contents: write
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/ih-tree.py
+      - run: python3 scripts/ih-index.py
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
