@@ -686,5 +686,5 @@
     bindResume(d);
   });
 
-  N.audioLib = { playQueue, enqueue, loadReciters, dlIndex, removeDl, cur: () => cur(), audio, VERSE_RECITERS };
+  N.audioLib = { playQueue, enqueue, loadReciters, dlIndex, removeDl, dlState, cancelAll, onDl: (f) => { DL.subs.add(f); return () => DL.subs.delete(f); }, cur: () => cur(), audio, VERSE_RECITERS };
 });

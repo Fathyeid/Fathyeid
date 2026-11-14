@@ -48,6 +48,7 @@
         <button data-go="encs"><span>📚</span><b>موسوعة العلماء</b><small>${ar(Object.values(E.scholars).flat().length)} عالماً في ${ar(E.scholarCats.length)} تخصصات</small></button>
         <button data-go="ench"><span>🏛️</span><b>التاريخ الإسلامي</b><small>خط زمني و${ar(E.history.length)} حدثاً ودولة ومعركة</small></button>
         <button data-go="enca"><span>⏳</span><b>موسوعة اليوم الآخر</b><small>من القرآن والأحاديث الصحيحة</small></button>
+        <button data-go="lib/all"><span>📖</span><b>المكتبة العلمية</b><small>كتب PDF وصوتيات ومرئيات من دار الإسلام</small></button>
         <button data-go="encme"><span>⭐</span><b>متابعتي</b><small>آخر ما قرأت والمحفوظات والتقدّم</small></button>
       </div>
       ${last.length ? `<h3 class="dash-sec">📌 آخر ما قرأت</h3><div class="chips" style="justify-content:flex-start">${last.map((k) => `<button class="chip" data-a="${esc(k)}">${esc(k)}</button>`).join('')}</div>` : ''}
@@ -65,6 +66,7 @@
       N.view.innerHTML = `
         <button class="card continue enc-adab" data-go="encma" style="width:100%"><div><small class="muted">🧎 آداب وأحكام المساجد</small><br><b>أحاديث صحيحة بتخريجها</b></div><span class="btn">فتح</span></button>
         ${E.mosques.map(([k, place]) => artCard(k, W, '📍 ' + place)).join('')}
+        <button class="btn block" data-go="lib/masajid" style="margin-bottom:8px">📚 كتب وصوتيات عن المساجد وأحكامها</button>
         <button class="btn ghost block" data-go="dtopic/seerah">🎬 محاضرات السيرة والتاريخ في المكتبة الدعوية</button>`;
       bindCards(N.view);
       $$('[data-go]', N.view).forEach((b) => { b.onclick = () => go(b.dataset.go); });
@@ -87,7 +89,9 @@
       const c = cat && E.scholars[cat] ? cat : E.scholarCats[0][0];
       N.view.innerHTML = `
         <div class="chips enc-tabs">${E.scholarCats.map(([k, t, ic]) => `<button class="chip ${k === c ? 'active' : ''}" data-c="${k}">${ic} ${t}</button>`).join('')}</div>
-        ${E.scholars[c].map((k) => artCard(k, W, (E.scholarCats.find((x) => x[0] === c) || [])[1])).join('')}`;
+        ${E.scholars[c].map((k) => artCard(k, W, (E.scholarCats.find((x) => x[0] === c) || [])[1])).join('')}
+        <button class="btn block" data-go="lib/ulama">📚 كتب التراجم وسير الأعلام</button>`;
+      $$('[data-go]', N.view).forEach((b) => { b.onclick = () => go(b.dataset.go); });
       bindCards(N.view);
       $$('[data-c]', N.view).forEach((b) => { b.onclick = () => go(`encs/${b.dataset.c}`); });
     });
@@ -106,6 +110,7 @@
         ${t === 'timeline' ? `<div class="enc-tl">${list.filter((h) => W.pages[h[0]]).map((h) => `<button class="enc-tl-i" data-a="${esc(h[0])}"><span class="enc-tl-y">${yearLbl(h)}</span><b>${E.historyTypes[h[1]][1]} ${esc(h[0])}</b></button>`).join('')}</div>`
           : list.map((h) => artCard(h[0], W, '🗓️ ' + yearLbl(h))).join('')}
         <p class="muted enc-note">التواريخ المعلَّمة «تقريباً» يختلف فيها المؤرخون أو تمتد على فترة؛ وتفاصيل الروايات ومواضع الخلاف في كل مقال ومراجعه.</p>
+        <button class="btn block" data-go="lib/tarikh" style="margin-bottom:8px">📚 كتب وصوتيات التاريخ والسيرة</button>
         <button class="btn ghost block" data-go="dtopic/seerah">🎬 محاضرات السيرة في المكتبة الدعوية</button>`;
       bindCards(N.view);
       $$('[data-t]', N.view).forEach((b) => { b.onclick = () => go(`ench/${b.dataset.t}`); });
@@ -118,6 +123,7 @@
     N.view.innerHTML = `
       <div class="card"><p class="ayah-text" style="font-size:1.35rem">﴿${esc(E.ayat['3:185-185'].t)}﴾</p><div class="ref">آل عمران: ١٨٥</div></div>
       <div class="enc-hub">${E.akhirah.map((x) => `<button data-k="${x.k}"><span>${x.ic}</span><b>${x.t}</b><small>${ar(x.q.length)} آية/مقطع • ${ar(x.h.length)} باب حديث</small></button>`).join('')}</div>
+      <button class="btn block" data-go="lib/akhirah" style="margin-bottom:8px">📚 كتب وصوتيات عن اليوم الآخر والجنائز</button>
       <button class="btn ghost block" data-go="dtopic/akhirah">🎬 محاضرات عن الآخرة في المكتبة الدعوية</button>
       <p class="muted enc-note">هذه الموسوعة تعتمد على نص القرآن الكريم وأبواب الصحيحين فقط، دون قصص غير ثابتة أو تفاصيل غيبية لم ترد بها النصوص.</p>`;
     $$('[data-k]', N.view).forEach((b) => { b.onclick = () => go(`encak/${b.dataset.k}`); });
@@ -207,20 +213,22 @@
   function renderSearch(qEnc) {
     const q = decodeURIComponent(qEnc || '');
     loader();
-    wiki().then((W) => {
+    Promise.all([wiki(), N.lib ? N.lib.index().catch(() => null) : null]).then(([W, LI]) => {
       const words = normAr(q).split(/\s+/).filter((w) => w.length > 1);
       const hit = (s) => words.every((w) => normAr(s).includes(w));
       const arts = Object.entries(W.pages).filter(([k, p]) => (MPLACE[k] || SCAT[k] || HTYPE[k]) && hit(k + ' ' + p.title + ' ' + p.intro)).map(([k]) => k);
       const groups = [['🕌 المساجد', arts.filter((k) => kindOf(k) === 'm')], ['📚 العلماء', arts.filter((k) => kindOf(k) === 's')], ['🏛️ التاريخ', arts.filter((k) => kindOf(k) === 'h')]];
       const akh = E.akhirah.filter((x) => hit(x.t + ' ' + x.h.map((h) => h[2]).join(' ')));
       const acad = (typeof ACADEMY !== 'undefined' ? ACADEMY : []).flatMap((t) => (t.levels || []).flatMap((l, li) => (l.lessons || []).filter((s) => hit(s + ' ' + t.title)).map((s) => [t.id, li, s, t.title])));
-      const total = arts.length + akh.length + acad.length;
+      const libHits = LI ? LI.items.filter((x) => hit(`${x.t} ${x.au.join(' ')} ${x.d}`)) : [];
+      const total = arts.length + akh.length + acad.length + libHits.length;
       N.view.innerHTML = `
         <form class="az-search" id="encS2"><input id="encQ2" type="search" value="${esc(q)}"><button class="btn">بحث</button></form>
         <p class="muted">${ar(total)} نتيجة لـ «${esc(q)}»</p>
         ${groups.filter((g) => g[1].length).map(([t, l]) => `<h3 class="dash-sec">${t}</h3>${l.map((k) => artCard(k, W, '')).join('')}`).join('')}
         ${akh.length ? `<h3 class="dash-sec">⏳ اليوم الآخر</h3>${akh.map((x) => `<button class="btn ghost block" style="margin-bottom:6px" data-go="encak/${x.k}">${x.ic} ${x.t}</button>`).join('')}` : ''}
         ${acad.length ? `<h3 class="dash-sec">🎓 دروس الأكاديمية</h3>${acad.slice(0, 30).map(([id, li, s, tt]) => `<button class="btn ghost block" style="margin-bottom:6px" data-go="track/${id}">${esc(s)} <small class="muted">— ${esc(tt)}</small></button>`).join('')}` : ''}
+        ${libHits.length ? `<h3 class="dash-sec">📖 المكتبة العلمية (${ar(libHits.length)})</h3>${libHits.slice(0, 25).map((x) => `<button class="btn ghost block" style="margin-bottom:6px;text-align:start" data-go="libi/${x.id}">${{ b: '📕', a: '🎧', v: '🎬' }[x.y]} ${esc(x.t)} <small class="muted">— ${esc(x.au.join('، '))}</small></button>`).join('')}` : ''}
         ${total ? '' : '<div class="card center muted">لا توجد نتائج. جرّب: الأزهر، البخاري، حطين، العباسية، الميزان…</div>'}
         <button class="btn ghost block" data-go="dsearch/${encodeURIComponent(q)}">🎬 ابحث عن «${esc(q)}» في المحاضرات المرئية</button>`;
       bindCards(N.view);
@@ -237,7 +245,8 @@
       const F = favs().filter((k) => W.pages[k]); const R = readList().filter((k) => W.pages[k]); const full = store.get('enc:full', []);
       N.view.innerHTML = `
         <div class="az-stats card"><div><b>${ar(R.length)}</b><small>مقالاً قرأته</small></div><div><b>${ar(full.length)}</b><small>محفوظ للقراءة بلا إنترنت</small></div><div><b>${ar(F.length)}</b><small>في المحفوظات</small></div></div>
-        <button class="btn block" data-go="academy" style="margin-bottom:14px">🎓 تقدّمي في الأكاديمية والشهادات</button>
+        <button class="btn block" data-go="academy" style="margin-bottom:8px">🎓 تقدّمي في الأكاديمية والشهادات</button>
+        <button class="btn ghost block" data-go="libme" style="margin-bottom:14px">📖 مكتبتي: الكتب والتحميلات وآخر صفحة</button>
         ${F.length ? `<h3 class="dash-sec">⭐ المحفوظات</h3>${F.map((k) => artCard(k, W, '')).join('')}` : ''}
         ${R.length ? `<h3 class="dash-sec">🕘 سجل القراءة</h3>${R.slice(0, 15).map((k) => artCard(k, W, '')).join('')}` : '<div class="card center muted">لم تقرأ أي مقال بعد</div>'}
         ${prog ? '' : ''}`;

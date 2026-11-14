@@ -23,6 +23,9 @@ for sec, cats in SECTIONS.items():
             while page <= 40:
                 d = get(f'{B}/main/get-category-items/{cat}/{typ}/ar/ar/{page}/50/json')
                 data = d.get('data') or []
+                if isinstance(data, dict): data = list(data.values())
+                data = [it for it in data if isinstance(it, dict) and it.get('id')]
+                if page == 1: print(' ', sec, cat, typ, 'total', (d.get('links') or {}).get('total_items'), 'got', len(data), flush=True)
                 for it in data:
                     if it.get('translated_language', 'ar') != 'ar': continue
                     x = items.setdefault(it['id'], {'id': it['id'], 't': (it.get('title') or '').strip(), 'y': y,
