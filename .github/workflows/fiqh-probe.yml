@@ -1,0 +1,23 @@
+name: فحص صلاحيات الموسوعة الفقهية
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths: ['.github/workflows/fiqh-probe.yml']
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: قراءة وكتابة بالمفتاح العام
+        env:
+          SB: https://movodjdwghharkfrgqtv.supabase.co
+          KEY: sb_publishable_41NxOHPNTwzGP5nvZOt2UQ_m7FMSyY4
+        run: |
+          echo "== READ books =="
+          curl -s "$SB/rest/v1/fiqh_books?select=id,title,index_status,fiqh_authors(short_name,died_ah)&order=id" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" | python3 -c "import sys,json;d=json.load(sys.stdin);print(len(d),'rows');[print(b['id'],b['title'],'|',(b['fiqh_authors'] or {}).get('short_name'),'|',b['index_status']) for b in d]"
+          echo "== READ topics =="
+          curl -s "$SB/rest/v1/fiqh_topics?select=slug,name" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" | python3 -c "import sys,json;print(len(json.load(sys.stdin)),'topics')"
+          echo "== WRITE attempt (must fail) =="
+          curl -s -o /dev/stderr -w "insert HTTP %{http_code}\n" -X POST "$SB/rest/v1/fiqh_books" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{"title":"x","madhhab":"other","field":"fiqh","rights_status":"open","source_id":1}'
+          curl -s -o /dev/stderr -w "update HTTP %{http_code}\n" -X PATCH "$SB/rest/v1/fiqh_books?id=eq.1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -H "Prefer: return=representation" -d '{"title":"x"}'
+          curl -s -o /dev/stderr -w "delete HTTP %{http_code}\n" -X DELETE "$SB/rest/v1/fiqh_books?id=eq.1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Prefer: return=representation"
