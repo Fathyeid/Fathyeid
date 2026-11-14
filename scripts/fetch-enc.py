@@ -43,12 +43,17 @@ def fetch(titles):
         time.sleep(1)
     return out, missing
 
-all_titles = list(T['mosques']) + [t for v in T['scholars'].values() for t in v] + list(T['history'])
-data, missing = fetch(all_titles)
-# المقدمات القصيرة جداً (صفحات توضيح) تُعدّ ناقصة
-for t, v in list(data.items()):
-    if len(v['intro']) < 80 or 'قد يشير إلى' in v['intro'] or 'يمكن أن يشير' in v['intro']:
-        missing.append(t + ' (توضيح/قصير)'); del data[t]
+entries = list(T['mosques']) + [t for v in T['scholars'].values() for t in v] + list(T['history'])
+# كل عنصر قد يحوي بدائل مفصولة بـ || ؛ يُعتمد أول بديل صالح (ليس صفحة توضيح) ويُحفظ باسم البديل الأول
+alts = {e.split('||')[0]: e.split('||') for e in entries}
+flat = sorted({a for v in alts.values() for a in v})
+raw, _ = fetch(flat)
+ok = lambda v: v and len(v['intro']) >= 80 and '(توضيح)' not in v['title'] and 'قد يشير إلى' not in v['intro'] and 'قد يُقصد' not in v['intro'] and 'يمكن أن يشير' not in v['intro']
+data, missing = {}, []
+for k, lst in alts.items():
+    hit = next((raw.get(a) for a in lst if ok(raw.get(a))), None)
+    if hit: data[k] = hit
+    else: missing.append(k)
 os.makedirs(os.path.join(ROOT, 'data'), exist_ok=True)
 json.dump({'source': 'ويكيبيديا العربية — CC BY-SA 4.0', 'fetched': time.strftime('%Y-%m-%d'), 'pages': data},
           open(os.path.join(ROOT, 'data/enc-wiki.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
