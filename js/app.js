@@ -684,7 +684,8 @@
         </div>
         <div class="field"><label>تنبيه عند دخول وقت الصلاة</label>
           <div class="seg" id="alerts"><button data-v="1">مفعّل</button><button data-v="0">معطّل</button></div>
-          <small class="muted">${NATIVE ? `يصلك إشعار ${window.NOOR_NATIVE_ADHAN ? 'بصوت الأذان' : 'بصوت التنبيه'} عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.` : 'في نسخة المتصفح يعمل التنبيه أثناء فتح التطبيق فقط. ثبّت تطبيق أندرويد ليصلك الأذان والهاتف مقفول.'}</small>
+          <small class="muted" id="adhanNote">${NATIVE ? 'يصلك إشعار عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.' : 'في نسخة المتصفح يعمل الأذان أثناء فتح التطبيق فقط. ثبّت تطبيق أندرويد ليصلك الأذان والهاتف مقفول.'}</small>
+          ${NATIVE ? '<a class="btn block" id="voiceApk" hidden style="margin-top:8px" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تفعيل صوت المؤذن والهاتف مقفول (تثبيت النسخة الأحدث — اختياري)</a>' : ''}
           ${NATIVE ? '<button class="btn block" id="exactBtn" style="margin-top:8px" hidden>⏰ السماح بالتنبيه في الوقت بالضبط</button><button class="btn ghost block" id="testAdhan" style="margin-top:8px">🔔 تجربة التنبيه بعد ١٠ ثوانٍ</button>' : ''}
           <button class="btn ghost block" id="hearAdhan" style="margin-top:8px">🔊 استمع لصوت الأذان</button>
           <small class="muted" style="display:block;margin-top:6px">تسجيل الأذان: «Beautiful adhan» من ويكيميديا كومنز (ترخيص حر CC0).</small>
@@ -722,6 +723,7 @@
     seg('alerts', 'alerts', (v) => v === '1' || v === true);
 
     if ($('#testAdhan')) $('#testAdhan').onclick = () => testAdhan();
+    if (NATIVE) hasVoice().then((v) => { const n = $('#adhanNote'); if (n) n.textContent = v ? 'يصلك الأذان بصوت المؤذن عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.' : 'يصلك إشعار بصوت التنبيه عند دخول كل صلاة. لسماع صوت المؤذن والهاتف مقفول ثبّت النسخة الأحدث مرة واحدة (اختياري، ولا تُحذف بياناتك).'; const b = $('#voiceApk'); if (b) b.hidden = v; });
     $('#hearAdhan').onclick = () => { const a = adhanAudio(); if (!a.paused) { a.pause(); a.currentTime = 0; $('#hearAdhan').textContent = '🔊 استمع لصوت الأذان'; return; } window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'adhan' })); a.play().then(() => { $('#hearAdhan').textContent = '⏹ إيقاف الأذان'; }).catch(() => toast('تعذّر تشغيل صوت الأذان')); a.onended = () => { if ($('#hearAdhan')) $('#hearAdhan').textContent = '🔊 استمع لصوت الأذان'; }; };
     if ($('#chkUpd')) $('#chkUpd').onclick = () => checkUpdate(true);
     if ($('#exactBtn')) {
@@ -1057,7 +1059,14 @@
 
   // ---------- الأذان في تطبيق أندرويد (إشعارات مجدولة تعمل والهاتف مقفول) ----------
   const LN = NATIVE && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
-  const ADHAN_CHANNEL = window.NOOR_NATIVE_ADHAN ? 'adhan-voice' : 'adhan-alert';
+  // صوت المؤذن مدمج في نسخ التطبيق الأصلية من المستوى ٤ فأعلى؛ النسخ الأقدم تبقى بصوت التنبيه حتى يثبّت المستخدم النسخة الجديدة (اختيارياً)
+  let ADHAN_CHANNEL = 'adhan-alert';
+  let voiceKnown = null;
+  async function hasVoice() {
+    if (voiceKnown === null) voiceKnown = !!window.NOOR_NATIVE_ADHAN && (await nativeLevel()) >= 4;
+    ADHAN_CHANNEL = voiceKnown ? 'adhan-voice' : 'adhan-alert';
+    return voiceKnown;
+  }
   let channelReady = false;
   async function ensureNotify() {
     if (!LN) return false;
@@ -1065,6 +1074,7 @@
     if (perm.display !== 'granted') perm = await LN.requestPermissions();
     if (perm.display !== 'granted') return false;
     if (!channelReady) {
+      const voice = await hasVoice();
       await LN.createChannel({
         id: ADHAN_CHANNEL,
         name: 'الأذان ومواقيت الصلاة',
@@ -1073,7 +1083,7 @@
         visibility: 1,
         vibration: true,
         lights: true,
-        ...(window.NOOR_NATIVE_ADHAN ? { sound: 'adhan.mp3' } : {}),
+        ...(voice ? { sound: 'adhan.mp3' } : {}),
       });
       channelReady = true;
     }
@@ -1213,7 +1223,7 @@
   window.addEventListener('noor:audio', (e) => { if (e.detail !== 'adhan' && adhanEl && !adhanEl.paused) adhanEl.pause(); });
   let lastAlert = store.get('lastAlert', 0);
   setInterval(() => {
-    if (!settings.alerts || LN) return;
+    if (!settings.alerts || (LN && voiceKnown !== false) || document.visibilityState !== 'visible' && LN) return; // في النسخ الأقدم: يُشغَّل صوت المؤذن داخل التطبيق إن كان مفتوحاً
     const now = new Date();
     const t = timesFor(now);
     for (const p of PRAYERS) {

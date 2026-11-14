@@ -37,6 +37,7 @@ jobs:
           # رقم يزيد دائماً (بالدقائق منذ ٢٠٢٦) ليُثبَّت كل تحديث فوق النسخة السابقة
           echo "NOOR_VERSION_CODE=$(( ($(date +%s) - 1767225600) / 60 ))" >> "$GITHUB_ENV"
           echo "NOOR_NATIVE_LEVEL=$(cat android/native-level.txt | tr -d '[:space:]')" >> "$GITHUB_ENV"
+          echo "NOOR_MIN_NATIVE=$(cat android/min-native-level.txt | tr -d '[:space:]')" >> "$GITHUB_ENV"
           echo "NOOR_BUILD_KIND=public" >> "$GITHUB_ENV"
 
       - name: تجهيز ملفات التطبيق
@@ -101,7 +102,7 @@ jobs:
 
             VERSION_CODE=${{ env.NOOR_VERSION_CODE }}
             WEB_CODE=${{ env.NOOR_VERSION_CODE }}
-            NATIVE_LEVEL=${{ env.NOOR_NATIVE_LEVEL }}
+            NATIVE_LEVEL=${{ env.NOOR_MIN_NATIVE }}
             WEB_SHA256=${{ env.NOOR_WEB_SHA256 }}
           files: |
             athar.apk
