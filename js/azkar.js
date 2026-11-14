@@ -288,7 +288,7 @@
     try {
       const R = store.get('az:rem', {});
       const D = dayRem();
-      await ln.cancel({ notifications: REM.map((r) => ({ id: r.id })).concat(Array.from({ length: 24 }, (_, i) => ({ id: 3110 + i }))) });
+      await ln.cancel({ notifications: REM.map((r) => ({ id: r.id })).concat(Array.from({ length: 24 }, (_, i) => ({ id: 3110 + i })), Array.from({ length: 100 }, (_, i) => ({ id: 3200 + i }))) });
       const on = REM.filter((r) => R[r.k]);
       const slots = daySlots(D);
       if (N.scheduleAdhan) N.scheduleAdhan(); // أذكار ما بعد الصلاة تُجدول مع مواقيت الأذان
@@ -296,12 +296,34 @@
       let perm = await ln.checkPermissions(); if (perm.display !== 'granted') perm = await ln.requestPermissions(); if (perm.display !== 'granted') return;
       await ln.createChannel({ id: 'azkar', name: 'تذكير الأذكار', description: 'أذكار الصباح والمساء والنوم والتذكير بالذكر خلال اليوم', importance: 4, visibility: 1 });
       const list = on.map((r) => { const [hour, minute] = R[r.k].split(':').map(Number); const sch = { hour, minute }; if (r.weekday) sch.weekday = r.weekday; return { id: r.id, title: `حان وقت ${r.t} 📿`, body: '﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾ — افتح «أثر»', channelId: 'azkar', extra: { route: r.route }, schedule: { on: sch, allowWhileIdle: true } }; });
-      slots.forEach(([hour, minute], i) => { const z = SHORT[i % SHORT.length]; list.push({ id: 3110 + i, title: '📿 تذكير بالذكر', body: `${z.t}\n${z.f}`, channelId: 'azkar', extra: { route: 'tasbih' }, schedule: { on: { hour, minute }, allowWhileIdle: true } }); });
+      // جدولة أسبوع كامل بتواريخ محددة حتى يتغيّر الذكر كل مرة وكل يوم
+      const now = new Date();
+      const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 864e5);
+      for (let d = 0; d < 7; d++) {
+        slots.forEach(([hour, minute], i) => {
+          const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, hour, minute);
+          if (at <= now) return;
+          const z = SHORT[((doy + d) * slots.length + i) % SHORT.length];
+          list.push({ id: 3200 + d * 14 + i, title: TITLES[(doy + d + i) % TITLES.length], body: `${z.t}\n— ${z.f}`, largeBody: `${z.t}\n— ${z.f}`, channelId: 'azkar', extra: { route: 'tasbih' }, schedule: { at, allowWhileIdle: true }, autoCancel: true });
+        });
+      }
       await ln.schedule({ notifications: list });
     } catch (e) { console.warn('azkar reminders', e); }
   }
+  const TITLES = ['📿 لحظة ذكر', '🤍 ذكّر قلبك', '📿 سبّح الله', '🌿 أثرٌ يبقى', '📿 لا تنسَ ذكر الله'];
   // أذكار قصيرة صحيحة للتذكير خلال اليوم (كل ذكر بمصدره)
   const SHORT = [
+    { t: 'سُبْحَانَ اللَّهِ', f: '«أيعجز أحدكم أن يكسب كل يوم ألف حسنة؟… يسبّح مائة تسبيحة» — رواه مسلم' },
+    { t: 'الْحَمْدُ لِلَّهِ', f: '«والحمد لله تملأ الميزان» — رواه مسلم' },
+    { t: 'سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ', f: '«تملآن ما بين السماوات والأرض» — رواه مسلم' },
+    { t: 'لَا إِلَهَ إِلَّا اللَّهُ', f: '«أفضل الذكر لا إله إلا الله» — رواه الترمذي وحسّنه الألباني' },
+    { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', f: '«من قالها في يوم مائة مرة حُطّت خطاياه وإن كانت مثل زبد البحر» — متفق عليه' },
+    { t: 'رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيمُ', f: 'كان النبي ﷺ يقولها في المجلس مائة مرة — رواه أبو داود والترمذي وصححه الألباني' },
+    { t: 'اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ', f: 'رواه أبو داود والنسائي وصححه الألباني' },
+    { t: 'حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ', f: 'سورة التوبة: ١٢٩' },
+    { t: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ', f: 'سورة البقرة: ٢٠١ — وكان أكثر دعاء النبي ﷺ (متفق عليه)' },
+    { t: 'يَا مُقَلِّبَ الْقُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ', f: 'رواه الترمذي وصححه الألباني' },
+    { t: 'اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي', f: 'رواه الترمذي وصححه الألباني' },
     { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', f: '«كلمتان خفيفتان على اللسان، ثقيلتان في الميزان» — متفق عليه' },
     { t: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ', f: '«من صلى عليّ صلاة صلى الله عليه بها عشراً» — رواه مسلم' },
     { t: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', f: '«كنز من كنوز الجنة» — متفق عليه' },
@@ -311,12 +333,12 @@
     { t: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ', f: 'متفق عليه' },
     { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ وَرِضَا نَفْسِهِ وَزِنَةَ عَرْشِهِ وَمِدَادَ كَلِمَاتِهِ', f: 'رواه مسلم' },
   ];
-  const dayRem = () => Object.assign({ every: 0, from: '09:00', to: '22:00', after: false }, store.get('az:rem2', {}));
+  const dayRem = () => Object.assign({ every: 3, from: '09:00', to: '21:00', after: false }, store.get('az:rem2', {}));
   function daySlots(D) {
     if (!D.every) return [];
     const m = (s) => { const [h, x] = s.split(':').map(Number); return h * 60 + x; };
     const out = [];
-    for (let t = m(D.from); t <= m(D.to) && out.length < 24; t += D.every * 60) out.push([Math.floor(t / 60), t % 60]);
+    for (let t = m(D.from); t <= m(D.to) && out.length < 14; t += D.every * 60) out.push([Math.floor(t / 60), t % 60]);
     return out;
   }
   N.azAfterPrayer = () => dayRem().after;
@@ -363,6 +385,8 @@
   const ln = LN();
   if (ln) {
     setTimeout(scheduleRem, 3500);
+    // إعادة الجدولة عند فتح التطبيق (مرة كل ٦ ساعات على الأكثر) ليبقى أسبوع كامل من التذكير مجدولاً
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - store.get('az:sched', 0) > 6 * 36e5) { store.set('az:sched', Date.now()); scheduleRem(); } });
     try { ln.addListener('localNotificationActionPerformed', (e) => { const r = e && e.notification && e.notification.extra && e.notification.extra.route; if (r) go(r); }); } catch (e) { /* */ }
   }
 });
