@@ -910,3 +910,15 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .share-apps { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 8px; margin: 4px 0 6px; }
 .share-app { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); color: inherit; text-decoration: none; font: 700 .82rem Tajawal, sans-serif; }
 .share-app span { font-size: 1.4rem; }
+/* اسأل الموسوعة */
+.fq-q p { font-size: 1.05rem; font-weight: 700; margin: 4px 0 0; line-height: 1.7; }
+.fq-ans-src { border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 10px; }
+.fq-mad { padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.fq-mad p { margin: 4px 0; font-family: Amiri, serif; font-size: 1rem; line-height: 1.9; }
+.fq-mad-h { margin: 14px 0 4px; color: var(--primary); }
+.fq-ev { font-family: Amiri, serif; font-size: 1.02rem; line-height: 1.9; margin: 8px 0; }
+.fq-ev.q { font-family: "Amiri Quran", Amiri, serif; }
+.fq-ev small { display: block; font-family: Tajawal, sans-serif; color: var(--muted); font-size: .76rem; }
+.fq-refs { padding-inline-start: 20px; margin: 6px 0; font-size: .84rem; line-height: 1.9; }
+.fq-lvl { padding: 2px 10px; border-radius: 999px; font-size: .85rem; }
+.fq-lvl.hi { background: #1e844922; color: #1e8449; } .fq-lvl.mid { background: #d6891022; color: #b9770e; } .fq-lvl.lo { background: #c0392b22; color: #c0392b; }

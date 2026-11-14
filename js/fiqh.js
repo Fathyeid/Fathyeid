@@ -30,7 +30,7 @@
 
   // ---------- الرئيسية ----------
   const TILES = [
-    ['ask', '💬', 'اسأل الموسوعة', 'سؤال بلغتك يُبحث له في المصادر', 4],
+    ['ask', '💬', 'اسأل الموسوعة', 'سؤال بلغتك وإجابة من نصوص الكتب بتوثيقها', 0],
     ['lib', '📚', 'مكتبة الكتب والمراجع', 'الكتب المعتمدة وحالة كل كتاب', 0],
     ['madhahib', '🕌', 'المذاهب الأربعة', 'كتب كل مذهب ومقارنة الأقوال', 5],
     ['contract', '🔍', 'تحليل العقود والمعاملات', 'فحص المعاملة الآن، وتحليل العقد كاملاً لاحقاً', 0],
@@ -56,7 +56,7 @@
     $$('.fq-tile').forEach((b) => { b.onclick = () => {
       const k = b.dataset.k; const ph = +b.dataset.ph;
       if (ph) { toast(`هذا القسم يُبنى في المرحلة ${ar(ph)} بإذن الله`); return; }
-      const R = { lib: 'fqlib', contract: 'c/contract', quran: 'quran', hadith: 'hadith', fatawa: 'fqlib/fatawa', saved: 'fqsaved', hist: 'fqhist' };
+      const R = { ask: 'fqask', lib: 'fqlib', contract: 'c/contract', quran: 'quran', hadith: 'hadith', fatawa: 'fqlib/fatawa', saved: 'fqsaved', hist: 'fqhist' };
       go(R[k]);
     }; });
     $$('[data-q]').forEach((b) => { b.onclick = () => go(`fqs/${encodeURIComponent(b.dataset.q)}`); });
@@ -144,7 +144,7 @@
     store.set(`fiqh:pos:${b.id}`, seq);
     const total = b.indexed_chunks || seq;
     const hq = qA ? decodeURIComponent(qA) : ''; const hrx = hq ? termRx(hq) : null;
-    let body = esc(c.body);
+    let body = esc(c.body.replace(/<[^>]+>/g, ''));
     if (hrx) body = body.replace(hrx, '<mark>$1</mark>');
     body = body.replace(/【([^】]*)】/g, '<b class="fq-h">$1</b>');
     N.view.innerHTML = `
@@ -159,7 +159,7 @@
     const bs = $('#fqBackS'); if (bs) bs.onclick = () => go(`fqs/${qA}`);
     const mk = $('.fq-page mark'); if (mk) setTimeout(() => mk.scrollIntoView({ block: 'center' }), 50);
     $('#fqCp').onclick = async () => { try { await navigator.clipboard.writeText(cite(b, c)); toast('نُسخ التوثيق'); } catch { toast(cite(b, c)); } };
-    $('#fqSh').onclick = () => N.shareText(`${c.body.replace(/【|】/g, '')}\n\n— ${cite(b, c)}`);
+    $('#fqSh').onclick = () => N.shareText(`${c.body.replace(/<[^>]+>/g, '').replace(/【|】/g, '')}\n\n— ${cite(b, c)}`);
     const J = $('#fqJ');
     if (J) J.onsubmit = async (e) => {
       e.preventDefault(); const v = parseInt($('#fqJv').value, 10); const pg = parseInt($('#fqJp').value, 10);
@@ -187,7 +187,7 @@
     return new RegExp(`(${pat.join('|')})`, 'g');
   }
   function snippet(body, rx, len = 260) {
-    const clean = body.replace(/【([^】]*)】/g, '«$1» ');
+    const clean = String(body).replace(/<[^>]+>/g, '').replace(/【([^】]*)】/g, '«$1» ');
     let i = 0;
     if (rx) { rx.lastIndex = 0; const m = rx.exec(clean); if (m) i = Math.max(0, m.index - 90); }
     let t = clean.slice(i, i + len);
