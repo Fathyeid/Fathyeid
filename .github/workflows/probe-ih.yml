@@ -1,0 +1,24 @@
+name: فحص سريع لتصنيفات IslamHouse
+on:
+  push:
+    branches: [dev]
+    paths: [.github/workflows/probe-ih.yml]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          python3 - <<'PY'
+          import json, urllib.request
+          B='https://api3.islamhouse.com/v3/paV29H2gm56kvLPy'
+          g=lambda u: json.load(urllib.request.urlopen(u, timeout=30))
+          top=g(B+'/categories/showall/ar/json')
+          print('TOP', len(top)); [print(' ', c['id'], c['source_id'], c['title']) for c in top]
+          d=g(top[0]['apiurl']); print('VIEWCAT type', type(d).__name__)
+          if isinstance(d, dict):
+              print('KEYS', list(d.keys()))
+              for k,v in d.items():
+                  if isinstance(v, list): print(k, len(v), json.dumps(v[:2], ensure_ascii=False)[:600])
+                  else: print(k, json.dumps(v, ensure_ascii=False)[:300])
+          else: print(json.dumps(d[:3], ensure_ascii=False)[:1500])
+          PY
