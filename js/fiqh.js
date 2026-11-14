@@ -47,9 +47,10 @@
     N.view.innerHTML = `
       <section class="fq-hero"><h2>الموسوعة الفقهية الإسلامية</h2><p>ابحث في كتب المذاهب الأربعة وأصول الفقه والفتاوى، مع التوثيق بالكتاب والجزء والصفحة.</p>
         <form class="fq-search" id="fqF"><input id="fqQ" type="search" placeholder="ابحث عن مسألة أو كتاب أو مؤلف…" autocomplete="off">${SR ? '<button type="button" class="fq-mic" id="fqMic" aria-label="بحث صوتي">🎙️</button>' : ''}<button class="btn" type="submit">بحث</button></form>
-        <small class="fq-note">البحث الآن في أسماء الكتب والمؤلفين والأبواب؛ والبحث داخل نصوص الكتب يُفعَّل بعد فهرستها.</small></section>
+        <small class="fq-note">يبحث داخل نصوص الكتب المفهرسة وفي أسماء الكتب والمؤلفين. ضع العبارة بين علامتي تنصيص "…" للبحث عنها كما هي.</small></section>
       <div class="fq-grid">${TILES.map(([k, ic, t, d, ph]) => `<button class="fq-tile ${ph ? 'soon' : ''}" data-k="${k}" data-ph="${ph}"><span class="fq-ic">${ic}</span><b>${t}</b><small>${ph ? `قيد الإنشاء — المرحلة ${ar(ph)}` : d}</small></button>`).join('')}</div>
       ${H.length ? `<h3 class="dash-sec">🔎 عمليات بحثك الأخيرة</h3><div class="chips" style="justify-content:flex-start">${H.slice(0, 8).map((x) => `<button class="chip" data-q="${esc(x.q)}">${esc(x.q)}</button>`).join('')}</div>` : ''}
+      <div id="fqTop"></div>
       <div class="card" id="fqStats"><div class="loader" style="margin:10px auto"></div></div>
       <div class="card calc-disc"><b>⚖️ منهج الموسوعة</b><p>تُعرض النصوص من مصادرها الأصلية منسوبة إلى الكتاب والطبعة والجزء والصفحة، ولا يُنسب قول إلى مذهب دون مرجع. ما تعرضه الموسوعة مادة علمية للبحث وليس فتوى؛ والمسائل الخاصة يُرجع فيها إلى المفتين ودور الإفتاء.</p></div>`;
     $$('.fq-tile').forEach((b) => { b.onclick = () => {
@@ -71,6 +72,11 @@
         r.start();
       } catch { toast('البحث الصوتي غير مدعوم على هذا الجهاز'); }
     };
+    rpc('fiqh_top_searches', { days: 30, lim: 10 }).then((T) => {
+      const el = $('#fqTop'); if (!el || !T || !T.length) return;
+      el.innerHTML = `<h3 class="dash-sec">🔥 الأكثر بحثاً</h3><div class="chips" style="justify-content:flex-start">${T.map((x) => `<button class="chip" data-q="${esc(x.q)}">${esc(x.q)}</button>`).join('')}</div>`;
+      $$('[data-q]', el).forEach((b) => { b.onclick = () => go(`fqs/${encodeURIComponent(b.dataset.q)}`); });
+    }).catch(() => {});
     catalog().then((d) => {
       const el = $('#fqStats'); if (!el) return;
       const open = d.filter((b) => b.rights_status === 'open'); const idx = d.filter((b) => b.index_status === 'indexed');
@@ -126,7 +132,7 @@
     const loc = c.page ? `${c.vol ? `ج${ar(c.vol)} ` : ''}ص${ar(c.page)}` : hadith ? `الحديث رقم ${ar(hadith)}` : '';
     return `${b.title}${a ? ` — ${a.short_name}` : ''}، ${loc}${b.publisher ? ` (ط. ${b.publisher}${b.pub_year ? `، ${b.pub_year}` : ''})` : ''}`;
   };
-  async function renderRead(id, seqA) {
+  async function renderRead(id, seqA, qA) {
     let d; try { d = await catalog(); } catch { N.view.innerHTML = '<div class="card center">تعذّر التحميل</div>'; return; }
     const b = d.find((x) => String(x.id) === String(id)); if (!b) { go('fqlib'); return; }
     N.setTitle(b.title.length > 24 ? b.title.slice(0, 24) + '…' : b.title);
@@ -137,15 +143,21 @@
     if (!c) { N.view.innerHTML = '<div class="card center">لا توجد صفحة بهذا الرقم</div>'; return; }
     store.set(`fiqh:pos:${b.id}`, seq);
     const total = b.indexed_chunks || seq;
-    const body = esc(c.body).replace(/【([^】]*)】/g, '<b class="fq-h">$1</b>');
+    const hq = qA ? decodeURIComponent(qA) : ''; const hrx = hq ? termRx(hq) : null;
+    let body = esc(c.body);
+    if (hrx) body = body.replace(hrx, '<mark>$1</mark>');
+    body = body.replace(/【([^】]*)】/g, '<b class="fq-h">$1</b>');
     N.view.innerHTML = `
+      ${hq ? `<div class="fq-from"><button class="fq-link" id="fqBackS">↩ العودة لنتائج «${esc(hq)}»</button></div>` : ''}
       <div class="fq-read-top">${c.heading ? `<span>${esc(c.heading)}</span>` : ''}<span>${c.page ? `${c.vol ? `الجزء ${ar(c.vol)} • ` : ''}الصفحة ${ar(c.page)}` : `مقطع ${ar(seq)}`}</span></div>
       <article class="card fq-page">${body}</article>
       <div class="card fq-cite"><small class="muted">التوثيق:</small><p>${esc(cite(b, c))}</p><div class="fq-links"><button class="btn ghost" id="fqCp">📋 نسخ التوثيق</button><button class="btn ghost" id="fqSh">📤 مشاركة النص</button></div></div>
       <div class="fq-nav"><button class="btn ghost" id="fqPrev" ${seq <= 1 ? 'disabled' : ''}>→ السابقة</button><span class="muted">${ar(seq)} / ${ar(total)}</span><button class="btn ghost" id="fqNext" ${seq >= total ? 'disabled' : ''}>التالية ←</button></div>
       ${b.has_page_numbers ? `<form class="fq-jump" id="fqJ"><input class="calc-in" id="fqJv" inputmode="numeric" placeholder="الجزء" value="${c.vol || ''}"><input class="calc-in" id="fqJp" inputmode="numeric" placeholder="الصفحة"><button class="btn">انتقال</button></form>` : ''}`;
-    $('#fqPrev').onclick = () => go(`fqread/${b.id}/${seq - 1}`);
-    $('#fqNext').onclick = () => go(`fqread/${b.id}/${seq + 1}`);
+    $('#fqPrev').onclick = () => go(`fqread/${b.id}/${seq - 1}${qA ? `/${qA}` : ''}`);
+    $('#fqNext').onclick = () => go(`fqread/${b.id}/${seq + 1}${qA ? `/${qA}` : ''}`);
+    const bs = $('#fqBackS'); if (bs) bs.onclick = () => go(`fqs/${qA}`);
+    const mk = $('.fq-page mark'); if (mk) setTimeout(() => mk.scrollIntoView({ block: 'center' }), 50);
     $('#fqCp').onclick = async () => { try { await navigator.clipboard.writeText(cite(b, c)); toast('نُسخ التوثيق'); } catch { toast(cite(b, c)); } };
     $('#fqSh').onclick = () => N.shareText(`${c.body.replace(/【|】/g, '')}\n\n— ${cite(b, c)}`);
     const J = $('#fqJ');
@@ -156,25 +168,91 @@
     };
   }
 
-  // ---------- البحث (المرحلة الأولى: في الفهرس) ----------
+  // ---------- محرك البحث داخل النصوص (المرحلة الثالثة) ----------
+  async function rpc(fn, args) {
+    const r = await fetch(`${SB}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.status === 204 ? null : r.json();
+  }
+  // نمط تظليل مرن: يقبل السوابق (و، ف، ب، ال…) وصور الألف والتاء المربوطة والتشكيل
+  const PFX = '(?:وال|فال|بال|كال|لل|ال|و|ف|ب|ك|ل)?';
+  const MARK = '[ً-ْٰـ]*';
+  const CLS = { 'ا': '[اأإآٱ]', 'ه': '[هة]', 'ي': '[يى]', 'و': '[وؤ]' };
+  function termRx(q) {
+    const words = N.normAr(q.replace(/["()|\-]/g, ' ')).split(/\s+/).filter((w) => w.length > 1 && !['او', 'أو', 'or', 'و'].includes(w))
+      .map((w) => w.replace(/^(وال|فال|بال|كال|لل|ال)(?=..)/, ''))
+      .map((w) => (w.length > 4 ? w.slice(0, -1) : w));
+    if (!words.length) return null;
+    const pat = words.map((w) => PFX + [...w].map((ch) => (CLS[ch] || ch) + MARK).join('') + '[ء-يً-ْ]*');
+    return new RegExp(`(${pat.join('|')})`, 'g');
+  }
+  function snippet(body, rx, len = 260) {
+    const clean = body.replace(/【([^】]*)】/g, '«$1» ');
+    let i = 0;
+    if (rx) { rx.lastIndex = 0; const m = rx.exec(clean); if (m) i = Math.max(0, m.index - 90); }
+    let t = clean.slice(i, i + len);
+    if (i > 0) t = '…' + t.replace(/^\S*\s/, '');
+    if (i + len < clean.length) t = t.replace(/\s\S*$/, '') + '…';
+    t = esc(t);
+    return rx ? t.replace(rx, '<mark>$1</mark>') : t;
+  }
+  const MODES = [['all', 'كل الكلمات'], ['phrase', 'عبارة مطابقة'], ['any', 'أي كلمة']];
   async function renderSearch(qEnc) {
-    const q = decodeURIComponent(qEnc || ''); addHist(q);
-    N.view.innerHTML = '<div class="loader" style="margin:30px auto"></div>';
-    let d; try { d = await catalog(); } catch { N.view.innerHTML = '<div class="card center">تعذّر الاتصال</div>'; return; }
-    const nq = N.normAr(q); const words = nq.split(/\s+/).filter((w) => w.length > 1);
-    const hit = (s) => { const t = N.normAr(s || ''); return words.every((w) => t.includes(w)); };
-    const books = d.filter((b) => hit(`${b.title} ${b.fiqh_authors ? b.fiqh_authors.name + ' ' + b.fiqh_authors.short_name : ''} ${MAD[b.madhhab]} ${FIELD[b.field]}`));
+    const q = decodeURIComponent(qEnc || '');
+    addHist(q);
+    const st = { mode: store.get('fiqh:mode', 'all'), mad: null, book: null, off: 0, rows: [], total: 0 };
+    let d = []; try { d = await catalog(); } catch { /* */ }
+    const BK = Object.fromEntries(d.map((b) => [b.id, b]));
+    const rx = termRx(q);
+    rpc('fiqh_log_search', { q }).catch(() => {});
+    // الكتب المطابقة بالاسم/المؤلف + الأبواب
+    const nq = N.normAr(q); const ws = nq.split(/\s+/).filter((w) => w.length > 1);
+    const bookHits = d.filter((b) => ws.every((w) => N.normAr(`${b.title} ${b.fiqh_authors ? b.fiqh_authors.name : ''}`).includes(w)));
     let topics = [];
     try { topics = store.get('fiqh:topics') || await sb('fiqh_topics?select=slug,name,keywords&order=sort'); store.set('fiqh:topics', topics); } catch { /* */ }
-    const tp = topics.filter((t) => words.some((w) => N.normAr(t.name).includes(w) || t.keywords.some((k) => N.normAr(k).includes(w) || w.includes(N.normAr(k)))));
+    const tp = topics.filter((t) => ws.some((w) => N.normAr(t.name).includes(w) || t.keywords.some((k) => { const nk = N.normAr(k); return nk.includes(w) || w.includes(nk); })));
     N.view.innerHTML = `
-      <div class="card"><b>نتائج: «${esc(q)}»</b><p class="muted" style="margin:4px 0 0">البحث حالياً في الفهرس؛ البحث داخل نصوص الكتب يُفعَّل بعد فهرستها.</p></div>
-      ${tp.length ? `<h3 class="dash-sec">🗂️ الأبواب الفقهية المتعلقة</h3><div class="chips" style="justify-content:flex-start">${tp.map((t) => `<span class="chip">${esc(t.name)}</span>`).join('')}</div>` : ''}
-      <h3 class="dash-sec">📚 الكتب (${ar(books.length)})</h3>
-      ${books.length ? books.map((b) => `<button class="fq-book" data-id="${b.id}"><b>${esc(b.title)}</b><small>${b.fiqh_authors ? esc(b.fiqh_authors.short_name) + ' • ' : ''}${MAD[b.madhhab] || ''}</small></button>`).join('') : '<div class="card muted center">لا توجد كتب مطابقة في الفهرس</div>'}
+      <form class="fq-search fq-search2" id="fqF"><input id="fqQ" type="search" value="${esc(q)}"><button class="btn">بحث</button></form>
+      <div class="seg fq-modes" id="fqM">${MODES.map(([k, t]) => `<button data-m="${k}" class="${st.mode === k ? 'active' : ''}">${t}</button>`).join('')}</div>
+      ${bookHits.length ? `<h3 class="dash-sec">📚 كتب بهذا الاسم</h3>${bookHits.slice(0, 4).map((b) => `<button class="fq-book" data-id="${b.id}"><b>${esc(b.title)}</b><small>${b.fiqh_authors ? esc(b.fiqh_authors.short_name) + ' • ' : ''}${MAD[b.madhhab] || ''}</small></button>`).join('')}` : ''}
+      ${tp.length ? `<div class="chips" style="justify-content:flex-start;margin:6px 0">${tp.map((t) => `<span class="chip">🗂️ ${esc(t.name)}</span>`).join('')}</div>` : ''}
+      <div id="fqFac"></div>
+      <div id="fqRes"><div class="loader" style="margin:24px auto"></div></div>
       <button class="btn ghost block" id="fqSave">🔖 حفظ هذا البحث</button>`;
+    $('#fqF').onsubmit = (e) => { e.preventDefault(); const v = $('#fqQ').value.trim(); if (v.length > 1) go(`fqs/${encodeURIComponent(v)}`); };
     $$('[data-id]').forEach((b) => { b.onclick = () => go(`fqbook/${b.dataset.id}`); });
     $('#fqSave').onclick = () => { const S = store.get('fiqh:saved', []).filter((x) => x.q !== q); S.unshift({ q, t: Date.now() }); store.set('fiqh:saved', S); toast('حُفظ البحث'); };
+    $$('#fqM button').forEach((b) => { b.onclick = () => { st.mode = b.dataset.m; store.set('fiqh:mode', st.mode); $$('#fqM button').forEach((x) => x.classList.toggle('active', x === b)); st.mad = null; st.book = null; load(true); }; });
+    async function facets() {
+      const el = $('#fqFac'); if (!el) return;
+      try {
+        const F = await rpc('fiqh_search_facets', { q, p_mode: st.mode });
+        const byMad = {}; F.forEach((f) => { const m = (BK[f.book_id] || {}).madhhab || 'other'; byMad[m] = (byMad[m] || 0) + f.n; });
+        el.innerHTML = F.length ? `<div class="chips fq-chips"><button class="chip ${!st.mad && !st.book ? 'active' : ''}" data-fm="">الكل</button>${Object.entries(byMad).map(([m, n]) => `<button class="chip ${st.mad === m ? 'active' : ''}" data-fm="${m}">${MAD[m] || m} (${ar(n)})</button>`).join('')}</div>
+          <div class="chips fq-chips">${F.sort((a2, b2) => b2.n - a2.n).map((f) => `<button class="chip ${st.book === f.book_id ? 'active' : ''}" data-fb="${f.book_id}">${esc(((BK[f.book_id] || {}).title || '').split(' ').slice(0, 3).join(' '))} (${ar(f.n)})</button>`).join('')}</div>` : '';
+        $$('[data-fm]', el).forEach((b) => { b.onclick = () => { st.mad = b.dataset.fm || null; st.book = null; load(true); }; });
+        $$('[data-fb]', el).forEach((b) => { b.onclick = () => { st.book = +b.dataset.fb; st.mad = null; load(true); }; });
+      } catch { el.innerHTML = ''; }
+    }
+    async function load(reset) {
+      if (reset) { st.off = 0; st.rows = []; facets(); }
+      const el = $('#fqRes'); if (!el) return;
+      if (reset) el.innerHTML = '<div class="loader" style="margin:24px auto"></div>';
+      let R;
+      try { R = await rpc('fiqh_search', { q, p_madhhab: st.mad, p_book: st.book, p_mode: st.mode, p_limit: 20, p_offset: st.off }); }
+      catch { el.innerHTML = '<div class="card center">تعذّر البحث؛ تحقق من الاتصال بالإنترنت.</div>'; return; }
+      st.rows = st.rows.concat(R); st.total = R.length ? R[0].total : (reset ? 0 : st.total); st.off += R.length;
+      if (!st.rows.length) {
+        el.innerHTML = `<div class="card"><b>لا توجد نتائج في النصوص المفهرسة.</b><p class="muted" style="margin:6px 0 0;line-height:1.8">جرّب: كلمة أقصر، أو صيغة «أي كلمة»، أو مصطلحاً فقهياً مرادفاً (مثل «التقسيط» أو «البيع لأجل»). البحث الآن في ${ar(d.filter((b) => b.index_status === 'indexed').length)} كتب مفهرسة.</p></div>`;
+        return;
+      }
+      el.innerHTML = `<p class="muted" style="margin:8px 0">${ar(st.total)} صفحة مطابقة${st.total > 400 ? ' • رُتّبت الصفحات التي يرد اللفظ في عناوينها أولاً؛ أضف كلمات لتدقيق الترتيب' : ' • مرتبة حسب الصلة'}</p>
+        ${st.rows.map((r) => { const b = BK[r.book_id] || { title: '', madhhab: '' }; const a = b.fiqh_authors; return `<button class="fq-hit" data-r="${r.book_id}/${r.seq}"><span class="fq-hit-h"><b>${esc(b.title.split(' ').slice(0, 4).join(' '))}</b><small>${a ? esc(a.short_name) + ' • ' : ''}${MAD[b.madhhab] || ''} • ${r.page ? `${r.vol ? `ج${ar(r.vol)} ` : ''}ص${ar(r.page)}` : `مقطع ${ar(r.seq)}`}</small></span>${r.heading ? `<span class="fq-hit-t">${esc(r.heading)}</span>` : ''}<span class="fq-hit-s">${snippet(r.body, rx)}</span></button>`; }).join('')}
+        ${st.off < st.total ? '<button class="btn ghost block" id="fqMore">عرض المزيد</button>' : ''}`;
+      $$('[data-r]', el).forEach((x) => { x.onclick = () => go(`fqread/${x.dataset.r}/${encodeURIComponent(q)}`); });
+      const mo = $('#fqMore'); if (mo) mo.onclick = () => { mo.disabled = true; mo.textContent = 'جارٍ التحميل…'; load(false); };
+    }
+    load(true);
   }
   function listView(key, empty, title) {
     const L = store.get(key, []);
@@ -193,5 +271,5 @@
     fqsaved: { title: 'الأسئلة المحفوظة', render: () => listView('fiqh:saved', 'لم تحفظ أي بحث بعد', 'المحفوظات'), back: 'fiqh' },
     fqhist: { title: 'سجل البحث', render: () => listView('fiqh:hist', 'لا يوجد سجل بحث', 'السجل'), back: 'fiqh' },
   });
-  N.fiqh = { sb, catalog, cite, MAD, FIELD };
+  N.fiqh = { sb, rpc, catalog, cite, termRx, snippet, MAD, FIELD };
 });
