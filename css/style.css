@@ -708,3 +708,12 @@ body.has-mini .toast { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
 .dash-grid .tile { padding: 12px 4px; font-size: .78rem; gap: 6px; }
 .dash-grid .tile .ic { width: 42px; height: 42px; font-size: 1.2rem; }
 @media (max-width: 360px) { .dash-t { font-size: .64rem; } .dash-t b { font-size: .64rem; } }
+
+/* ---------- الابتهالات ---------- */
+.ibt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+.ibt-m { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 16px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); color: var(--text); }
+.ibt-av { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; background: var(--surface-2); box-shadow: 0 0 0 2px var(--gold-soft); margin-bottom: 4px; }
+.ibt-m b { font-size: .92rem; }
+.ibt-m small { color: var(--muted); font-size: .76rem; line-height: 1.5; }
+:root[data-skin="brown"] .ibt-m { background: linear-gradient(165deg, #161c19 0%, #0f1311 100%); border-color: rgba(143, 220, 118, .16); }
+:root[data-skin="brown"] .ibt-av { background: radial-gradient(circle at 35% 30%, #24402a, #151b18 70%); box-shadow: 0 0 0 1px rgba(143, 220, 118, .35); }
