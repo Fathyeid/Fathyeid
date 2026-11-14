@@ -1,0 +1,20 @@
+name: جلب بيانات الموسوعات من ويكيبيديا
+on:
+  push:
+    branches: [dev]
+    paths: [scripts/enc-titles.json, scripts/fetch-enc.py, .github/workflows/fetch-enc.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/fetch-enc.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/enc-wiki.json
+          git diff --cached --quiet || git commit -m "بيانات الموسوعات من ويكيبيديا"
+          git push
