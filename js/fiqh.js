@@ -114,7 +114,46 @@
       <div class="card"><h3>⚖️ المصدر والحقوق</h3>${kv('المصدر الرقمي', s && s.name)}${kv('الترخيص', b.license || (b.rights_status === 'restricted' ? 'محفوظ لأصحابه' : 'غير محدد'))}
         ${b.notes ? `<p class="calc-why">${esc(b.notes.replace(/؟?\s*رقمه في المكتبة الشاملة:\s*\S+/, '').replace(/؛\s*$/, ''))}</p>` : ''}
         <div class="fq-links">${b.source_url ? `<a class="btn ghost" href="${esc(b.source_url)}" target="_blank" rel="noopener">${b.text_url ? '🗂️ ملف النص في OpenITI' : '🌐 الموقع الرسمي'}</a>` : ''}${sham ? `<a class="btn ghost" href="${esc(sham[0])}" target="_blank" rel="noopener">📚 صفحة الكتاب في الشاملة</a>` : ''}</div></div>
-      <div class="card calc-disc"><p>${b.index_status === 'metadata_only' ? 'هذا الكتاب لا يُنسخ نصه داخل التطبيق احتراماً لحقوق ناشره؛ ويمكنك قراءته من مصدره الرسمي.' : 'النص متاح بترخيص مفتوح وسيُضاف إلى البحث داخل الموسوعة بعد فهرسته ومراجعة جودته.'}</p></div>`;
+      ${b.index_status === 'indexed' ? `<button class="btn block" id="fqRead" style="margin-bottom:12px">📖 تصفّح الكتاب (${ar(b.indexed_chunks)} صفحة مفهرسة)</button>` : ''}
+      <div class="card calc-disc"><p>${b.index_status === 'metadata_only' ? 'هذا الكتاب لا يُنسخ نصه داخل التطبيق احتراماً لحقوق ناشره؛ ويمكنك قراءته من مصدره الرسمي.' : b.index_status === 'indexed' ? 'النص مفهرس ويظهر في البحث؛ وكل صفحة موثقة بالجزء والصفحة من الطبعة المذكورة.' : 'النص متاح بترخيص مفتوح وسيُضاف إلى البحث داخل الموسوعة بعد فهرسته ومراجعة جودته.'}</p></div>`;
+    const rd = $('#fqRead'); if (rd) rd.onclick = () => go(`fqread/${b.id}/${store.get(`fiqh:pos:${b.id}`, 1)}`);
+  }
+
+  // ---------- قارئ الكتاب (صفحة بصفحة) ----------
+  const cite = (b, c) => {
+    const a = b.fiqh_authors;
+    const hadith = !c.page && (c.body.match(/【(\d+)\s*-\s*】/) || [])[1];
+    const loc = c.page ? `${c.vol ? `ج${ar(c.vol)} ` : ''}ص${ar(c.page)}` : hadith ? `الحديث رقم ${ar(hadith)}` : '';
+    return `${b.title}${a ? ` — ${a.short_name}` : ''}، ${loc}${b.publisher ? ` (ط. ${b.publisher}${b.pub_year ? `، ${b.pub_year}` : ''})` : ''}`;
+  };
+  async function renderRead(id, seqA) {
+    let d; try { d = await catalog(); } catch { N.view.innerHTML = '<div class="card center">تعذّر التحميل</div>'; return; }
+    const b = d.find((x) => String(x.id) === String(id)); if (!b) { go('fqlib'); return; }
+    N.setTitle(b.title.length > 24 ? b.title.slice(0, 24) + '…' : b.title);
+    const seq = Math.max(1, parseInt(seqA, 10) || 1);
+    N.view.innerHTML = '<div class="loader" style="margin:30px auto"></div>';
+    let c;
+    try { const r = await sb(`fiqh_chunks?select=seq,vol,page,heading,body&book_id=eq.${b.id}&seq=eq.${seq}`); c = r[0]; } catch { N.view.innerHTML = '<div class="card center">تعذّر تحميل الصفحة؛ تحقق من الاتصال.</div>'; return; }
+    if (!c) { N.view.innerHTML = '<div class="card center">لا توجد صفحة بهذا الرقم</div>'; return; }
+    store.set(`fiqh:pos:${b.id}`, seq);
+    const total = b.indexed_chunks || seq;
+    const body = esc(c.body).replace(/【([^】]*)】/g, '<b class="fq-h">$1</b>');
+    N.view.innerHTML = `
+      <div class="fq-read-top">${c.heading ? `<span>${esc(c.heading)}</span>` : ''}<span>${c.page ? `${c.vol ? `الجزء ${ar(c.vol)} • ` : ''}الصفحة ${ar(c.page)}` : `مقطع ${ar(seq)}`}</span></div>
+      <article class="card fq-page">${body}</article>
+      <div class="card fq-cite"><small class="muted">التوثيق:</small><p>${esc(cite(b, c))}</p><div class="fq-links"><button class="btn ghost" id="fqCp">📋 نسخ التوثيق</button><button class="btn ghost" id="fqSh">📤 مشاركة النص</button></div></div>
+      <div class="fq-nav"><button class="btn ghost" id="fqPrev" ${seq <= 1 ? 'disabled' : ''}>→ السابقة</button><span class="muted">${ar(seq)} / ${ar(total)}</span><button class="btn ghost" id="fqNext" ${seq >= total ? 'disabled' : ''}>التالية ←</button></div>
+      ${b.has_page_numbers ? `<form class="fq-jump" id="fqJ"><input class="calc-in" id="fqJv" inputmode="numeric" placeholder="الجزء" value="${c.vol || ''}"><input class="calc-in" id="fqJp" inputmode="numeric" placeholder="الصفحة"><button class="btn">انتقال</button></form>` : ''}`;
+    $('#fqPrev').onclick = () => go(`fqread/${b.id}/${seq - 1}`);
+    $('#fqNext').onclick = () => go(`fqread/${b.id}/${seq + 1}`);
+    $('#fqCp').onclick = async () => { try { await navigator.clipboard.writeText(cite(b, c)); toast('نُسخ التوثيق'); } catch { toast(cite(b, c)); } };
+    $('#fqSh').onclick = () => N.shareText(`${c.body.replace(/【|】/g, '')}\n\n— ${cite(b, c)}`);
+    const J = $('#fqJ');
+    if (J) J.onsubmit = async (e) => {
+      e.preventDefault(); const v = parseInt($('#fqJv').value, 10); const pg = parseInt($('#fqJp').value, 10);
+      if (!pg) { toast('أدخل رقم الصفحة'); return; }
+      try { const r = await sb(`fiqh_chunks?select=seq&book_id=eq.${b.id}${v ? `&vol=eq.${v}` : ''}&page=gte.${pg}&order=seq&limit=1`); if (r[0]) go(`fqread/${b.id}/${r[0].seq}`); else toast('الصفحة غير موجودة'); } catch { toast('تعذّر الاتصال'); }
+    };
   }
 
   // ---------- البحث (المرحلة الأولى: في الفهرس) ----------
@@ -149,9 +188,10 @@
     fiqh: { title: 'الموسوعة الفقهية', render: renderHome, back: 'home' },
     fqlib: { title: 'مكتبة الموسوعة', render: renderLib, back: 'fiqh' },
     fqbook: { title: 'كتاب', render: renderBook, back: 'fqlib' },
+    fqread: { title: 'قراءة', render: renderRead, back: 'fqlib' },
     fqs: { title: 'نتائج البحث', render: renderSearch, back: 'fiqh' },
     fqsaved: { title: 'الأسئلة المحفوظة', render: () => listView('fiqh:saved', 'لم تحفظ أي بحث بعد', 'المحفوظات'), back: 'fiqh' },
     fqhist: { title: 'سجل البحث', render: () => listView('fiqh:hist', 'لا يوجد سجل بحث', 'السجل'), back: 'fiqh' },
   });
-  N.fiqh = { sb, catalog, MAD, FIELD };
+  N.fiqh = { sb, catalog, cite, MAD, FIELD };
 });
