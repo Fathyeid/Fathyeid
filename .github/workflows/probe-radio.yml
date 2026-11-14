@@ -1,0 +1,20 @@
+name: فحص واجهة IslamHouse
+on:
+  push:
+    branches: [dev]
+    paths: [.github/workflows/probe-radio.yml]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          B=https://api3.islamhouse.com/v3/paV29H2gm56kvLPy
+          Q=$(python3 -c "import urllib.parse;print(urllib.parse.quote('البرزخ'))")
+          for p in "main/get-author-items/272777/showall/ar/ar/1/2/json" "main/get-author-items/272777/books/ar/ar/1/2/json" "main/get-author-items/272777/ar/ar/1/2/json" \
+            "main/search/showall/ar/ar/1/2/$Q/json" "main/search/books/ar/ar/1/2/$Q/json" "main/search/$Q/showall/ar/ar/1/2/json" "main/search-items/$Q/showall/ar/ar/1/2/json" "main/sitecontent/ar/ar/1/2/json" \
+            "categories/list/ar/json" "categories/ar/json" "main/get-categories/ar/json" "categories/get-categories-tree/ar/json" "categories/showall/ar/json" "main/categories-list/ar/json" "categories/get-category-info/49/ar/json" "main/get-category-items/49/showall/ar/ar/1/2/json" "main/get-category-items/49/books/ar/ar/1/2/json" \
+            "main/get-author/272777/ar/json" "main/authors/ar/ar/1/2/json" "main/fatwa/ar/ar/1/1/json" "main/articles/ar/ar/1/1/json" "main/showall/ar/ar/1/1/json"; do
+            r=$(curl -s -m 20 -w '\n%{http_code}' "$B/$p"); code=$(echo "$r" | tail -1)
+            echo "[$code] $p :: $(echo "$r" | head -c 260 | python3 -c 'import sys;print(sys.stdin.read().encode().decode("unicode_escape","ignore")[:260].replace("\n"," "))' 2>/dev/null)"
+          done
+          echo "=== license page"; curl -sL -m 20 https://islamhouse.com/ar/ | grep -oiE '.{0,80}(حقوق|copyright|license|ترخيص).{0,120}' | head -5
