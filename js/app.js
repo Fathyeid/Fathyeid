@@ -199,6 +199,7 @@
         <button class="tile" data-go="audio"><span class="ic">🎧</span>المكتبة الصوتية</button>
         <button class="tile" data-go="radio"><span class="ic">📻</span>إذاعة القرآن</button>
         <button class="tile" data-go="ibtihal"><span class="ic">🎙️</span>الابتهالات</button>
+        <button class="tile" data-go="enc"><span class="ic">🏛️</span>الموسوعات</button>
         <button class="tile" data-go="academy"><span class="ic">🎓</span>الأكاديمية</button>
         <button class="tile" data-go="hifz"><span class="ic">🧠</span>حفظ القرآن</button>
         <button class="tile" data-go="hadith"><span class="ic">📜</span>الحديث الشريف</button>
@@ -254,7 +255,7 @@
     ['«خيركم من تعلّم القرآن وعلّمه»', 'رواه البخاري'],
     ['﴿وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ﴾', 'البقرة: ٤٥'],
   ];
-  const DASH_TILES = [['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['zakat', '💰', 'الزكاة'], ['bookmarks', '🔖', 'العلامات']];
+  const DASH_TILES = [['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['enc', '🏛️', 'الموسوعات'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['zakat', '💰', 'الزكاة'], ['bookmarks', '🔖', 'العلامات']];
   function renderDash() {
     const now = new Date();
     const t = timesFor(now);
