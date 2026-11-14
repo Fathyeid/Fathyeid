@@ -72,9 +72,11 @@
   }
 
   function applyTheme() {
-    const dark = settings.theme === 'dark' || (settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    const brown = settings.theme === 'brown';
+    const dark = brown || settings.theme === 'dark' || (settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    $('meta[name="theme-color"]').content = dark ? '#0b1512' : '#0d3b2e';
+    if (brown) document.documentElement.dataset.skin = 'brown'; else delete document.documentElement.dataset.skin;
+    $('meta[name="theme-color"]').content = brown ? '#17100b' : dark ? '#0b1512' : '#0d3b2e';
   }
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
@@ -702,7 +704,7 @@
       </div>
       <div class="card">
         <h3>🎨 المظهر</h3>
-        <div class="seg" id="theme"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button></div>
+        <div class="seg" id="theme" style="flex-wrap:wrap"><button data-v="auto">تلقائي</button><button data-v="light">فاتح</button><button data-v="dark">داكن</button><button data-v="brown">🌙 أسمر</button></div>
       </div>
       ${NATIVE ? '' : `<div class="card"><h3>📱 تطبيق أندرويد</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">ثبّت نسخة أندرويد ليصلك تنبيه الأذان عند كل صلاة حتى والهاتف مقفول.</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تحميل التطبيق (APK)</a></div>`}
       ${NATIVE ? `<div class="card"><h3>🔄 التحديثات</h3><p class="muted" style="margin:0 0 10px;font-size:.9rem">رقم النسخة الحالية: ${arG(BUILD.code || 0)}. تصل التحديثات تلقائياً في الخلفية وتعمل عند فتح التطبيق.</p><button class="btn ghost block" id="chkUpd">التحقق من وجود تحديث</button></div>` : ''}
