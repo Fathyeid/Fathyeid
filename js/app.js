@@ -76,7 +76,7 @@
     const dark = brown || settings.theme === 'dark' || (settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     if (brown) document.documentElement.dataset.skin = 'brown'; else delete document.documentElement.dataset.skin;
-    $('meta[name="theme-color"]').content = brown ? '#17100b' : dark ? '#0b1512' : '#0d3b2e';
+    $('meta[name="theme-color"]').content = brown ? '#0b0d0c' : dark ? '#0b1512' : '#0d3b2e';
   }
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
