@@ -85,18 +85,30 @@
     await navigator.clipboard.writeText([text, url].filter(Boolean).join('\n'));
     toast('تم نسخ النص والرابط');
   }
+  // أزرار التطبيقات مباشرة: تعمل في كل نسخ التطبيق (حتى القديمة) لأنها روابط تفتح التطبيق المختار
+  function targets({ text, url }) {
+    const u = encodeURIComponent(url || SITE); const t = encodeURIComponent(text);
+    const noUrl = encodeURIComponent(text.replace(url || '', '').trim());
+    const L = [
+      ['واتساب', '🟢', N.NATIVE ? `whatsapp://send?text=${t}` : `https://wa.me/?text=${t}`],
+      ['فيسبوك', '🔵', `https://www.facebook.com/sharer/sharer.php?u=${u}`],
+      N.NATIVE ? ['ماسنجر', '💬', `fb-messenger://share?link=${u}`] : null,
+      ['تليجرام', '✈️', `https://t.me/share/url?url=${u}&text=${noUrl}`],
+    ].filter(Boolean);
+    return `<div class="share-apps">${L.map(([n, ic, h]) => `<a class="share-app" href="${esc(h)}" target="_blank" rel="noopener"><span>${ic}</span>${n}</a>`).join('')}<button class="share-app" data-s="copy"><span>📋</span>نسخ</button></div>`;
+  }
+  function bindTargets(sh, copyText) {
+    sh.el.querySelectorAll('a.share-app').forEach((a) => { a.addEventListener('click', () => setTimeout(sh.close, 400)); });
+    const c = sh.el.querySelector('[data-s="copy"]');
+    if (c) c.onclick = async () => { sh.close(); try { await navigator.clipboard.writeText(copyText); toast('تم النسخ'); } catch { toast('تعذّر النسخ'); } };
+  }
   async function send(o) {
     try {
       if (nativeShare()) return await sendNative(o);
-      if (N.NATIVE) { // نسخة تطبيق قديمة بلا مكوّن المشاركة: ننسخ ونعرض تحديثاً اختيارياً
-        try { await navigator.clipboard.writeText([o.text, o.url].filter(Boolean).join('\n')); } catch { /* */ }
-        const sh = N.sheet(`<div class="sheet-title">تم نسخ النص والرابط ✓</div>
-          <p class="muted" style="line-height:1.9">الصقه في فيسبوك أو واتساب. ولتظهر لك قائمة المشاركة مباشرة مع صورة جاهزة، ثبّت النسخة الجديدة من التطبيق مرة واحدة (بياناتك محفوظة).</p>
-          <a class="btn block" id="shUp" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk" target="_blank" rel="noopener">⬇️ تحميل النسخة الجديدة</a>`);
-        $('#shUp', sh.el).onclick = () => setTimeout(sh.close, 300);
-        return;
-      }
-      return await sendWeb(o);
+      if (!N.NATIVE && (o.canvas || navigator.share)) return await sendWeb(o);
+      // نسخة التطبيق المثبّتة قبل إضافة المشاركة، أو متصفح بلا مشاركة: اختيار التطبيق مباشرة
+      const sh = N.sheet(`<div class="sheet-title">مشاركة عبر</div>${targets(o)}`);
+      bindTargets(sh, [o.text, o.url && !o.text.includes(o.url) ? o.url : ''].filter(Boolean).join('\n'));
     } catch (e) {
       if (e && (e.name === 'AbortError' || /cancel/i.test(String(e.message || e)))) return;
       try { await navigator.clipboard.writeText([o.text, o.url].filter(Boolean).join('\n')); toast('تم النسخ'); } catch { toast('تعذّرت المشاركة'); }
@@ -109,17 +121,21 @@
     const body = (opts.clean || text || '').trim();
     const signed = /من تطبيق أثر|تطبيق أثر —/.test(body);
     const caption = `${body}${url ? `\n\n${opts.card ? 'اقرأ في التطبيق' : 'افتحه في التطبيق'}: ${url}` : ''}${signed ? '' : `\n\n${SIGN}`}`;
-    if (!opts.card) return send({ text: caption, url: null });
+    if (!opts.card) return send({ text: caption, url });
+    const oldApk = N.NATIVE && !nativeShare();
     const sh = N.sheet(`<div class="sheet-title">مشاركة</div>
       <div class="share-prev"><canvas id="shCv"></canvas></div>
-      <div class="share-opts">
+      ${oldApk ? `${targets({ text: caption, url })}
+        <p class="muted share-note">الرابط يفتح ${esc(opts.card.kind || 'المحتوى')} نفسه لمن يضغط عليه. ولمشاركة هذه البطاقة كصورة: <a href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk" target="_blank" rel="noopener">حمّل أحدث نسخة من التطبيق</a> (اختياري).</p>`
+        : `<div class="share-opts">
         <button class="btn" data-s="img">🖼️ صورة</button>
         <button class="btn ghost" data-s="link">🔗 رابط</button>
         <button class="btn ghost" data-s="txt">📋 نسخ النص</button>
       </div>
-      <p class="muted share-note">الصورة تظهر كمنشور جميل، والرابط يفتح ${esc(opts.card.kind || 'المحتوى')} نفسه داخل تطبيق أثر لمن يضغط عليه.</p>`);
+      <p class="muted share-note">الصورة تظهر كمنشور جميل، والرابط يفتح ${esc(opts.card.kind || 'المحتوى')} نفسه داخل تطبيق أثر لمن يضغط عليه.</p>`}`);
     const cv = await drawCard(opts.card);
     const pv = $('#shCv', sh.el); pv.width = cv.width; pv.height = cv.height; pv.getContext('2d').drawImage(cv, 0, 0);
+    if (oldApk) { bindTargets(sh, caption); return; }
     $('[data-s="img"]', sh.el).onclick = () => { sh.close(); send({ text: caption, canvas: cv }); };
     $('[data-s="link"]', sh.el).onclick = () => { sh.close(); send({ text: `${opts.card.kind ? `${opts.card.kind}${opts.card.ref ? ` — ${opts.card.ref}` : ''}` : ''}\n${url || SITE}`, url: url || SITE }); };
     $('[data-s="txt"]', sh.el).onclick = async () => { sh.close(); try { await navigator.clipboard.writeText(caption); toast('تم نسخ النص مع الرابط'); } catch { toast('تعذّر النسخ'); } };
