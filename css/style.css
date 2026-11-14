@@ -783,3 +783,30 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .book-row.bk-ok { cursor: pointer; }
 .bk-lib { color: var(--primary); font-weight: 700; }
 :root[data-theme="dark"] .bk-lib { color: var(--gold); }
+
+/* ---------- تطوير الصلاة والقرآن ---------- */
+.pr-now { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.pr-cd { font-size: 1.4rem; font-weight: 800; color: var(--primary); direction: ltr; font-variant-numeric: tabular-nums; }
+:root[data-theme="dark"] .pr-cd { color: var(--gold); }
+.pr-done { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: transparent; color: #fff; font-weight: 800; margin-inline-start: 8px; flex: none; }
+.pr-done.on { background: var(--primary); border-color: var(--primary); }
+.pr-extra { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.pr-extra:last-of-type { border-bottom: 0; }
+.pr-adj { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.pr-adj span:first-child { flex: 1; }
+.pr-adj b { min-width: 28px; text-align: center; }
+.pt-wrap { overflow-x: auto; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--border); }
+.pt { width: 100%; border-collapse: collapse; font-size: .78rem; text-align: center; background: var(--surface); }
+.pt th { position: sticky; top: 0; background: var(--surface-2); padding: 8px 4px; font-weight: 800; }
+.pt td { padding: 6px 3px; border-top: 1px solid var(--border); white-space: nowrap; }
+.pt td small { display: block; color: var(--muted); font-size: .68rem; }
+.pt tr.today td { background: var(--gold-soft); font-weight: 800; }
+.q-page { display: block; text-align: center; color: var(--muted); font-size: .75rem; margin: 6px 0; font-family: var(--ui-font); }
+.q-mark { display: block; text-align: center; color: var(--gold); font-size: .8rem; font-weight: 800; margin: 8px 0; font-family: var(--ui-font); }
+.q-sajda { color: var(--gold); font-size: .75em; font-family: var(--ui-font); }
+.q-quick { display: grid; gap: 8px; margin-bottom: 12px; }
+.q-jump { display: flex; gap: 8px; }
+.q-jump input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+.mp-top { display: flex; justify-content: space-between; color: var(--gold); font-weight: 800; font-size: .85rem; margin-bottom: 8px; }
+.mp-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0; }
+.mp-foot input { width: 60px; padding: 6px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); text-align: center; }

@@ -92,13 +92,16 @@
   function timesFor(date) {
     const [y, m, d] = ymdIn(date, tz());
     const { lat, lng } = settings.location;
-    return PrayTimes.compute(y, m, d, lat, lng, settings.method, settings.asr);
+    const t = PrayTimes.compute(y, m, d, lat, lng, settings.method, settings.asr);
+    const adj = settings.adj || {};
+    Object.keys(adj).forEach((k) => { if (t[k] && adj[k]) t[k] = new Date(t[k].getTime() + adj[k] * 60000); });
+    return t;
   }
 
   const fmtTime = (d) => d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', timeZone: tz() });
   const hijri = (d) => {
     try {
-      return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-arab', { day: 'numeric', month: 'long', year: 'numeric', timeZone: tz() }).format(d);
+      return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-arab', { day: 'numeric', month: 'long', year: 'numeric', timeZone: tz() }).format(new Date(d.getTime() + (settings.hijriAdj || 0) * 864e5));
     } catch { return ''; }
   };
   const greg = (d) => d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz() });
@@ -150,7 +153,7 @@
     $('#pageTitle').textContent = route.title;
     $('#backBtn').hidden = !route.back;
     $('#backBtn').onclick = () => history.length > 1 ? history.back() : go(route.back);
-    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran', hifz: 'quran', hifzs: 'quran', hifzp: 'quran', hifzplan: 'quran', azcat: 'azkar', azsearch: 'azkar', azfav: 'azkar', azlists: 'azkar', azlist: 'azkar', azset: 'azkar', azabout: 'azkar' }[name] || name;
+    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran', hifz: 'quran', hifzs: 'quran', hifzp: 'quran', hifzplan: 'quran', azcat: 'azkar', azsearch: 'azkar', azfav: 'azkar', azlists: 'azkar', azlist: 'azkar', azset: 'azkar', azabout: 'azkar', ptable: 'prayers', mpage: 'quran', surah: 'quran' }[name] || name;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.route === tab));
     view.innerHTML = '';
     view.className = 'fade-in';
@@ -379,6 +382,8 @@
 
   // ---------- القرآن الكريم ----------
   const API = 'https://api.alquran.cloud/v1';
+  // تفاسير متاحة من alquran.cloud (اُستبعد «تنوير المقباس» لضعف نسبته إلى ابن عباس رضي الله عنهما)
+  const TAFSIRS = [['ar.muyassar', 'الميسر'], ['ar.jalalayn', 'الجلالين'], ['ar.waseet', 'الوسيط (طنطاوي)'], ['ar.baghawi', 'البغوي'], ['ar.qurtubi', 'القرطبي']];
   async function fetchJSON(url, cacheKey) {
     const cached = cacheKey && store.get(cacheKey);
     if (cached) return cached;
@@ -516,7 +521,7 @@
         <article class="mushaf">
           <div class="surah-header"><h2>${s.name}</h2><small>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}، ${ar(s.numberOfAyahs)} آية</small></div>
           ${n !== 1 && n !== 9 ? '<div class="basmala">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>' : ''}
-          <p class="quran-text" id="qt">${ayahs.map((a, i) => `<span class="ayah" data-i="${i}">${a.text}</span> <span class="ayah-num">${ar(a.numberInSurah)}</span> `).join('')}</p>
+          <p class="quran-text" id="qt">${ayahs.map((a, i) => { const pv = ayahs[i - 1]; const mk = []; if (i > 0 && pv.juz !== a.juz) mk.push(`الجزء ${ar(a.juz)}`); if (i > 0 && pv.hizbQuarter !== a.hizbQuarter && (a.hizbQuarter - 1) % 4 === 0) mk.push(`الحزب ${ar((a.hizbQuarter - 1) / 4 + 1)}`); else if (i > 0 && pv.hizbQuarter !== a.hizbQuarter) mk.push(['', 'ربع', 'نصف', 'ثلاثة أرباع'][(a.hizbQuarter - 1) % 4] + ` الحزب ${ar(Math.floor((a.hizbQuarter - 1) / 4) + 1)}`); return `${i > 0 && pv.page !== a.page ? `<span class="q-page">صفحة ${ar(a.page)}</span>` : ''}${mk.length ? `<span class="q-mark">${mk.join(' • ')}</span>` : ''}<span class="ayah" data-i="${i}">${a.text}</span> <span class="ayah-num">${ar(a.numberInSurah)}</span>${a.sajda ? ' <span class="q-sajda" title="موضع سجدة تلاوة">۩ سجدة</span>' : ''} `; }).join('')}</p>
         </article>
         <div style="display:flex;gap:10px;margin-top:14px">
           ${n > 1 ? `<button class="btn ghost block" data-go="surah/${n - 1}">→ السورة السابقة</button>` : ''}
@@ -575,7 +580,7 @@
             <button class="btn ghost" data-a="share">📤 مشاركة</button>
           </div>
           ${settings.translation ? `<div class="tafsir"><h4>الترجمة • ${esc(TRANSLATIONS[settings.translation] || '')}</h4><div class="trans-body" dir="${settings.translation.startsWith('ur') ? 'rtl' : 'ltr'}"><div class="loader" style="margin:16px auto"></div></div></div>` : ''}
-          <div class="tafsir"><h4>التفسير الميسر</h4><div class="tafsir-body"><div class="loader" style="margin:16px auto"></div></div></div>`);
+          <div class="tafsir"><h4>التفسير</h4><div class="chips tf-chips" style="justify-content:flex-start;margin-bottom:8px">${TAFSIRS.map(([k, t]) => `<button class="chip ${k === (settings.tafsir || 'ar.muyassar') ? 'active' : ''}" data-tf="${k}">${t}</button>`).join('')}</div><div class="tafsir-body"><div class="loader" style="margin:16px auto"></div></div></div>`);
         if (settings.translation) {
           const trb = $('.trans-body', sh.el);
           fetchJSON(`${API}/ayah/${a.number}/${settings.translation}`, `tr:${settings.translation}:${a.number}`)
@@ -587,9 +592,14 @@
         $('[data-a="share"]', sh.el).onclick = () => shareText(`﴿${a.text}﴾
 [${ref}]` + APP_SIGN());
         const tb = $('.tafsir-body', sh.el);
-        fetchJSON(`${API}/ayah/${a.number}/ar.muyassar`, `tafsir:${a.number}`)
-          .then((d) => { tb.textContent = d.text; })
-          .catch(() => { tb.textContent = 'تعذّر تحميل التفسير، تأكد من الاتصال بالإنترنت.'; });
+        const loadTf = (ed) => {
+          tb.innerHTML = '<div class="loader" style="margin:16px auto"></div>';
+          fetchJSON(`${API}/ayah/${a.number}/${ed}`, ed === 'ar.muyassar' ? `tafsir:${a.number}` : `tf:${ed}:${a.number}`)
+            .then((d) => { tb.textContent = d.text; })
+            .catch(() => { tb.textContent = 'تعذّر تحميل التفسير، تأكد من الاتصال بالإنترنت.'; });
+        };
+        loadTf(settings.tafsir || 'ar.muyassar');
+        $$('[data-tf]', sh.el).forEach((b) => { b.onclick = () => { settings.tafsir = b.dataset.tf; saveSettings(); $$('[data-tf]', sh.el).forEach((x) => x.classList.toggle('active', x === b)); loadTf(b.dataset.tf); }; });
       };
       $$('.ayah').forEach((el) => el.addEventListener('click', () => openAyah(+el.dataset.i)));
 
@@ -1215,7 +1225,7 @@
         const after = window.Noor && window.Noor.azAfterPrayer && window.Noor.azAfterPrayer();
         if (!settings.alerts && !after) return;
         if (!(await ensureNotify())) { toast('فعّل الإشعارات للتطبيق ليصلك الأذان'); return; }
-        if (after) await LN.createChannel({ id: 'azkar', name: 'تذكير الأذكار', description: 'أذكار الصباح والمساء والنوم والتذكير بالذكر خلال اليوم', importance: 4, visibility: 1 });
+        if (after || +settings.pre > 0) await LN.createChannel({ id: 'azkar', name: 'تذكير الأذكار', description: 'أذكار الصباح والمساء والنوم والتذكير بالذكر خلال اليوم', importance: 4, visibility: 1 });
         const now = Date.now();
         const list = [];
         for (let day = 0; day < 14; day++) {
@@ -1224,7 +1234,10 @@
             const at = t[p.key];
             const at2 = new Date(at.getTime() + 15 * 60000);
             if (after && at2.getTime() > now + 5000) list.push({ id: 200 + day * 10 + i + 1, title: `📿 أذكار ما بعد صلاة ${p.name}`, body: 'أستغفر الله (ثلاثاً)، اللهم أنت السلام ومنك السلام، تباركت يا ذا الجلال والإكرام — افتح «أثر» لإتمام الأذكار', channelId: 'azkar', extra: { route: 'azcat/azkar/prayer' }, schedule: { at: at2, allowWhileIdle: true }, autoCancel: true });
-            if (!settings.alerts || at.getTime() <= now + 5000) return;
+            const pre = +settings.pre || 0;
+            const offP = (settings.alertOff || []).includes(p.key);
+            if (settings.alerts && !offP && pre > 0) { const atP = new Date(at.getTime() - pre * 60000); if (atP.getTime() > now + 5000) list.push({ id: 400 + day * 10 + i + 1, title: `⏳ بقي ${ar(pre)} دقيقة على أذان ${p.name}`, body: `${fmtTime(at)} • تهيّأ للصلاة`, channelId: 'azkar', schedule: { at: atP, allowWhileIdle: true }, autoCancel: true }); }
+            if (!settings.alerts || offP || at.getTime() <= now + 5000) return;
             list.push({
               id: day * 10 + i + 1,
               title: `حان الآن موعد صلاة ${p.name} ${p.ic}`,
@@ -1360,6 +1373,7 @@
   window.Noor = {
     $, $$, view, store, toast, go, ar, arG, toAr, esc, routes, settings, saveSettings,
     fetchJSON, API, sheet, shareText, todayKey, ymdIn, tz, hijri, greg, NATIVE, applyTheme, AZKAR, scheduleAdhan,
+    timesFor, nextPrayer, fmtTime, countdown, PRAYERS, TAFSIRS, normAr,
     setTitle: (t) => { $('#pageTitle').textContent = t; },
     homeExtras: [],
   };

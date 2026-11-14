@@ -1,9 +1,9 @@
 /* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
-const VERSION = 'noor-v27';
+const VERSION = 'noor-v28';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
   'js/native-flags.js', 'js/quran-meta.js', 'js/academy-data.js', 'js/audio-lib.js', 'js/academy.js',
-  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js', 'js/dawah.js', 'js/azkar-data.js', 'js/azkar.js', 'js/radio.js', 'js/ibtihal.js', 'js/encyc-data.js', 'js/encyc.js', 'js/library.js', 'data/enc-wiki.json', 'data/lib-index.json',
+  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js', 'js/dawah.js', 'js/azkar-data.js', 'js/azkar.js', 'js/radio.js', 'js/ibtihal.js', 'js/encyc-data.js', 'js/encyc.js', 'js/library.js', 'js/prayer-quran.js', 'data/enc-wiki.json', 'data/lib-index.json',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/father.jpg', 'icons/art/mosque.svg', 'icons/art/pattern.svg', 'icons/art/lantern.svg', 'icons/art/mosque-dark.svg', 'icons/art/pattern-dark.svg', 'icons/art/lantern-dark.svg', 'adhan/adhan.mp3',
 ];
 
