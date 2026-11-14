@@ -12,7 +12,7 @@ concurrency:
 jobs:
   video:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: النسخة المنشورة من التطبيق (ما يراه الناس)
@@ -43,13 +43,14 @@ jobs:
       - name: الدمج
         run: |
           python3 scripts/video/build.py mux out
-          for t in 3 25 60 100 140; do ffmpeg -loglevel error -y -ss $t -i out/athar-video.mp4 -frames:v 1 -vf scale=240:-1 out/k$t.png || true; done
-          ffmpeg -loglevel error -y $(for t in 3 25 60 100 140; do [ -f out/k$t.png ] && echo "-i out/k$t.png"; done) -filter_complex hstack=$(ls out/k*.png | wc -l) out/preview.png || true
+          for t in 5 60 150 250 350 450 550; do ffmpeg -loglevel error -y -ss $t -i out/athar-video.mp4 -frames:v 1 -vf scale=240:-1 out/k$t.png || true; done
+          ffmpeg -loglevel error -y $(for t in 5 60 150 250 350 450 550; do [ -f out/k$t.png ] && echo "-i out/k$t.png"; done) -filter_complex hstack=$(ls out/k*.png | wc -l) out/preview.png || true
       - uses: actions/upload-artifact@v4
         with:
           name: athar-video
           path: |
             out/athar-video.mp4
+            out/athar-video-720.mp4
             out/preview.png
       - name: النشر في صفحة الإصدارات (ما قبل الإصدار، لا يؤثر على رابط التطبيق)
         uses: softprops/action-gh-release@v2
@@ -57,10 +58,12 @@ jobs:
           tag_name: video-${{ github.run_number }}
           name: "فيديو تعريفي بتطبيق أثر (${{ github.run_number }})"
           body: |
-            فيديو تعريفي بتطبيق «أثر — رفيق المسلم»: جولة في أقسام التطبيق المنشور مع تعليق صوتي بالعربية.
+            فيديو تعريفي بتطبيق «أثر — رفيق المسلم» (حوالي ١٠ دقائق): جولة في كل أقسام التطبيق المنشور بمظهر «أسمر» مع شرح صوتي بالعربية.
+            athar-video.mp4 = الجودة العالية 1080×2340 • athar-video-720.mp4 = نسخة خفيفة للمشاركة على واتساب.
             التعليق الصوتي مولَّد آلياً (صوت عصبي عربي عبر edge-tts).
           files: |
             out/athar-video.mp4
+            out/athar-video-720.mp4
             out/preview.png
           prerelease: true
           make_latest: false

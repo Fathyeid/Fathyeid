@@ -41,11 +41,17 @@ def mux(out):
         filt.append(f'[{i}:a]adelay={ms}|{ms}[a{i}]')
     mix = ''.join(f'[a{i}]' for i in range(1, len(scenes) + 1)) + f'amix=inputs={len(scenes)}:normalize=0,apad[aout]'
     fc = ';'.join(filt + [mix])
+    # نسخة عالية الجودة 1080×2340
     dst = os.path.join(out, 'athar-video.mp4')
     subprocess.check_call(['ffmpeg', '-y', *inputs, '-filter_complex', fc, '-map', '0:v', '-map', '[aout]',
-                           '-c:v', 'libx264', '-preset', 'medium', '-crf', '24', '-pix_fmt', 'yuv420p', '-r', '30',
-                           '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart', dst])
+                           '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-r', '30',
+                           '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', dst])
     print('video', dst, round(dur(dst), 1), 's', os.path.getsize(dst) // 1024, 'KB')
+    # نسخة خفيفة للمشاركة على واتساب (عرض 720)
+    lite = os.path.join(out, 'athar-video-720.mp4')
+    subprocess.check_call(['ffmpeg', '-y', '-i', dst, '-vf', 'scale=720:-2:flags=lanczos', '-c:v', 'libx264', '-preset', 'slow', '-crf', '26',
+                           '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', lite])
+    print('lite', lite, os.path.getsize(lite) // 1024, 'KB')
 
 
 if __name__ == '__main__':
