@@ -203,6 +203,12 @@
 
   // ---------- الصفحة الرئيسية للموسوعة ----------
   function catStats(c) { const p = prog(); return c.items.filter((k) => (p[k] || 0) >= target(k)).length; }
+  // إحصاءات لوحة الرئيسية (ثيم أسمر)
+  N.azStats = () => {
+    const p = prog();
+    const fri = catOf('azkar', 'friday');
+    return { done: Object.keys(p).filter((k) => ITEMS[k] && p[k] >= target(k)).length, streak: streak(), friDone: fri ? catStats(fri) : 0, friTotal: fri ? fri.items.length : 0 };
+  };
   function renderHome(tab) {
     tab = tab === 'duas' ? 'duas' : 'azkar';
     const last = store.get('az:last');

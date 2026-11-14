@@ -165,6 +165,7 @@
 
   // ---------- الرئيسية ----------
   function renderHome() {
+    if (document.documentElement.dataset.skin === 'brown') return renderDash();
     const now = new Date();
     const ayah = DAILY_AYAT[dayIndex() % DAILY_AYAT.length];
     const hadith = DAILY_HADITH[dayIndex() % DAILY_HADITH.length];
@@ -228,6 +229,112 @@
       if (n >= np.time) np = nextPrayer(n);
       $('#nextName').textContent = `${np.name} • ${fmtTime(np.time)}`;
       $('#cd').textContent = countdown(np.time - n);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }
+
+  // ---------- لوحة الرئيسية (ثيم «أسمر») ----------
+  const P_ICON = {
+    fajr: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 4v4M9 7l3-3 3 3M5 12l1.5 1M19 12l-1.5 1"/>',
+    sunrise: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    dhuhr: '<circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/>',
+    asr: '<path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A4 4 0 1 1 17 18z"/><path d="M16 4l1-2M20 7l2-1"/>',
+    maghrib: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 9v4M9 11l3 3 3-3"/>',
+    isha: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  };
+  const DASH_LINES = [
+    ['﴿فَاذْكُرُونِي أَذْكُرْكُمْ﴾', 'البقرة: ١٥٢'],
+    ['«أحبّ الأعمال إلى الله أدومها وإن قلّ»', 'متفق عليه'],
+    ['﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾', 'الرعد: ٢٨'],
+    ['«خيركم من تعلّم القرآن وعلّمه»', 'رواه البخاري'],
+    ['﴿وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ﴾', 'البقرة: ٤٥'],
+  ];
+  const DASH_TILES = [['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['zakat', '💰', 'الزكاة'], ['bookmarks', '🔖', 'العلامات']];
+  function renderDash() {
+    const now = new Date();
+    const t = timesFor(now);
+    const ayah = DAILY_AYAT[dayIndex() % DAILY_AYAT.length];
+    const keyOf = (d) => ymdIn(d, tz()).join('-');
+    const tr = (store.get('tracker', {})[keyOf(now)]) || {};
+    const prayed = PRAYERS.filter((p) => !p.sun && tr[p.key]).length;
+    const az = (window.Noor.azStats && window.Noor.azStats()) || { done: 0, streak: 0, friDone: 0, friTotal: 0 };
+    const kh = Object.assign({ done: [] }, store.get('khatma', {}));
+    const wd = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tz() }).format(now);
+    const toFri = (5 - ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wd) + 7) % 7;
+    const friKey = 'fri:' + keyOf(new Date(now.getTime() + toFri * 864e5));
+    const fri = Object.assign({ kahf: false, salawat: 0 }, store.get(friKey, {}));
+    const line = DASH_LINES[dayIndex() % DASH_LINES.length];
+    const last = store.get('lastRead');
+    const friWhen = toFri === 0 ? 'اليوم' : toFri === 1 ? 'غداً' : 'الجمعة القادمة';
+    view.innerHTML = `
+      <section class="dash-prayer">
+        <div class="dash-top">
+          <div class="dash-where">
+            <div class="dash-loc"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>${esc(settings.location.name)}</div>
+            <div class="dash-date">${greg(now)}</div>
+            <div class="dash-hijri">${hijri(now)}</div>
+          </div>
+          <div class="dash-next">
+            <small>الصلاة القادمة</small>
+            <b id="dNext"></b>
+            <div class="dash-pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg><span><small>متبقّي</small><span id="dCd"></span></span></div>
+          </div>
+        </div>
+        <div class="dash-times" id="dTimes">${PRAYERS.map((p) => `<div class="dash-t" data-k="${p.key}"><svg viewBox="0 0 24 24">${P_ICON[p.key]}</svg><span>${p.name}</span><b>${fmtTime(t[p.key])}</b></div>`).join('')}</div>
+      </section>
+
+      <section class="card dash-day">
+        <div class="dash-h"><h3>🌿 يومك مع أثر</h3><button class="dash-link" data-go="tracker">التفاصيل ‹</button></div>
+        <div class="dash-stats">
+          <button data-go="tracker"><svg viewBox="0 0 24 24"><path d="M4 21V10l8-6 8 6v11zM9 21v-6h6v6"/></svg><b>${ar(prayed)}/${ar(5)}</b><small>الصلوات</small></button>
+          <button data-go="khatma"><svg viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5c-3-.5-6 0-8 1.5zM12 6v14.5"/></svg><b>${ar(kh.done.length)}/${ar(30)}</b><small>أجزاء الختمة</small></button>
+          <button data-go="azkar"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg><b>${ar(az.done)}</b><small>أذكار اليوم</small></button>
+          <button data-go="azkar"><svg viewBox="0 0 24 24"><path d="M12 22c4 0 7-3 7-7 0-5-5-7-4-13-3 2-6 6-6 9-1-1-1.5-2.5-1.5-4C5 9.5 5 12 5 15c0 4 3 7 7 7z"/></svg><b>${ar(az.streak)}</b><small>يوم متتالٍ</small></button>
+        </div>
+        <div class="dash-line">✨ ${line[0]} <small>— ${line[1]}</small></div>
+      </section>
+
+      <section class="card dash-fri">
+        <button class="dash-fri-h" data-go="azcat/azkar/friday">
+          <span class="dash-fri-ic">🕌</span>
+          <span class="dash-fri-t"><b>بركات الجمعة <em>${friWhen}</em></b><small>سورة الكهف، الصلاة على النبي ﷺ، ساعة الإجابة</small></span>
+          <span class="dash-arrow">‹</span>
+        </button>
+        <div class="dash-fri-row">
+          <button id="fKahf"><b>${fri.kahf ? '✓ قُرئت' : 'لم تُقرأ'}</b><small>سورة الكهف</small></button>
+          <button id="fSal"><b>${ar(fri.salawat)}</b><small>الصلاة على النبي</small></button>
+          <button data-go="azcat/azkar/friday"><b>${ar(az.friDone)}/${ar(az.friTotal)}</b><small>أذكار الجمعة</small></button>
+        </div>
+      </section>
+
+      ${last ? `<div class="card continue"><div><small class="muted">متابعة القراءة</small><br><b>${esc(last.name)}</b> <small class="muted">— الآية ${ar(last.ayah)}</small></div><button class="btn" data-go="surah/${last.n}">متابعة</button></div>` : ''}
+
+      <section class="dedication">
+        <img class="ded-photo" src="icons/father.jpg" alt="المرحوم عيد فتحي أبو طالب" width="112" height="112">
+        <div class="ded-label">صدقة جارية على روح</div>
+        <div class="ded-name">المرحوم بإذن الله<br>عيد فتحي أبو طالب</div>
+        <p class="ded-dua">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ، وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ</p>
+        <div class="ded-actions"><button class="btn ded-btn" data-go="zikr/deceased">🤲 أدعية للمتوفى</button></div>
+      </section>
+
+      <h3 class="dash-sec">الأقسام</h3>
+      <div class="grid dash-grid">${DASH_TILES.map(([r, i, n]) => `<button class="tile" data-go="${r}"><span class="ic">${i}</span>${n}</button>`).join('')}</div>
+      <div id="homeExtras"></div>
+      <div class="card"><h3>📖 آية اليوم</h3><p class="ayah-text">﴿${ayah.text}﴾</p><div class="ref">${ayah.ref}</div></div>`;
+    $$('[data-go]', view).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+    (window.Noor.homeExtras || []).forEach((fn) => { try { fn($('#homeExtras')); } catch (e) { console.error(e); } });
+    const saveFri = () => store.set(friKey, fri);
+    $('#fKahf').onclick = () => { fri.kahf = !fri.kahf; saveFri(); $('#fKahf b').textContent = fri.kahf ? '✓ قُرئت' : 'لم تُقرأ'; if (fri.kahf) toast('تقبّل الله منك 🤍'); };
+    $('#fSal').onclick = () => { fri.salawat++; saveFri(); $('#fSal b').textContent = ar(fri.salawat); if (navigator.vibrate) navigator.vibrate(10); };
+    let np = nextPrayer();
+    const tick = () => {
+      const n = new Date();
+      if (n >= np.time) np = nextPrayer(n);
+      $('#dNext').textContent = np.name;
+      $('#dCd').textContent = countdown(np.time - n);
+      $$('#dTimes .dash-t').forEach((el) => el.classList.toggle('on', el.dataset.k === np.key));
     };
     tick();
     const id = setInterval(tick, 1000);
