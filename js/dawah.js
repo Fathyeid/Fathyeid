@@ -300,7 +300,7 @@
       }));
       if (!v) return;
       $('#dwFav').onclick = (e) => { const on = toggleFav(id); e.currentTarget.textContent = on ? '★ في المفضلة' : '☆ المفضلة'; };
-      $('#dwShare').onclick = () => N.shareText(`${v.title}\n${sk ? sk.name : ''}\nhttps://www.youtube.com/watch?v=${id}\n\nمن تطبيق أثر - صدقة جارية على روح المرحوم عيد فتحي أبو طالب`);
+      $('#dwShare').onclick = () => N.shareText(`🎬 ${v.title}\n${sk ? sk.name : ''}`, { route: `dwatch/${id}`, card: { kind: `محاضرة — ${sk ? sk.name : 'المكتبة الدعوية'}`, text: v.title, ref: 'شاهدها كاملة في تطبيق أثر' } });
       $('#dwDl').onclick = () => N.sheet(`<div class="sheet-title">التحميل غير متاح حالياً</div><p class="muted" style="line-height:1.9">تحميل الحلقات داخل التطبيق يحتاج إذناً من فريق الشيخ، لأن يوتيوب لا يسمح بنقل فيديوهاته إلى تطبيقات أخرى. نسعى للحصول على الإذن، وسيُضاف التحميل فور ذلك بإذن الله.</p><p class="muted" style="line-height:1.9">يمكنك الآن حفظ الحلقة في تطبيق يوتيوب نفسه باستخدام زر «تنزيل» أسفل الفيديو.</p><a class="btn block" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">فتح في يوتيوب</a>`);
       $('#dwList').onclick = () => {
         const sh = N.sheet(`<div class="sheet-title">إضافة إلى قائمة</div>${lists().map((l) => `<button class="btn ghost block" style="margin-bottom:6px" data-pl="${l.id}">📃 ${esc(l.name)}</button>`).join('') || '<p class="muted center">لا توجد قوائم. أنشئ واحدة:</p>'}

@@ -86,7 +86,8 @@
     }));
     $$('[data-share]', root).forEach((b) => b.addEventListener('click', () => {
       const h = list.find((x) => x.hadithnumber === +b.dataset.share);
-      N.shareText(`${h.text}\n\n[${book(k).name}، رقم ${h.hadithnumber}]\n\nمن تطبيق أثر - صدقة جارية على روح المرحوم عيد فتحي أبو طالب\n${location.origin}${location.pathname}`);
+      const tx = h.text.length > 700 ? h.text.slice(0, 700).replace(/\s\S*$/, '') + '…' : h.text;
+      N.shareText(`${h.text}\n\n[${book(k).name}، رقم ${h.hadithnumber}]`, { route: `hbook/${k}`, card: { kind: 'حديث شريف', text: tx, ref: `${book(k).name}، رقم ${h.hadithnumber}` } });
     }));
   }
 

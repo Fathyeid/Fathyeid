@@ -88,7 +88,7 @@
     };
     $('#ibPrev').onclick = () => go(`ibw/${k}/${i - 1}`);
     $('#ibNext').onclick = () => go(`ibw/${k}/${i + 1}`);
-    $('#ibShare').onclick = () => N.shareText(`${v.title}\nhttps://youtu.be/${v.video_id}\n\nمن تطبيق أثر - رفيق المسلم`);
+    $('#ibShare').onclick = () => N.shareText(`🎙️ ${v.title}`, { route: `ibw/${k}/${i}`, card: { kind: 'ابتهال', text: v.title, ref: 'استمع إليه في تطبيق أثر' } });
     // الانتقال تلقائياً للابتهال التالي عند انتهاء الحالي
     const frame = $('#ibf');
     const onMsg = (e) => {
