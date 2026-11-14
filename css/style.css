@@ -776,3 +776,10 @@ body.has-mini .toast { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
 .pdf-note { margin: 10px 0; color: var(--gold); }
 .dw-player video { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; }
 :root[data-skin="brown"] .lib-card, :root[data-skin="brown"] .lib-at { background: linear-gradient(165deg, #161c19 0%, #0f1311 100%); border-color: rgba(143, 220, 118, .16); }
+
+/* ---------- الأكاديمية: صفحة الدرس وربط الكتب ---------- */
+button.juz-open { border: 0; background: none; color: inherit; text-align: start; padding: 0; display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.lesson-link { color: var(--gold); font-size: .78rem; }
+.book-row.bk-ok { cursor: pointer; }
+.bk-lib { color: var(--primary); font-weight: 700; }
+:root[data-theme="dark"] .bk-lib { color: var(--gold); }

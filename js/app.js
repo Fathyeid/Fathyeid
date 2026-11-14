@@ -143,7 +143,7 @@
   let cleanup = null;
   let renderSeq = 0;
   function router() {
-    const [name, arg, arg2] = (location.hash.slice(2) || 'home').split('/');
+    const [name, arg, arg2, arg3] = (location.hash.slice(2) || 'home').split('/');
     const route = routes[name] || routes.home;
     if (typeof cleanup === "function") { try { cleanup(); } catch (e) { console.error(e); } } cleanup = null;
     $$('.sheet-backdrop').forEach((e) => e.remove());
@@ -155,7 +155,7 @@
     view.innerHTML = '';
     view.className = 'fade-in';
     void view.offsetWidth;
-    const out = route.render(arg, arg2);
+    const out = route.render(arg, arg2, arg3);
     if (out && typeof out.then === "function") { const mine = ++renderSeq; out.then((fn) => { if (typeof fn !== "function") return; if (mine === renderSeq) cleanup = fn; else fn(); }).catch(() => {}); } else { cleanup = out || null; renderSeq++; }
     window.scrollTo(0, 0);
   }
