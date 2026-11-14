@@ -49,6 +49,10 @@ const W = 1080; const H = 2340; const ZOOM = 3; // 360×780 بكسل منطقي 
         document.body.appendChild(el);
       }
       el.style.top = top ? '64px' : 'auto'; el.style.bottom = top ? 'auto' : '92px';
+      // علامة لونية صغيرة في الركن تحدد بداية المشهد في التسجيل (تُغطّى عند الدمج) لضبط تزامن الصوت
+      let mk = document.getElementById('vmark');
+      if (!mk) { mk = document.createElement('div'); mk.id = 'vmark'; mk.style.cssText = 'position:fixed;left:0;top:0;width:5px;height:5px;z-index:100000;pointer-events:none'; document.body.appendChild(mk); }
+      window.__vk = (window.__vk || 0) + 1; mk.style.background = window.__vk % 2 ? '#ff00ff' : '#00ffff';
       el.style.opacity = '0'; el.textContent = cap; requestAnimationFrame(() => { el.style.opacity = '1'; });
     }, [s.cap, s.capTop || false]);
     const start = (Date.now() - t0) / 1000;
