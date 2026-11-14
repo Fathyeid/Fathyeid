@@ -840,3 +840,12 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .calc-ex { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .calc-ex .btn { flex: 1; min-width: 100px; }
 :root[data-skin="brown"] .calc-tool { background: linear-gradient(165deg, #161c19 0%, #0f1311 100%); border-color: rgba(143, 220, 118, .16); }
+.calc-rw { grid-template-columns: 1.4fr 1fr auto; }
+.calc-rw:has(select) { grid-template-columns: 1fr 1.4fr auto; }
+.calc-rw:has(select) [data-n] { grid-column: 1 / -1; }
+.calc-bar { height: 6px; border-radius: 6px; background: var(--surface-2); overflow: hidden; margin: 4px 0; }
+.calc-bar span { display: block; height: 100%; background: var(--primary); }
+.calc-done { opacity: .65; }
+.calc-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.calc-2 .card { margin: 0; }
+.lib-at-b [data-sh] { flex: 0 0 56px; }

@@ -460,5 +460,5 @@
     // الحاسبة القديمة: تُحوَّل إلى الجديدة مع نقل القيم المحفوظة
     zakat: { title: 'زكاة المال', render: () => { const o = store.get('zakat', null); if (o && !store.get('calc:zmig')) { store.set('calc:open', { cash: o.cash, g24: o.g24, g21: o.g21, g18: o.g18, silver: o.silver, gp: o.gp, sp: o.sp, debts: o.debts }); store.set('calc:zmig', 1); } return renderZakat(); }, back: 'calc' },
   });
-  N.calc = { exportReport, money, Faraid: Fa };
+  N.calc = { exportReport, money, Faraid: Fa, num, cur, curName, curSelect, saveHist, takeOpen, exportBar, bindExport, TOOLS, CALCS, REVIEW, pct, frac, hist };
 });
