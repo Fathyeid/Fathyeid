@@ -1,0 +1,31 @@
+name: فحص سريع لتصنيفات IslamHouse
+on:
+  push:
+    branches: [dev]
+    paths: [.github/workflows/probe-ih.yml]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          python3 - <<'PY'
+          import json, urllib.request
+          B='https://api3.islamhouse.com/v3/paV29H2gm56kvLPy'
+          def g(u):
+              try: return json.load(urllib.request.urlopen(u, timeout=30))
+              except Exception as e: return 'ERR '+str(e)[:40]
+          tot=lambda d: (d.get('links') or {}).get('total_items') if isinstance(d, dict) else d
+          for cid in [192525, 86219, 132381]:
+              print('items', cid, tot(g(f'{B}/main/get-category-items/{cid}/showall/ar/ar/1/1/json')))
+          root=g(B+'/categories/viewcat/397053/ar/showall/json')
+          def walk(lst, dep):
+              for c in lst:
+                  n=c['apiurl'].split('/viewcat/')[1].split('/')[0]
+                  t=tot(g(f'{B}/main/get-category-items/{n}/showall/ar/ar/1/1/json'))
+                  t2=tot(g(f'{B}/main/get-category-items/{c["id"]}/showall/ar/ar/1/1/json'))
+                  print('  '*dep, c['id'], n, c['title'], c.get('datatype'), 'byN', t, 'byId', t2, flush=True)
+                  if dep<1 and c.get('datatype')=='multicategories':
+                      sub=g(c['apiurl'])
+                      if isinstance(sub, list): walk(sub, dep+1)
+          walk(root, 0)
+          PY
