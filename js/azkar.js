@@ -189,7 +189,7 @@
       const pb = $('[data-play]', el); if (pb) pb.onclick = () => play(k, pb);
       $('[data-fav]', el).onclick = (e) => { const F = favs(); const j = F.indexOf(k); if (j < 0) F.push(k); else F.splice(j, 1); store.set('az:fav', F); e.target.textContent = j < 0 ? '★' : '☆'; toast(j < 0 ? 'أضيف إلى المفضلة' : 'أُزيل من المفضلة'); };
       $('[data-copy]', el).onclick = async () => { try { await navigator.clipboard.writeText(plain(ITEMS[k])); toast('تم النسخ'); } catch { toast('تعذّر النسخ'); } };
-      $('[data-share]', el).onclick = () => shareText(plain(ITEMS[k]) + '\n\nمن تطبيق أثر - رفيق المسلم');
+      $('[data-share]', el).onclick = () => { const it = ITEMS[k]; const lr = opts.lastRead; shareText(plain(it), { route: lr ? `azcat/${lr.type}/${lr.key}/${el.dataset.i}` : 'azkar', card: { kind: it.src === 'quran' ? 'دعاء من القرآن الكريم' : (lr && lr.type === 'duas' ? 'دعاء' : 'ذكر'), text: it.t, ref: it.src === 'quran' ? it.f : (DB.grades[it.g] || '') } }); };
       $('[data-more]', el).onclick = () => moreSheet(k, rerender);
       $('.az-src', el).onclick = () => sourceSheet(k);
     });

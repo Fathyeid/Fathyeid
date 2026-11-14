@@ -22,6 +22,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- روابط المشاركة: athar://open?r=<مسار> تفتح المحتوى نفسه داخل التطبيق -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="athar" android:host="open" />
+            </intent-filter>
+
         </activity>
 
         <provider

@@ -900,3 +900,10 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .fq-hit mark, .fq-page mark { background: #f3d77a; color: #1c2a24; border-radius: 3px; padding: 0 2px; }
 .fq-from { margin-bottom: 6px; }
 :root[data-skin="brown"] .fq-hit { background: linear-gradient(165deg, #161c19 0%, #0f1311 100%); border-color: rgba(143, 220, 118, .16); }
+
+/* ===== المشاركة ===== */
+.share-prev { display: flex; justify-content: center; margin: 4px 0 12px; }
+.share-prev canvas { width: 62%; max-width: 280px; height: auto; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.share-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.share-opts .btn { padding: 11px 6px; font-size: .9rem; }
+.share-note { font-size: .8rem; line-height: 1.7; margin: 10px 0 0; text-align: center; }

@@ -477,11 +477,12 @@
     store.set('bookmarks', bm);
     return i < 0;
   }
-  async function shareText(text) {
+  async function shareText(text, opts) {
+    if (window.NoorShare) return window.NoorShare(text, opts); // js/share.js: قائمة المشاركة الأصلية + روابط تفتح التطبيق
     try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(text); toast('تم نسخ النص'); } catch { toast('تعذّر النسخ'); }
   }
-  const APP_SIGN = () => `\n\nمن تطبيق أثر - صدقة جارية على روح المرحوم عيد فتحي أبو طالب\n${location.origin}${location.pathname}`;
+  const APP_SIGN = () => '\n\nمن تطبيق أثر - صدقة جارية على روح المرحوم عيد فتحي أبو طالب\nhttps://fathyeid.github.io/Fathyeid/';
   function sheet(html) {
     const bd = document.createElement('div');
     bd.className = 'sheet-backdrop';
@@ -590,8 +591,7 @@
         }
         $('[data-a="play"]', sh.el).onclick = () => { sh.close(); playAt(i); };
         $('[data-a="bm"]', sh.el).onclick = (e) => { toggleBM({ n, name: s.name, ayah: a.numberInSurah, text: a.text.slice(0, 90) }); e.currentTarget.textContent = bmLabel(); };
-        $('[data-a="share"]', sh.el).onclick = () => shareText(`﴿${a.text}﴾
-[${ref}]` + APP_SIGN());
+        $('[data-a="share"]', sh.el).onclick = () => shareText(`﴿${a.text}﴾\n[${ref}]`, { route: `surah/${n}/${a.numberInSurah}`, card: { kind: 'آية قرآنية', text: `﴿${a.text}﴾`, ref } });
         const tb = $('.tafsir-body', sh.el);
         const loadTf = (ed) => {
           tb.innerHTML = '<div class="loader" style="margin:16px auto"></div>';
