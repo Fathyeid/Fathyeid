@@ -360,5 +360,6 @@
   const at = C.TOOLS.findIndex((t) => t.k === 'debts');
   C.TOOLS.splice(at >= 0 ? at : C.TOOLS.length, at >= 0 ? 1 : 0, ...NEW);
   Object.assign(C.CALCS, { dayn: [renderLedger, 'سجل ديوني'], sadad: [renderPlan, 'خطة سداد الديون'], muhassa: [renderMuhassa, 'توزيع مبلغ على الدائنين'], tdeath: [renderDeathDebts, 'سداد ديون المتوفى'], taqsit: [renderTaqsit, 'حاسبة التقسيط'], bay: [renderBay, 'حاسبة البيع والربح'], mazalim: [renderMazalim, 'رد المظالم'] });
+  Object.assign(C, { rowsEditor, readRows, bindRows, src, r2, mon });
   setTimeout(scheduleDebtRem, 4000);
 });
