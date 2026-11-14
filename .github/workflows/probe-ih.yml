@@ -9,17 +9,16 @@ jobs:
     steps:
       - run: |
           python3 - <<'PY'
-          import json, urllib.request, re
+          import json, urllib.request
           B='https://api3.islamhouse.com/v3/paV29H2gm56kvLPy'
-          def g(u):
-              try: return json.load(urllib.request.urlopen(u, timeout=30))
-              except Exception as e: return 'ERR '+str(e)[:60]
-          top=g(B+'/categories/showall/ar/json')
-          print('TOP', len(top))
-          for c in top:
-              if re.search('مسجد|مساجد|تاريخ|تراجم|علماء|الآخر|القيامة|البرزخ|الموت|الجنة|النار|الجنائز|السيرة|الصحابة|الغزوات|الحضارة|التفسير|الفقه|العقيدة|الحديث|التجويد|أصول|اللغة', c['title']): print(' ', c['id'], c['title'])
-          for cid in [795, 34, 10]:
-              d=g(f'{B}/categories/viewcat/{cid}/ar/showall/json'); print('VIEW', cid, json.dumps(d, ensure_ascii=False)[:500])
-          for p in ['main/get-category-items/795/showall/ar/ar/1/2/json','main/get-category-items/795/books/ar/ar/1/2/json','categories/get-category-items/795/showall/ar/ar/1/2/json','main/get-category-items/795/ar/ar/1/2/json','categories/viewcat/795/ar/books/json','categories/viewcat/795/ar/showall/1/2/json']:
-              print('P', p, json.dumps(g(B+'/'+p), ensure_ascii=False)[:400])
+          g=lambda u: json.load(urllib.request.urlopen(u, timeout=30))
+          for typ in ['books','audios','videos']:
+              d=g(f'{B}/main/get-category-items/795/{typ}/ar/ar/1/1/json')
+              print(typ, 'total', d['links'].get('total_items'), 'pages', d['links'].get('pages_number'))
+              it=d['data'][0]; full=g(it['api_url'])
+              print(' item keys', list(full.keys()))
+              for a in full.get('attachments', [])[:3]: print('  att', json.dumps(a, ensure_ascii=False)[:300])
           PY
+          for u in https://d1.islamhouse.com/data/ar/ih_books/single2/ar-the-forty-family-hadiths.pdf; do
+            echo "== $u"; curl -sI -H "Origin: https://localhost" "$u" | grep -iE 'HTTP|access-control|content-type|content-length|accept-ranges'
+          done
