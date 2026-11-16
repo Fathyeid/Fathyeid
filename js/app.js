@@ -1222,6 +1222,7 @@
   // file: اسم الملف في مجلد adhan وفي موارد أندرويد (raw) • lvl: أقل مستوى للتطبيق الأصلي يحتوي الصوت
   const ADHAN_SOUNDS = [
     { k: 'classic', file: 'adhan', name: 'الأذان الأول (الافتراضي)', len: '٢:٣٤', lvl: 4, ch: 'adhan-voice', credit: '«Beautiful adhan» — Adam-synagda (CC0)' },
+    { k: 'madina', file: 'adhan_madina', name: 'أذان المسجد النبوي — المدينة المنورة', len: '٣:٠٧', lvl: 7, credit: 'تسجيل من المسجد النبوي — ejaz215 (CC BY 3.0)' },
     { k: 'azan2', file: 'adhan_2', name: 'الأذان الثاني', len: '٣:٠٣', lvl: 6, credit: '«Azan» — Andrewler (CC BY-SA 4.0)' },
     { k: 'azan3', file: 'adhan_3', name: 'الأذان الثالث', len: '١:٢٧', lvl: 6, credit: '«The Adhan» — Aaqib Azeez، رفعه Atcovi (CC BY-SA 4.0)' },
     { k: 'short', file: 'adhan_short', name: 'أذان قصير', len: '٠:٤٢', lvl: 6, credit: '«Adhan» — Aishatu98 (CC0)' },
