@@ -46,8 +46,8 @@ jobs:
         run: |
           if [ -f adhan/adhan.mp3 ]; then
             mkdir -p android/app/src/main/res/raw
-            cp adhan/adhan.mp3 android/app/src/main/res/raw/adhan.mp3
-            echo "تم إضافة صوت الأذان"
+            cp adhan/*.mp3 android/app/src/main/res/raw/
+            ls android/app/src/main/res/raw/ && echo "تم إضافة أصوات الأذان"
           fi
 
       - name: مزامنة Capacitor

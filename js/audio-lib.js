@@ -170,15 +170,70 @@
     }
     render();
   }
+  // ===== التشغيل في الخلفية (تطبيق أندرويد) =====
+  // خدمة أمامية تمنع أندرويد من إيقاف الصوت عند قفل الشاشة أو الخروج من التطبيق
+  const BG = N.NATIVE && window.Capacitor && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('BgAudio') ? window.Capacitor.Plugins.BgAudio : null;
+  let wantPlay = false; // هل يريد المستخدم التشغيل الآن (تبقى صحيحة عند انقطاع البث حتى نعيد الاتصال)
+  let reloading = false; // إعادة اتصال بالبث جارية: تجاهل حدث الإيقاف الناتج عنها
+  let bgOn = false;
+  let bgStopT = null;
+  function bgSync() {
+    if (!BG) return;
+    clearTimeout(bgStopT);
+    const it = cur();
+    if (wantPlay && it) {
+      bgOn = true;
+      BG.start({ title: it.title || 'أثر', sub: it.sub || 'يُشغَّل الآن' }).catch(() => {});
+    } else if (bgOn) {
+      // مهلة قصيرة حتى لا تتوقف الخدمة بين سورة وأخرى
+      bgStopT = setTimeout(() => { if (!wantPlay) { bgOn = false; BG.stop().catch(() => {}); } }, 4000);
+    }
+  }
+  if (BG) BG.addListener('stop', () => { wantPlay = false; bgOn = false; audio.pause(); render(); });
+
+  // ===== إعادة الاتصال التلقائي بالبث المباشر عند انقطاعه =====
+  let liveT = null;
+  let liveTries = 0;
+  function liveRecover() {
+    const it = cur();
+    if (!it || !it.live || !wantPlay) return;
+    clearTimeout(liveT);
+    liveT = setTimeout(async () => {
+      if (cur() !== it || !wantPlay) return;
+      if (!audio.paused && !audio.ended && audio.readyState >= 3) { liveTries = 0; return; }
+      if (navigator.onLine === false) { liveRecover(); return; }
+      if (++liveTries > 30) { wantPlay = false; bgSync(); toast('انقطع البث، اضغط تشغيل للمحاولة مرة أخرى'); render(); return; }
+      try {
+        const u = it.resolve ? await it.resolve() : (liveTries % 2 && it.alt ? it.alt : it.url);
+        if (cur() !== it || !wantPlay) return;
+        reloading = true;
+        audio.src = it.resolve ? u : u + (u.includes('?') ? '&' : '?') + 't=' + Date.now();
+        await audio.play();
+      } catch (e) { reloading = false; if (e.name !== 'AbortError') liveRecover(); }
+    }, Math.min(1500 + liveTries * 1500, 10000));
+  }
+  audio.addEventListener('playing', () => { reloading = false; liveTries = 0; clearTimeout(liveT); });
+  ['error', 'stalled'].forEach((ev) => audio.addEventListener(ev, liveRecover));
+  // «waiting» طبيعي لثوانٍ أثناء التخزين المؤقت؛ نعيد الاتصال فقط إن طال التوقف
+  audio.addEventListener('waiting', () => { const it = cur(); if (it && it.live) setTimeout(() => { if (cur() === it && wantPlay && audio.readyState < 3) liveRecover(); }, 12000); });
+  window.addEventListener('online', liveRecover);
+
   audio.addEventListener('ended', () => {
-    if (P.sleepEnd) { P.sleepEnd = false; render(); toast('تم إيقاف التشغيل (مؤقت النوم)'); return; }
+    const it = cur();
+    if (it && it.live && wantPlay) { liveRecover(); return; } // البث لا ينتهي: الخادم قطع الاتصال
+    if (P.sleepEnd) { P.sleepEnd = false; wantPlay = false; bgSync(); render(); toast('تم إيقاف التشغيل (مؤقت النوم)'); return; }
     if (P.repeat === 'one') { playIndex(P.idx); return; }
     if (P.idx + 1 < P.queue.length) { playIndex(P.idx + 1); return; }
     if (P.repeat === 'all' && P.queue.length) { playIndex(0); return; }
+    wantPlay = false; bgSync();
     render();
   });
-  audio.addEventListener('play', () => { window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'lib' })); render(); });
-  audio.addEventListener('pause', () => { saveLast(true); render(); });
+  audio.addEventListener('play', () => { wantPlay = true; bgSync(); window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'lib' })); render(); });
+  audio.addEventListener('pause', () => {
+    // الإيقاف بسبب انتهاء الملف أو خطأ في الشبكة أو إعادة الاتصال ليس إيقافاً من المستخدم
+    if (!audio.ended && !audio.error && !reloading) { wantPlay = false; bgSync(); }
+    saveLast(true); render();
+  });
   window.addEventListener('noor:audio', (e) => { if (e.detail !== 'lib' && !audio.paused) audio.pause(); });
 
   let lastSave = 0;

@@ -1,4 +1,19 @@
-صوت الأذان: "Beautiful adhan" — Wikimedia Commons
+أصوات الأذان في تطبيق «أثر» — كلها من ويكيميديا كومنز برخص حرّة:
+
+adhan.mp3 — "Beautiful adhan"
 https://commons.wikimedia.org/wiki/File:Beautiful_adhan.ogg
 المرفوع: Adam-synagda — الترخيص: CC0 (ملكية عامة، يجوز استخدامه بلا قيود)
-حُوّل إلى MP3 أحادي القناة لاستخدامه صوتاً لإشعار الأذان في تطبيق «أثر».
+
+adhan_2.mp3 — "Azan"
+https://commons.wikimedia.org/wiki/File:Azan.ogg
+المرفوع: Andrewler — الترخيص: CC BY-SA 4.0 (يلزم ذكر المصدر)
+
+adhan_3.mp3 — "The Adhan - Muslim Call to Prayer - Aaqib Azeez"
+https://commons.wikimedia.org/wiki/File:The_Adhan_-_Muslim_Call_to_Prayer_-_Aaqib_Azeez.mp3
+المؤذن: Aaqib Azeez، المرفوع: Atcovi — الترخيص: CC BY-SA 4.0 (يلزم ذكر المصدر)
+
+adhan_short.mp3 — "Adhan"
+https://commons.wikimedia.org/wiki/File:Adhan.ogg
+المرفوع: Aishatu98 — الترخيص: CC0 (ملكية عامة)
+
+حُوّلت إلى MP3 لاستخدامها صوتاً لإشعار الأذان في تطبيق «أثر».

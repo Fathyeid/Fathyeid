@@ -810,10 +810,13 @@
         <div class="field"><label>تنبيه عند دخول وقت الصلاة</label>
           <div class="seg" id="alerts"><button data-v="1">مفعّل</button><button data-v="0">معطّل</button></div>
           <small class="muted" id="adhanNote">${NATIVE ? 'يصلك إشعار عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.' : 'في نسخة المتصفح يعمل الأذان أثناء فتح التطبيق فقط. ثبّت تطبيق أندرويد ليصلك الأذان والهاتف مقفول.'}</small>
-          ${NATIVE ? '<a class="btn block" id="voiceApk" hidden style="margin-top:8px" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تفعيل صوت المؤذن والهاتف مقفول (تثبيت النسخة الأحدث — اختياري)</a>' : ''}
+        </div>
+        <div class="field"><label for="adhanSound">صوت الأذان</label>
+          <select id="adhanSound">${ADHAN_SOUNDS.map((s) => `<option value="${s.k}" ${s.k === adhanSoundDef(settings.adhanSound).k ? 'selected' : ''}>${s.name}${s.len ? ` — ${s.len}` : ''}</option>`).join('')}</select>
+          <button class="btn ghost block" id="hearAdhan" style="margin-top:8px">🔊 استمع للصوت المختار</button>
+          ${NATIVE ? '<a class="btn block" id="voiceApk" hidden style="margin-top:8px" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ لتفعيل كل أصوات الأذان والهاتف مقفول: ثبّت النسخة الأحدث (لا تُحذف بياناتك)</a>' : ''}
           ${NATIVE ? '<button class="btn block" id="exactBtn" style="margin-top:8px" hidden>⏰ السماح بالتنبيه في الوقت بالضبط</button><button class="btn ghost block" id="testAdhan" style="margin-top:8px">🔔 تجربة التنبيه بعد ١٠ ثوانٍ</button>' : ''}
-          <button class="btn ghost block" id="hearAdhan" style="margin-top:8px">🔊 استمع لصوت الأذان</button>
-          <small class="muted" style="display:block;margin-top:6px">تسجيل الأذان: «Beautiful adhan» من ويكيميديا كومنز (ترخيص حر CC0).</small>
+          <small class="muted" id="adhanCredit" style="display:block;margin-top:6px"></small>
         </div>
       </div>
       <div class="card">
@@ -848,8 +851,40 @@
     seg('alerts', 'alerts', (v) => v === '1' || v === true);
 
     if ($('#testAdhan')) $('#testAdhan').onclick = () => testAdhan();
-    if (NATIVE) hasVoice().then((v) => { const n = $('#adhanNote'); if (n) n.textContent = v ? 'يصلك الأذان بصوت المؤذن عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.' : 'يصلك إشعار بصوت التنبيه عند دخول كل صلاة. لسماع صوت المؤذن والهاتف مقفول ثبّت النسخة الأحدث مرة واحدة (اختياري، ولا تُحذف بياناتك).'; const b = $('#voiceApk'); if (b) b.hidden = v; });
-    $('#hearAdhan').onclick = () => { const a = adhanAudio(); if (!a.paused) { a.pause(); a.currentTime = 0; $('#hearAdhan').textContent = '🔊 استمع لصوت الأذان'; return; } window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'adhan' })); a.play().then(() => { $('#hearAdhan').textContent = '⏹ إيقاف الأذان'; }).catch(() => toast('تعذّر تشغيل صوت الأذان')); a.onended = () => { if ($('#hearAdhan')) $('#hearAdhan').textContent = '🔊 استمع لصوت الأذان'; }; };
+    // ----- صوت الأذان -----
+    const HEAR = '🔊 استمع للصوت المختار';
+    const stopHear = () => { if (adhanEl && !adhanEl.paused) { adhanEl.pause(); adhanEl.currentTime = 0; } if ($('#hearAdhan')) $('#hearAdhan').textContent = HEAR; };
+    const paintAdhan = async () => {
+      const chosen = adhanSoundDef(settings.adhanSound);
+      const cr = $('#adhanCredit');
+      if (cr) cr.textContent = chosen.credit ? `التسجيل: ${chosen.credit} — من ويكيميديا كومنز.` : 'سيصلك صوت الإشعار المعتاد في هاتفك عند دخول وقت الصلاة.';
+      if (!NATIVE) return;
+      const v = await hasVoice();
+      const lvl = levelKnown;
+      const sel = $('#adhanSound');
+      if (sel) $$('option', sel).forEach((o) => { const s = adhanSoundDef(o.value); const ok = soundOk(s, lvl); o.disabled = !ok; o.textContent = `${s.name}${s.len ? ` — ${s.len}` : ''}${ok ? '' : ' (يحتاج تحديث التطبيق)'}`; });
+      const n = $('#adhanNote');
+      if (n) n.textContent = v ? 'يصلك الأذان بصوت المؤذن عند دخول كل صلاة حتى لو كان الهاتف مقفولاً.' : chosen.k === 'beep' ? 'يصلك إشعار بصوت التنبيه المعتاد عند دخول كل صلاة.' : 'يصلك إشعار بصوت التنبيه عند دخول كل صلاة. لسماع صوت المؤذن والهاتف مقفول ثبّت النسخة الأحدث مرة واحدة (اختياري، ولا تُحذف بياناتك).';
+      const b = $('#voiceApk'); if (b) b.hidden = ADHAN_SOUNDS.every((s) => soundOk(s, lvl));
+    };
+    paintAdhan();
+    $('#adhanSound').onchange = (e) => {
+      stopHear();
+      settings.adhanSound = e.target.value;
+      saveSettings(); // يعيد جدولة الأذان على قناة الصوت الجديد
+      paintAdhan();
+      toast('تم الحفظ، سيصلك الأذان بهذا الصوت');
+    };
+    $('#hearAdhan').onclick = () => {
+      const k = $('#adhanSound').value;
+      if (!adhanSoundDef(k).file) { stopHear(); toast('سيصلك صوت الإشعار المعتاد في هاتفك'); return; }
+      const a = adhanAudio(k);
+      if (!a.paused) { stopHear(); return; }
+      window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'adhan' }));
+      a.currentTime = 0;
+      a.play().then(() => { $('#hearAdhan').textContent = '⏹ إيقاف الأذان'; }).catch(() => toast('تعذّر تشغيل صوت الأذان'));
+      a.onended = () => { if ($('#hearAdhan')) $('#hearAdhan').textContent = HEAR; };
+    };
     if ($('#chkUpd')) $('#chkUpd').onclick = () => checkUpdate(true);
     if ($('#exactBtn')) {
       exactAllowed().then((ok) => { if ($('#exactBtn')) $('#exactBtn').hidden = ok; });
@@ -1182,35 +1217,65 @@
   }
 
 
+  // ---------- أصوات الأذان (يختارها المستخدم من الإعدادات) ----------
+  // كل التسجيلات من ويكيميديا كومنز برخص حرّة؛ التفاصيل في adhan/CREDITS.txt
+  // file: اسم الملف في مجلد adhan وفي موارد أندرويد (raw) • lvl: أقل مستوى للتطبيق الأصلي يحتوي الصوت
+  const ADHAN_SOUNDS = [
+    { k: 'classic', file: 'adhan', name: 'الأذان الأول (الافتراضي)', len: '٢:٣٤', lvl: 4, ch: 'adhan-voice', credit: '«Beautiful adhan» — Adam-synagda (CC0)' },
+    { k: 'azan2', file: 'adhan_2', name: 'الأذان الثاني', len: '٣:٠٣', lvl: 6, credit: '«Azan» — Andrewler (CC BY-SA 4.0)' },
+    { k: 'azan3', file: 'adhan_3', name: 'الأذان الثالث', len: '١:٢٧', lvl: 6, credit: '«The Adhan» — Aaqib Azeez، رفعه Atcovi (CC BY-SA 4.0)' },
+    { k: 'short', file: 'adhan_short', name: 'أذان قصير', len: '٠:٤٢', lvl: 6, credit: '«Adhan» — Aishatu98 (CC0)' },
+    { k: 'beep', file: null, name: 'تنبيه الهاتف العادي (بدون صوت مؤذن)', ch: 'adhan-alert' },
+  ];
+  const adhanSoundDef = (k) => ADHAN_SOUNDS.find((s) => s.k === k) || ADHAN_SOUNDS[0];
+
   // ---------- الأذان في تطبيق أندرويد (إشعارات مجدولة تعمل والهاتف مقفول) ----------
   const LN = NATIVE && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
-  // صوت المؤذن مدمج في نسخ التطبيق الأصلية من المستوى ٤ فأعلى؛ النسخ الأقدم تبقى بصوت التنبيه حتى يثبّت المستخدم النسخة الجديدة (اختيارياً)
+  // أصوات المؤذن مدمجة في التطبيق الأصلي: الصوت الأول من المستوى ٤، والبقية من المستوى ٦.
+  // أندرويد يثبّت صوت كل قناة إشعارات عند إنشائها، لذا لكل صوت قناة خاصة به.
+  // النسخ الأقدم تبقى بصوت التنبيه حتى يثبّت المستخدم النسخة الجديدة (اختيارياً)
   let ADHAN_CHANNEL = 'adhan-alert';
   let voiceKnown = null;
+  let levelKnown = null;
+  const soundOk = (s, lvl) => !s.file || (!!window.NOOR_NATIVE_ADHAN && lvl >= s.lvl);
+  async function adhanSound() {
+    if (levelKnown === null) levelKnown = NATIVE ? await nativeLevel() : 99;
+    const want = adhanSoundDef(settings.adhanSound);
+    // إن لم يكن الصوت المختار مدمجاً في هذه النسخة نرجع إلى الأذان الافتراضي ثم إلى التنبيه العادي
+    return [want, adhanSoundDef('classic'), adhanSoundDef('beep')].find((s) => soundOk(s, levelKnown));
+  }
   async function hasVoice() {
-    if (voiceKnown === null) voiceKnown = !!window.NOOR_NATIVE_ADHAN && (await nativeLevel()) >= 4;
-    ADHAN_CHANNEL = voiceKnown ? 'adhan-voice' : 'adhan-alert';
+    const s = await adhanSound();
+    voiceKnown = !!s.file;
+    ADHAN_CHANNEL = s.ch || `adhan-v-${s.k}`;
     return voiceKnown;
   }
-  let channelReady = false;
+  let channelReady = '';
   async function ensureNotify() {
     if (!LN) return false;
     let perm = await LN.checkPermissions();
     if (perm.display !== 'granted') perm = await LN.requestPermissions();
     if (perm.display !== 'granted') return false;
-    if (!channelReady) {
-      const voice = await hasVoice();
+    const s = await adhanSound();
+    await hasVoice();
+    if (channelReady !== ADHAN_CHANNEL) {
       await LN.createChannel({
         id: ADHAN_CHANNEL,
-        name: 'الأذان ومواقيت الصلاة',
+        name: s.file ? `الأذان ومواقيت الصلاة (${s.name})` : 'الأذان ومواقيت الصلاة',
         description: 'تنبيه عند دخول وقت كل صلاة',
         importance: 5,
         visibility: 1,
         vibration: true,
         lights: true,
-        ...(voice ? { sound: 'adhan.mp3' } : {}),
+        ...(s.file ? { sound: `${s.file}.mp3` } : {}),
       });
-      channelReady = true;
+      // حذف قنوات الأصوات الأخرى حتى لا تتكرر في إعدادات الإشعارات بالهاتف
+      try {
+        const { channels } = await LN.listChannels();
+        const old = (channels || []).filter((c) => /^adhan-/.test(c.id) && c.id !== ADHAN_CHANNEL);
+        for (const c of old) await LN.deleteChannel({ id: c.id });
+      } catch { /* تجاهل */ }
+      channelReady = ADHAN_CHANNEL;
     }
     return true;
   }
@@ -1347,11 +1412,19 @@
 
   // ---------- تنبيه الأذان ----------
   let adhanEl = null;
-  const adhanAudio = () => (adhanEl = adhanEl || new Audio('adhan/adhan.mp3'));
+  // صوت الأذان المختار (أو صوت معيّن للاستماع التجريبي)
+  const adhanAudio = (k) => {
+    const s = adhanSoundDef(k || settings.adhanSound);
+    const src = `adhan/${(s.file || 'adhan')}.mp3`;
+    if (!adhanEl) adhanEl = new Audio();
+    if (!adhanEl.src.endsWith(src)) { adhanEl.pause(); adhanEl.src = src; }
+    return adhanEl;
+  };
   window.addEventListener('noor:audio', (e) => { if (e.detail !== 'adhan' && adhanEl && !adhanEl.paused) adhanEl.pause(); });
   let lastAlert = store.get('lastAlert', 0);
   setInterval(() => {
     if (!settings.alerts || (LN && voiceKnown !== false) || document.visibilityState !== 'visible' && LN) return; // في النسخ الأقدم: يُشغَّل صوت المؤذن داخل التطبيق إن كان مفتوحاً
+    if (adhanSoundDef(settings.adhanSound).k === 'beep' && LN) return; // اختار المستخدم التنبيه العادي
     const now = new Date();
     const t = timesFor(now);
     for (const p of PRAYERS) {
@@ -1362,7 +1435,7 @@
         store.set('lastAlert', lastAlert);
         const msg = `حان الآن موعد صلاة ${p.name}`;
         toast('🕌 ' + msg);
-        try { window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'adhan' })); adhanAudio().play().catch(() => {}); } catch { /* تجاهل */ }
+        if (adhanSoundDef(settings.adhanSound).file) { try { window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'adhan' })); adhanAudio().play().catch(() => {}); } catch { /* تجاهل */ } }
         if ('Notification' in window && Notification.permission === 'granted') {
           try { new Notification('أثر', { body: msg, icon: 'icons/icon.svg' }); } catch { /* تجاهل */ }
         }
