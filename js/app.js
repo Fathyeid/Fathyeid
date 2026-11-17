@@ -1411,6 +1411,31 @@
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(false); });
   }
 
+  // ---------- عدّاد المستخدمين المجهول ----------
+  // رقم عشوائي يُولَّد على الجهاز ويُرسل مرة يومياً مع نوع النسخة فقط (بدون أي بيانات شخصية أو موقع)
+  function ping() {
+    const day = new Date().toISOString().slice(0, 10);
+    if (store.get('ping:day', '') === day) return;
+    let id = store.get('iid', '');
+    if (!/^[0-9a-f-]{36}$/.test(id)) {
+      try { id = crypto.randomUUID(); } catch {
+        const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+        const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+        id = `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+      }
+      store.set('iid', id);
+    }
+    const platform = NATIVE ? 'android' : (matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'pwa' : 'web');
+    const KEY = 'sb_publishable_41NxOHPNTwzGP5nvZOt2UQ_m7FMSyY4';
+    fetch('https://movodjdwghharkfrgqtv.supabase.co/rest/v1/rpc/athar_ping', {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_id: id, p_platform: platform, p_build: BUILD.code || 0 }),
+    }).then((r) => { if (r.ok) store.set('ping:day', day); }).catch(() => {});
+  }
+  setTimeout(ping, 6000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ping(); });
+
   // ---------- تنبيه الأذان ----------
   let adhanEl = null;
   // صوت الأذان المختار (أو صوت معيّن للاستماع التجريبي)
