@@ -37,7 +37,7 @@ def page(path, title, desc, base, kind):
 <h1 id="t">{t}</h1><div id="prev" class="prev"></div>
 <a class="btn" id="open" href="#">📲 افتح في تطبيق أثر</a>
 <a class="btn ghost" id="web" href="{SITE}">🌐 افتحه في المتصفح</a>
-<a class="btn ghost" id="dl" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ حمّل التطبيق (أندرويد)</a>
+<a class="btn ghost" id="dl" href="https://movodjdwghharkfrgqtv.supabase.co/functions/v1/athar-update?dl=apk">⬇️ حمّل التطبيق (أندرويد)</a>
 <p class="note">{html.escape(SIGN)}</p></main>
 <script src="{'../' if '/' in path else ''}open.js"></script>
 </body></html>

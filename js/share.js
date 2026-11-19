@@ -126,7 +126,7 @@
     const sh = N.sheet(`<div class="sheet-title">مشاركة</div>
       <div class="share-prev"><canvas id="shCv"></canvas></div>
       ${oldApk ? `${targets({ text: caption, url })}
-        <p class="muted share-note">الرابط يفتح ${esc(opts.card.kind || 'المحتوى')} نفسه لمن يضغط عليه. ولمشاركة هذه البطاقة كصورة: <a href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk" target="_blank" rel="noopener">حمّل أحدث نسخة من التطبيق</a> (اختياري).</p>`
+        <p class="muted share-note">الرابط يفتح ${esc(opts.card.kind || 'المحتوى')} نفسه لمن يضغط عليه. ولمشاركة هذه البطاقة كصورة: <a href="https://movodjdwghharkfrgqtv.supabase.co/functions/v1/athar-update?dl=apk" target="_blank" rel="noopener">حمّل أحدث نسخة من التطبيق</a> (اختياري).</p>`
         : `<div class="share-opts">
         <button class="btn" data-s="img">🖼️ صورة</button>
         <button class="btn ghost" data-s="link">🔗 رابط</button>

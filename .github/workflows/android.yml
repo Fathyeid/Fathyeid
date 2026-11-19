@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write  # توكن OIDC لإثبات هوية مسار البناء عند رفع ملفات التحديث إلى Supabase
 
 concurrency:
   group: android-apk
@@ -111,3 +112,17 @@ jobs:
             noor-play.aab
           fail_on_unmatched_files: false
           make_latest: true
+
+      # المستودع خاص، فلا تصل أجهزة المستخدمين إلى إصدارات GitHub؛ نرفع ملفات التحديث إلى مساحة عامة في Supabase.
+      # الرفع بلا أسرار: الدالة athar-publish تتحقق من توكن OIDC الصادر من GitHub لهذا المسار وهذا الفرع فقط.
+      - name: نشر ملفات التحديث على Supabase
+        env:
+          PUBLISH_URL: https://movodjdwghharkfrgqtv.supabase.co/functions/v1/athar-publish
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=athar-publish" | jq -r .value)
+          call() { curl -fsS --retry 3 -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "$1" "$PUBLISH_URL"; }
+          URLS=$(call "{\"action\":\"urls\",\"code\":$NOOR_VERSION_CODE}")
+          curl -fsS --retry 3 -X PUT -H 'Content-Type: application/zip' -H 'x-upsert: true' --data-binary @web.zip "$(echo "$URLS" | jq -r .web)" > /dev/null
+          curl -fsS --retry 3 -X PUT -H 'Content-Type: application/vnd.android.package-archive' -H 'x-upsert: true' --data-binary @athar.apk "$(echo "$URLS" | jq -r .apk)" > /dev/null
+          call "{\"action\":\"commit\",\"code\":$NOOR_VERSION_CODE,\"native_level\":$NOOR_MIN_NATIVE,\"web_sha256\":\"$NOOR_WEB_SHA256\",\"tag\":\"apk-${{ github.run_number }}\"}"
