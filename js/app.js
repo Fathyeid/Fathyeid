@@ -1346,7 +1346,8 @@
   }
   async function checkUpdate(manual) {
     if (!NATIVE || !BUILD.code) { if (manual) toast('التحقق من التحديثات متاح في تطبيق أندرويد فقط'); return; }
-    if (!manual && Date.now() - store.get('upd:checked', 0) < 3600000) return;
+    // تحقق تلقائي كل ١٠ دقائق بالكثير (طلب واحد خفيف إلى GitHub)
+    if (!manual && Date.now() - store.get('upd:checked', 0) < 600000) return;
     if (manual) toast('جارٍ التحقق من التحديثات...');
     try {
       const res = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } });
@@ -1365,15 +1366,15 @@
         }
         const web = num('WEB_CODE'); const zip = asset('web.zip');
         if (zip && web > BUILD.code) {
-          if (store.get('upd:pendingWeb', 0) === web) { if (manual) toast('التحديث جاهز، وسيعمل عند فتح التطبيق المرة القادمة'); return; }
+          if (store.get('upd:pendingWeb', 0) === web) { showReady(store.get('upd:pendingId', ''), manual); return; }
           // بصمة SHA-256 للملف (تحسبها GitHub لكل ملف منشور) وتشترطها أداة التحديث للتحقق من سلامته
           const shaM = /WEB_SHA256=([0-9a-f]{64})/.exec(rel.body || '');
           const checksum = (zip.digest || '').replace(/^sha256:/, '') || (shaM ? shaM[1] : '');
           try {
             const bundle = await UPD.download({ url: zip.browser_download_url, version: String(web), checksum });
             await UPD.next({ id: bundle.id });
-            store.set('upd:pendingWeb', web);
-            if (manual) toast('تم تنزيل التحديث ✓ سيعمل تلقائياً عند فتح التطبيق المرة القادمة');
+            store.set('upd:pendingWeb', web); store.set('upd:pendingId', bundle.id);
+            showReady(bundle.id, true);
           } catch (err) {
             console.warn('web update', err);
             // عند تعذّر التحديث في الخلفية نعرض تثبيت النسخة الكاملة حتى لا يبقى المستخدم على نسخة قديمة
@@ -1392,6 +1393,24 @@
     } catch {
       if (manual) toast('تعذّر التحقق، تأكد من الاتصال بالإنترنت');
     }
+  }
+  // التحديث متنزّل وجاهز: نعرضه للمستخدم مع تطبيقه فوراً بدل الانتظار حتى إعادة فتح التطبيق
+  let readyShown = false;
+  function showReady(id, force) {
+    if (!id || (readyShown && !force)) { if (force) toast('التحديث جاهز، وسيعمل عند فتح التطبيق المرة القادمة'); return; }
+    readyShown = true;
+    const sh = sheet(`
+      <div class="center"><p style="font-size:2.6rem;margin:0">✨</p>
+      <div class="sheet-title" style="font-size:1.15rem">تحديث جديد جاهز</div>
+      <p class="muted" style="line-height:1.9">تم تنزيل نسخة جديدة من تطبيق أثر. اضغط «تطبيق الآن» لتشغيلها فوراً، وكل بياناتك ستبقى كما هي.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn block" id="rdyGo">تطبيق الآن</button>
+        <button class="btn ghost block" id="rdyLater">لاحقاً (عند فتح التطبيق المرة القادمة)</button>
+      </div>`);
+    $('#rdyGo', sh.el).onclick = async () => {
+      try { await UPD.set({ id }); } catch (e) { console.warn('apply update', e); sh.close(); toast('سيعمل التحديث عند فتح التطبيق المرة القادمة'); }
+    };
+    $('#rdyLater', sh.el).onclick = sh.close;
   }
   function showUpdate(url, latest) {
     const sh = sheet(`
