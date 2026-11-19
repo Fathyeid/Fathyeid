@@ -205,6 +205,7 @@
         <button class="tile" data-go="enc"><span class="ic">🏛️</span>الموسوعات</button>
         <button class="tile" data-go="lib/all"><span class="ic">📚</span>المكتبة العلمية</button>
         <button class="tile" data-go="academy"><span class="ic">🎓</span>الأكاديمية</button>
+        <button class="tile" data-go="qz"><span class="ic">🎯</span>اختبر علمك</button>
         <button class="tile" data-go="hifz"><span class="ic">🧠</span>حفظ القرآن</button>
         <button class="tile" data-go="hadith"><span class="ic">📜</span>الحديث الشريف</button>
         <button class="tile" data-go="dawah"><span class="ic">🎬</span>المكتبة الدعوية</button>
@@ -260,7 +261,7 @@
     ['«خيركم من تعلّم القرآن وعلّمه»', 'رواه البخاري'],
     ['﴿وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ﴾', 'البقرة: ٤٥'],
   ];
-  const DASH_TILES = [['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['enc', '🏛️', 'الموسوعات'], ['lib/all', '📚', 'المكتبة'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['calc', '🧮', 'الحاسبات'], ['fiqh', '⚖️', 'الموسوعة الفقهية'], ['bookmarks', '🔖', 'العلامات']];
+  const DASH_TILES = [['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['enc', '🏛️', 'الموسوعات'], ['lib/all', '📚', 'المكتبة'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qz', '🎯', 'اختبر علمك'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['calc', '🧮', 'الحاسبات'], ['fiqh', '⚖️', 'الموسوعة الفقهية'], ['bookmarks', '🔖', 'العلامات']];
   function renderDash() {
     const now = new Date();
     const t = timesFor(now);
@@ -1410,6 +1411,31 @@
     setTimeout(() => checkUpdate(false), 4000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(false); });
   }
+
+  // ---------- عدّاد المستخدمين المجهول ----------
+  // رقم عشوائي يُولَّد على الجهاز ويُرسل مرة يومياً مع نوع النسخة فقط (بدون أي بيانات شخصية أو موقع)
+  function ping() {
+    const day = new Date().toISOString().slice(0, 10);
+    if (store.get('ping:day', '') === day) return;
+    let id = store.get('iid', '');
+    if (!/^[0-9a-f-]{36}$/.test(id)) {
+      try { id = crypto.randomUUID(); } catch {
+        const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+        const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+        id = `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+      }
+      store.set('iid', id);
+    }
+    const platform = NATIVE ? 'android' : (matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'pwa' : 'web');
+    const KEY = 'sb_publishable_41NxOHPNTwzGP5nvZOt2UQ_m7FMSyY4';
+    fetch('https://movodjdwghharkfrgqtv.supabase.co/rest/v1/rpc/athar_ping', {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_id: id, p_platform: platform, p_build: BUILD.code || 0 }),
+    }).then((r) => { if (r.ok) store.set('ping:day', day); }).catch(() => {});
+  }
+  setTimeout(ping, 6000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ping(); });
 
   // ---------- تنبيه الأذان ----------
   let adhanEl = null;
