@@ -129,14 +129,15 @@
       if (!name) return toast('اكتب اسماً مستعاراً');
       if (!age) return toast('اختر العمر');
       const list = P.list();
-      if (p) Object.assign(list.find((x) => x.id === p.id), { name, age, avatar: av });
-      else { const id = 'k' + Date.now().toString(36); list.push({ id, name, age, avatar: av, created: Date.now() }); P.setActive(id); }
+      if (p) Object.assign(list.find((x) => x.id === p.id), { name, age, avatar: av, upd: Date.now() });
+      else { const id = 'k' + Date.now().toString(36); list.push({ id, name, age, avatar: av, created: Date.now(), upd: Date.now() }); P.setActive(id); }
       P.save(list); goHome();
     };
   }
 
   // ---------- الصفحة الرئيسية للموسوعة ----------
   async function renderHome() {
+    autoSync(10 * 60000);
     if (!me()) return renderSetup(false);
     loader();
     let I; try { I = await index(); } catch { return failed(); }
@@ -469,7 +470,7 @@
       <h3 class="kd-h">🎁 صندوق المكافآت: شخصيات جديدة</h3>
       <div class="kd-avs">${UNLOCK.map(([x, n]) => `<button class="${stars >= n ? '' : 'locked'}" ${stars >= n ? `data-av="${x}"` : 'disabled'} title="${ar(n)} نجمة">${stars >= n ? x : '🔒'}<small>${ar(n)}⭐</small></button>`).join('')}</div>
       <p class="muted kd-note">اضغط على شخصية مفتوحة لتختارها.</p></div>`;
-    $$('[data-av]').forEach((b) => b.onclick = () => { const list = P.list(); list.find((p) => p.id === P.activeId()).avatar = b.dataset.av; P.save(list); toast('تم تغيير شخصيتك ' + b.dataset.av); renderJourney(); });
+    $$('[data-av]').forEach((b) => b.onclick = () => { const list = P.list(); Object.assign(list.find((p) => p.id === P.activeId()), { avatar: b.dataset.av, upd: Date.now() }); P.save(list); toast('تم تغيير شخصيتك ' + b.dataset.av); renderJourney(); });
   }
   // ---------- الألعاب ----------
   let ayatP = null;
@@ -666,7 +667,7 @@
       const sel = $$('[data-c]', sh.el).filter((x) => x.checked).map((x) => x.dataset.c);
       if (!sel.length) return toast('اختر قسماً واحداً على الأقل');
       const list = P.list(); const q = list.find((x) => x.id === p.id);
-      q.rules = { cats: sel.length === cats.length ? null : sel, maxLevel: lvl, minutes: +$('#rM', sh.el).value, audio: $('#rA', sh.el).checked };
+      q.upd = Date.now(); q.rules = { cats: sel.length === cats.length ? null : sel, maxLevel: lvl, minutes: +$('#rM', sh.el).value, audio: $('#rA', sh.el).checked };
       P.save(list); touch(); sh.close(); toast('تم حفظ الإعدادات ✓'); done();
     };
   }
@@ -676,7 +677,121 @@
     Object.keys(localStorage).filter((k) => k.startsWith(pre)).forEach((k) => localStorage.removeItem(k));
     const list = P.list().filter((x) => x.id !== p.id); P.save(list);
     if (P.activeId() === p.id) P.setActive(list[0] ? list[0].id : '');
+    const f = FAM.get();
+    if (f) { FAM.set({ ...f, removed: [...(f.removed || []), p.id] }); api({ action: 'delkid', code: f.code, id: p.id }).catch(() => { /* يُحذف في المزامنة القادمة */ }); }
     toast('تم حذف الملف'); return true;
+  }
+
+  // ---------- النسخ الاحتياطي والمزامنة برمز العائلة (المرحلة ٥) ----------
+  // لا بريد ولا حساب: رمز سري يحتفظ به ولي الأمر. يُرسل للخادم الاسم المستعار والعمر والتقدّم والقواعد وبصمة رمز ولي الأمر فقط.
+  const SYNC_URL = 'https://movodjdwghharkfrgqtv.supabase.co/functions/v1/athar-kids-sync';
+  const FAM = { get: () => store.get('kd:family', null), set: (v) => store.set('kd:family', v) };
+  const SKIP = /^(tts:|warned$)/; // مفاتيح خاصة بالجهاز لا تُزامن
+  async function api(body) {
+    const r = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.error || String(r.status)); e.code = j.error; throw e; }
+    return j;
+  }
+  function kidKeys(pid) {
+    const pre = `noor:kd:${pid}:`; const o = {};
+    for (const k of Object.keys(localStorage)) if (k.startsWith(pre) && !SKIP.test(k.slice(pre.length))) { try { o[k.slice(pre.length)] = JSON.parse(localStorage.getItem(k)); } catch { /* تجاهل */ } }
+    return o;
+  }
+  // دمج بيانات جهازين دون فقدان تقدّم: الأكمل والأعلى يغلب
+  const maxBy = (a, b, f) => (a == null ? b : b == null ? a : f(b) > f(a) ? b : a);
+  function mergeKey(k, a, b) {
+    if (a == null) return b; if (b == null) return a;
+    if (k === 'prog') { const o = { ...a }; for (const id in b) { const x = o[id], y = b[id]; if (!x) { o[id] = y; continue; } o[id] = { ...x, ...y, done: !!(x.done || y.done), stars: Math.max(x.stars || 0, y.stars || 0), seen: Math.max(x.seen || 0, y.seen || 0), at: x.at && y.at ? Math.min(x.at, y.at) : x.at || y.at, quiz: maxBy(x.quiz, y.quiz, (q) => q.at || 0) }; if (o[id].quiz) o[id].quiz.best = Math.max((x.quiz && x.quiz.best) || 0, (y.quiz && y.quiz.best) || 0); } return o; }
+    if (k === 'stars') return Math.max(+a || 0, +b || 0);
+    if (k === 'fav') return [...new Set([...a, ...b])];
+    if (k === 'badges' || k === 'games') return { ...b, ...a };
+    if (k === 'usage') { const o = { ...a }; for (const d in b) o[d] = Math.max(o[d] || 0, b[d]); return o; }
+    if (k === 'week') return a.w !== b.w ? (a.w > b.w ? a : b) : { w: a.w, lessons: Math.max(a.lessons, b.lessons), quizzes: Math.max(a.quizzes, b.quizzes), games: Math.max(a.games, b.games), claimed: { ...b.claimed, ...a.claimed } };
+    if (k === 'last') return maxBy(a, b, (x) => x.at || 0);
+    if (k === 'extra') return a.day !== b.day ? a : { day: a.day, min: Math.max(a.min, b.min) };
+    return a; // غير ذلك: قيمة هذا الجهاز
+  }
+  let syncing = null;
+  function syncNow(manual) {
+    const f = FAM.get(); if (!f) return Promise.resolve(false);
+    if (syncing) return syncing;
+    syncing = (async () => {
+      try {
+        const r = await api({ action: 'pull', code: f.code });
+        const gone = [...new Set([...(f.removed || []), ...((r.parent && r.parent.removed) || [])])];
+        // طفل حذفه ولي الأمر من جهاز آخر: يُحذف هنا أيضاً
+        for (const id of gone) { const pre = `noor:kd:${id}:`; Object.keys(localStorage).filter((k) => k.startsWith(pre)).forEach((k) => localStorage.removeItem(k)); }
+        const list = P.list().filter((p) => !gone.includes(p.id));
+        if (gone.includes(P.activeId())) P.setActive('');
+        for (const rk of r.kids) {
+          if (gone.includes(rk.id) || !rk.data || !rk.data.profile) continue;
+          const loc = list.find((p) => p.id === rk.id);
+          if (!loc) list.push(rk.data.profile);
+          else if ((rk.data.profile.upd || 0) > (loc.upd || 0)) Object.assign(loc, rk.data.profile);
+          const mine = kidKeys(rk.id);
+          for (const k in rk.data.keys || {}) store.set(`kd:${rk.id}:${k}`, mergeKey(k, mine[k], rk.data.keys[k]));
+        }
+        P.save(list);
+        if (!P.activeId() && list[0]) P.setActive(list[0].id);
+        if (!PIN.has() && r.parent && r.parent.hash) store.set('kd:parent', r.parent);
+        await api({ action: 'push', code: f.code, parent: PIN.get() || undefined, kids: list.map((p) => ({ id: p.id, data: { profile: p, keys: kidKeys(p.id) } })) });
+        FAM.set({ ...FAM.get(), at: Date.now() });
+        if (manual) toast('تمت المزامنة ✓');
+        return true;
+      } catch (e) {
+        if (manual) toast(e.code === 'not_found' ? 'رمز العائلة غير صحيح' : e.code === 'too_many_kids' ? 'الحد الأقصى ٨ أطفال للعائلة' : 'تعذّر الاتصال، سنحاول لاحقاً');
+        if (e.code === 'not_found') e.notFound = true;
+        throw e;
+      } finally { syncing = null; }
+    })();
+    return syncing.catch((e) => (e.notFound ? 'not_found' : false));
+  }
+  // مزامنة تلقائية هادئة: عند فتح الموسوعة وعند الخروج من التطبيق
+  const autoSync = (gap) => { const f = FAM.get(); if (f && Date.now() - (f.at || 0) > gap) syncNow(false); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') autoSync(60000); });
+  const fmtCode = (c) => c.replace(/^(ATHR-)(\w{4})-(\w{4})/, '$1••••-••••');
+  function showCode(code, fresh) {
+    const sh = N.sheet(`<div class="kd"><div class="sheet-title">🔑 رمز العائلة</div>${fresh ? '<p>اكتب هذا الرمز واحفظه في مكان آمن (ورقة أو ملاحظة خاصة). به تستعيد بيانات أطفالك على أي جهاز.</p>' : ''}
+      <div class="kd-code" dir="ltr">${esc(code)}</div>
+      <p class="kd-safe">⚠️ من يعرف هذا الرمز يستطيع رؤية تقدّم أطفالك. لا تشاركه إلا مع الوالد الآخر.</p>
+      <div class="kd-row2"><button class="btn" id="cCopy">📋 نسخ</button><button class="btn ghost" id="cShare">↗️ مشاركة</button></div></div>`);
+    $('#cCopy', sh.el).onclick = async () => { try { await navigator.clipboard.writeText(code); toast('تم النسخ ✓'); } catch { toast('انسخ الرمز يدوياً'); } };
+    $('#cShare', sh.el).onclick = () => N.shareText(`رمز عائلتنا في موسوعة الطفل – تطبيق أثر:\n${code}`);
+  }
+  function syncCard() {
+    const f = FAM.get();
+    if (!f) return `<div class="kd-card kd-sync"><h3 class="kd-h3">☁️ النسخ الاحتياطي برمز العائلة</h3><p class="muted">احفظ تقدّم أطفالك وإعداداتهم في السحابة، واستعدها على أي جهاز أو بعد إعادة تثبيت التطبيق. لا نطلب بريداً ولا رقم هاتف.</p>
+      <div class="kd-row2"><button class="btn" id="sNew">🔑 إنشاء رمز عائلة</button><button class="btn ghost" id="sHave">عندي رمز (استعادة)</button></div></div>`;
+    return `<div class="kd-card kd-sync"><h3 class="kd-h3">☁️ النسخ الاحتياطي مفعّل</h3><p>الرمز: <b dir="ltr">${esc(fmtCode(f.code))}</b></p><p class="muted">آخر مزامنة: ${f.at ? new Intl.DateTimeFormat('ar', { dateStyle: 'medium', timeStyle: 'short' }).format(f.at) : 'لم تتم بعد'}</p>
+      <div class="kd-row2"><button class="btn" id="sNow">🔄 مزامنة الآن</button><button class="btn ghost" id="sShow">👁️ إظهار الرمز</button></div>
+      <div class="kd-row2"><button class="btn ghost" id="sOff">إيقاف المزامنة على هذا الجهاز</button><button class="btn ghost" id="sWipe">🗑️ حذف البيانات من السحابة</button></div></div>`;
+  }
+  function bindSync() {
+    const on = (id, fn) => { const b = $('#' + id); if (b) b.onclick = fn; };
+    on('sNew', async () => {
+      try { const { code } = await api({ action: 'create' }); FAM.set({ code }); const ok = await syncNow(false); if (ok !== true) throw new Error('sync'); renderParent(); showCode(code, true); }
+      catch (e) { FAM.set(null); toast(e.code === 'rate' ? 'محاولات كثيرة، حاول بعد ساعة' : 'تعذّر الاتصال بالإنترنت'); }
+    });
+    on('sHave', () => {
+      const sh = N.sheet(`<div class="kd"><div class="sheet-title">استعادة برمز العائلة</div><input class="search" id="rC" dir="ltr" placeholder="ATHR-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters"><button class="btn block" id="rGo">استعادة</button><p class="muted kd-note">تُدمج البيانات مع ما على هذا الجهاز دون حذف أي تقدّم.</p></div>`);
+      $('#rGo', sh.el).onclick = async () => {
+        const raw = $('#rC', sh.el).value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^ATHR/, '');
+        if (raw.length !== 12) return toast('الرمز ١٢ حرفاً بعد ATHR');
+        const code = `ATHR-${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8)}`;
+        FAM.set({ code }); sh.close();
+        const r = await syncNow(true);
+        if (r !== true) FAM.set(null);
+        renderParent();
+      };
+    });
+    on('sNow', async () => { const r = await syncNow(true); if (r === 'not_found') { FAM.set(null); toast('هذا الرمز لم يعد موجوداً في السحابة'); } renderParent(); });
+    on('sShow', () => parentGate(() => showCode(FAM.get().code, false)));
+    on('sOff', () => { if (confirm('إيقاف المزامنة على هذا الجهاز؟ تبقى بياناتك على الجهاز وفي السحابة، ويمكنك الاستعادة بالرمز لاحقاً.')) { FAM.set(null); renderParent(); } });
+    on('sWipe', async () => {
+      if (!confirm('حذف كل بيانات العائلة من السحابة نهائياً؟ تبقى البيانات على هذا الجهاز فقط.')) return;
+      try { await api({ action: 'wipe', code: FAM.get().code }); FAM.set(null); toast('حُذفت بيانات العائلة من السحابة ✓'); renderParent(); } catch { toast('تعذّر الاتصال بالإنترنت'); }
+    });
   }
 
   // ---------- اللوحة ----------
@@ -684,8 +799,10 @@
     N.setTitle('لوحة ولي الأمر');
     if (!PIN.has()) {
       N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">أهلاً بولي الأمر! أنشئ رمزاً سرياً من ٤ أرقام لحماية الإعدادات، حتى لا يغيّرها الطفل.</div></div></section>
-        <button class="btn block kd-big" id="pNew">🔐 إنشاء رمز ولي الأمر</button><p class="muted kd-note">الرمز والإعدادات محفوظة على هذا الجهاز فقط.</p></div>`;
+        <button class="btn block kd-big" id="pNew">🔐 إنشاء رمز ولي الأمر</button><p class="muted kd-note">الرمز والإعدادات محفوظة على هذا الجهاز.</p>
+        ${FAM.get() ? '' : '<div class="kd-card kd-sync"><p class="muted">استخدمت الموسوعة على جهاز آخر وعندك رمز عائلة؟</p><button class="btn ghost block" id="sHave">☁️ استعادة برمز العائلة</button></div>'}</div>`;
       $('#pNew').onclick = async () => { if (await newPin()) renderParent(); };
+      bindSync();
       return;
     }
     if (!unlocked()) {
@@ -727,6 +844,7 @@
     N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">لوحة ولي الأمر 👨‍👩‍👧<br><small>تابع تقدّم أطفالك وحدّد ما يناسبهم. كل البيانات على هذا الجهاز فقط.</small></div></div></section>
       ${kids.length ? kids.map(card).join('') : '<div class="kd-card center"><p>لا توجد ملفات أطفال بعد.</p></div>'}
       <button class="btn block kd-big" id="pAdd">➕ إضافة طفل</button>
+      ${syncCard()}
       <div class="kd-links"><button class="chip" id="pPin">🔑 تغيير الرمز</button><button class="chip" id="pLock">🔒 قفل اللوحة</button></div></div>`;
     $$('[data-set]').forEach((b) => b.onclick = () => rulesSheet(kids.find((x) => x.id === b.dataset.set), cats, renderParent));
     $$('[data-edit]').forEach((b) => b.onclick = () => { P.setActive(b.dataset.edit); renderSetup(true); });
@@ -734,6 +852,7 @@
     $('#pAdd').onclick = () => { P.setActive(''); renderSetup(false); };
     $('#pPin').onclick = async () => { if (await verifyPin('الرمز الحالي') && (await newPin())) renderParent(); };
     $('#pLock').onclick = () => { parentUntil = 0; go('kids'); };
+    bindSync();
   }
 
   Object.assign(routes, {
