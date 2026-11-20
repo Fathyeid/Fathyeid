@@ -116,6 +116,7 @@ def load(q, bukhari, muslim, stats):
                     qz.append({'q': ex(x['q']), 'o': [ex(o, True) for o in x['o']], 'a': x['a'], 'e': ex(x.get('e', ''))})
                 if qz: row['quiz'] = qz
                 if 'cards' in it: row['cards'] = it['cards']
+                if it.get('map'): row['map'] = True  # الخريطة التفاعلية (data/kids/world.json)
                 if 'experiment' in it:  # تجربة منزلية آمنة: أدوات وخطوات وتنبيه سلامة إلزامي
                     e = it['experiment']
                     if not e.get('safety'): die(f'{w}: التجربة تحتاج تنبيه سلامة')
@@ -141,7 +142,7 @@ def main():
         for it in lst:  # فهرس مختصر للبحث والصفحة الرئيسية دون تحميل كل المحتوى
             index['items'].append({'id': it['id'], 'c': cid, 't': it['title'], 'k': it['kind'], 'age': it['age'], 'l': it['level'],
                                    'ic': it.get('icon', ic), 'sub': it.get('sub', ''), 'tags': it.get('tags', []),
-                                   'm': sorted({'نص'} | ({'اختبار'} if it.get('quiz') else set()) | ({'خطوات'} if it.get('steps') else set()) | ({'بطاقات'} if it.get('cards') else set()) | ({'آيات'} if any(e['k'] == 'q' for e in it.get('evidence', [])) else set()) | ({'خط زمني'} if it.get('timeline') else set()) | ({'تجربة'} if it.get('experiment') else set())),
+                                   'm': sorted({'نص'} | ({'اختبار'} if it.get('quiz') else set()) | ({'خطوات'} if it.get('steps') else set()) | ({'بطاقات'} if it.get('cards') else set()) | ({'آيات'} if any(e['k'] == 'q' for e in it.get('evidence', [])) else set()) | ({'خط زمني'} if it.get('timeline') else set()) | ({'تجربة'} if it.get('experiment') else set()) | ({'خريطة'} if it.get('map') else set())),
                                    'x': (it['intro'][:140]), **({'hj': it['hijri']} if it.get('hijri') else {})})
     json.dump(index, open(os.path.join(OUT, 'index.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('✓ مواد الموسوعة', len(items), dict(stats))

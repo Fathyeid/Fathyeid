@@ -250,6 +250,48 @@
     next();
   }
 
+  // ---------- الخريطة التفاعلية (حدود Natural Earth، والبيانات العربية من scripts/kids/countries.json) ----------
+  let worldP = null;
+  async function mountMap(box, onWin) {
+    box.innerHTML = '<div class="loader"></div>';
+    let W; try { W = await (worldP = worldP || fetch('data/kids/world.json').then((r) => r.json())); } catch { worldP = null; box.innerHTML = '<p class="muted center">تعذّر تحميل الخريطة.</p>'; return; }
+    let zoom = 1; let quiz = null;
+    box.innerHTML = `<div class="kd-map-bar"><button class="btn ghost kd-tool" id="mOut">➖</button><button class="btn ghost kd-tool" id="mIn">➕</button><button class="btn kd-tool" id="mQuiz">🎯 تحدي الخريطة</button></div>
+      <p class="kd-map-q" id="mQ" hidden></p>
+      <div class="kd-map-wrap"><svg class="kd-map" id="mSvg" viewBox="0 0 ${W.w} ${W.h}" role="img" aria-label="خريطة العالم">${W.c.map(([id, , d]) => `<path d="${d}" data-id="${id}" class="${W.info[id] ? 'has' : ''}"/>`).join('')}</svg></div>
+      <p class="muted kd-note">الدول الملوّنة لها بطاقة معلومات. حرّك الخريطة بإصبعك بعد التكبير.</p>`;
+    const svg = $('#mSvg', box);
+    const setZoom = (z) => { zoom = Math.min(4, Math.max(1, z)); svg.style.width = `${zoom * 100}%`; };
+    $('#mIn', box).onclick = () => setZoom(zoom + 0.75);
+    $('#mOut', box).onclick = () => setZoom(zoom - 0.75);
+    const ids = Object.keys(W.info).filter((id) => svg.querySelector(`[data-id="${id}"]`));
+    const ask = () => {
+      const id = ids[Math.floor(Math.random() * ids.length)];
+      quiz = { id, tries: 0 };
+      $('#mQ', box).hidden = false; $('#mQ', box).innerHTML = `🎯 أين تقع <b>${esc(W.info[id].n)}</b>؟ اضغط عليها في الخريطة.`;
+      $$('path.found, path.miss', svg).forEach((p) => p.classList.remove('found', 'miss'));
+    };
+    $('#mQuiz', box).onclick = ask;
+    svg.addEventListener('click', (e) => {
+      const p = e.target.closest('path'); if (!p) return;
+      const id = p.dataset.id; const c = W.info[id];
+      $$('path.sel', svg).forEach((x) => x.classList.remove('sel')); p.classList.add('sel');
+      if (quiz) {
+        if (id === quiz.id) {
+          p.classList.add('found'); const first = quiz.tries === 0; quiz = null;
+          $('#mQ', box).innerHTML = `✅ أحسنت! هذه ${esc(c.n)}. ${first ? '+١ ⭐' : ''} <button class="chip" id="mNext">سؤال آخر</button>`;
+          if (first && onWin) onWin();
+          $('#mNext', box).onclick = ask; return;
+        }
+        quiz.tries++; p.classList.add('miss');
+        $('#mQ', box).innerHTML = `🤔 ليست هذه، حاول مرة أخرى. أين تقع <b>${esc(W.info[quiz.id].n)}</b>؟${quiz.tries >= 3 ? ' (تلميح: في قارة ' + esc(W.info[quiz.id].c) + ')' : ''}`;
+        return;
+      }
+      N.sheet(c ? `<div class="kd"><div class="sheet-title">${esc(c.n)}</div><div class="kd-chips"><span>🏛️ العاصمة: ${esc(c.cap)}</span><span>🌍 القارة: ${esc(c.c)}</span></div><p>💡 ${esc(c.f)}</p></div>`
+        : '<div class="kd"><div class="sheet-title">🗺️ دولة</div><p class="muted">بطاقة هذه الدولة قيد الإعداد. جرّب دولة ملوّنة!</p></div>');
+    });
+  }
+
   // ---------- صفحة المادة ----------
   async function renderItem(cid, id) {
     if (!me()) return renderSetup(false);
@@ -279,6 +321,7 @@
         ${it.timeline ? `<div class="kd-tl">${it.timeline.map((e, i) => `<button class="kd-tl-e" data-tl="${i}"><span class="kd-tl-y">${esc(e.y)}</span><span class="kd-tl-dot"></span><span class="kd-tl-c"><b>${esc(e.t)}</b><span class="kd-tl-d">${qtext(e.d)}</span></span></button>`).join('')}</div>` : ''}
         ${it.steps ? `<div class="kd-steps">${it.steps.map((s, i) => `<div class="kd-step"><span>${ar(i + 1)}</span><div>${say(s.t, 'b')}${s.d ? say(s.d) : ''}</div></div>`).join('')}</div>` : ''}
       </div>
+      ${it.map ? '<div class="kd-card" id="kMap"></div>' : ''}
       ${it.experiment ? `<div class="kd-card kd-exp"><h3 class="kd-h3">🧪 جرّبها بنفسك</h3><p class="kd-safe">⚠️ ${esc(it.experiment.safety)}</p><b>الأدوات:</b><div class="kd-chips">${it.experiment.tools.map((x) => `<span>${esc(x)}</span>`).join('')}</div><b>الخطوات:</b><ol>${it.experiment.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>${it.experiment.why ? `<details><summary>🤔 لماذا حدث ذلك؟</summary><p>${esc(it.experiment.why)}</p></details>` : ''}</div>` : ''}
       ${it.facts ? `<div class="kd-card"><h3 class="kd-h3">👥 الشخصيات والأماكن</h3>${it.facts.people ? `<div class="kd-chips">${it.facts.people.map((x) => `<span>👤 ${esc(x)}</span>`).join('')}</div>` : ''}${it.facts.places ? `<div class="kd-chips">${it.facts.places.map((x) => `<span>📍 ${esc(x)}</span>`).join('')}</div>` : ''}</div>` : ''}
       ${it.evidence ? `<div class="kd-card"><h3 class="kd-h3">📜 من القرآن والسنة</h3>${it.evidence.map((e) => e.k === 'q' ? `<div class="kd-ev"><span class="kd-qr">﴿${esc(e.x)}﴾</span><small>${esc(e.r)}</small></div>` : `<div class="kd-ev">«${esc(e.x)}»<small>${esc(e.r)} • ${esc(e.g)}</small></div>`).join('')}</div>` : ''}
@@ -300,8 +343,11 @@
     $('#kFav').onclick = (e) => { let f = S.fav(); f = f.includes(id) ? f.filter((x) => x !== id) : [id, ...f]; S.setFav(f); e.target.textContent = fav() ? '★ في المفضلة' : '☆ المفضلة'; toast(fav() ? 'أُضيف إلى المفضلة ⭐' : 'أُزيل من المفضلة'); };
     $('#kPrint').onclick = () => { stopTTS(); document.body.classList.add('kd-printing'); window.print(); setTimeout(() => document.body.classList.remove('kd-printing'), 500); };
     $('#kDone').onclick = () => finish(0);
-    $$('.kd-fc').forEach((b) => b.onclick = () => b.classList.toggle('flip'));
+    // قلب البطاقة ونطقها بصوت الجهاز (مفيد لتعلّم الحروف والكلمات)
+    const sayWord = (t) => { if (!TTS || ttsState) return; try { TTS.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ar'; const v = arVoice(); if (v) u.voice = v; u.rate = 0.8; TTS.speak(u); } catch { /* تجاهل */ } };
+    $$('.kd-fc').forEach((b) => b.onclick = () => { b.classList.toggle('flip'); if (b.classList.contains('flip')) sayWord(`${b.querySelector('.kd-fc-f').textContent}، ${b.querySelector('.kd-fc-b').textContent.replace(/\p{Extended_Pictographic}/gu, '')}`); });
     $$('.kd-tl-e').forEach((b) => b.onclick = () => b.classList.toggle('open'));
+    if (it.map) mountMap($('#kMap'), () => { S.addStars(1); });
     if (it.situation) $$('#kSit .kd-opt').forEach((b) => b.onclick = () => {
       const s = it.situation; const ok = +b.dataset.i === s.a;
       $$('#kSit .kd-opt').forEach((x) => { x.disabled = true; if (+x.dataset.i === s.a) x.classList.add('right'); });
@@ -351,7 +397,7 @@
         <select id="sC"><option value="">كل الأقسام</option>${I.cats.filter((c) => c.count).map((c) => `<option value="${c.id}">${c.ic} ${esc(c.n)}</option>`).join('')}</select>
         <select id="sA"><option value="0">كل الأعمار</option>${STAGES.map((s) => `<option value="${s[0]}" ${f.age >= s[0] && f.age <= s[1] ? 'selected' : ''}>${ar(s[0])}–${ar(s[1])} سنة</option>`).join('')}</select>
         <select id="sK"><option value="">كل الأنواع</option><option value="موثق">موثّق</option><option value="علمي">علمي</option><option value="خيالي">قصة خيالية</option></select>
-        <select id="sM"><option value="">كل الوسائط</option>${['اختبار', 'خطوات', 'بطاقات', 'آيات', 'خط زمني', 'تجربة'].map((m) => `<option>${m}</option>`).join('')}</select>
+        <select id="sM"><option value="">كل الوسائط</option>${['اختبار', 'خطوات', 'بطاقات', 'آيات', 'خط زمني', 'تجربة', 'خريطة'].map((m) => `<option>${m}</option>`).join('')}</select>
         <select id="sL"><option value="0">كل المستويات</option>${[1, 2, 3].map((l) => `<option value="${l}">${LEVEL[l]}</option>`).join('')}</select>
       </div><div id="sR"></div></div>`;
     const ageSel = () => { const v = +$('#sA').value; const s = STAGES.find((x) => x[0] === v); return s ? [s[0], s[1]] : null; };
