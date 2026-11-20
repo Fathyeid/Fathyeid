@@ -13,3 +13,6 @@ python3 -I "$ROOT/scripts/kids/build.py" \
   --quran "$CACHE/quran/package/dist/quran.json" \
   --bukhari "$CACHE/bukhari/package/data/bukhari.json.gz" \
   --muslim "$CACHE/muslim/package/data/muslim.json.gz"
+# الخريطة التفاعلية (data/kids/world.json) تُبنى عند تغيير scripts/kids/countries.json فقط:
+#   mkdir -p "$CACHE/map" && (cd "$CACHE/map" && npm install --ignore-scripts --no-audit --no-fund world-atlas@2.0.2 topojson-client@3.1.0 d3-geo@3.1.1)
+#   node "$ROOT/scripts/kids/build-map.mjs" "$CACHE/map/node_modules"

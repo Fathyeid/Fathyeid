@@ -1145,3 +1145,12 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .kd .kd-exp ol { padding-inline-start: 22px; line-height: 2; margin: 6px 0; }
 .kd .kd-exp details summary { font-weight: 800; cursor: pointer; margin-top: 6px; }
 .kd .kd-safe { background: color-mix(in srgb, #e76f51 14%, var(--surface)); border-radius: 12px; padding: 8px 12px; font-weight: 700; font-size: .9rem; }
+/* موسوعة الطفل: الخريطة التفاعلية */
+.kd .kd-map-bar { display: flex; gap: 8px; margin-bottom: 8px; }
+.kd .kd-map-wrap { overflow: auto; border-radius: 16px; background: color-mix(in srgb, #3a86ff 12%, var(--surface)); -webkit-overflow-scrolling: touch; direction: ltr; }
+.kd .kd-map { display: block; width: 100%; height: auto; transition: width .25s; }
+.kd .kd-map path { fill: color-mix(in srgb, var(--muted) 35%, var(--surface)); stroke: var(--surface); stroke-width: .5; cursor: pointer; transition: fill .2s; }
+.kd .kd-map path.has { fill: color-mix(in srgb, var(--kd-em) 65%, var(--surface)); }
+.kd .kd-map path.sel { fill: var(--kd-gold); }
+.kd .kd-map path.found { fill: #2a9d8f; } .kd .kd-map path.miss { fill: #e76f51; }
+.kd .kd-map-q { padding: 10px 12px; border-radius: 14px; background: var(--kd-soft); font-weight: 700; line-height: 1.9; }
