@@ -55,6 +55,13 @@
   const stageOf = (age) => STAGES.find((s) => age >= s[0] && age <= s[1]) || STAGES[1];
   const levelOf = (stars) => Math.floor(Math.sqrt(stars / 5)) + 1;
   const fitsAge = (it, age) => !age || (age >= it.age[0] - 1 && age <= it.age[1] + 1);
+  // قواعد ولي الأمر لكل طفل (تُضبط من لوحة ولي الأمر)
+  const RULES0 = { cats: null, maxLevel: 3, minutes: 0, audio: true };
+  const rulesOf = (p) => Object.assign({}, RULES0, (p && p.rules) || {});
+  const catAllowed = (c) => { const r = rulesOf(me()); return !r.cats || r.cats.includes(c); };
+  const allowed = (it) => catAllowed(it.c || it.cat) && (it.l || it.level || 1) <= rulesOf(me()).maxLevel;
+  const audioOn = () => rulesOf(me()).audio;
+  const lockedPage = () => { N.view.innerHTML = `<div class="kd"><div class="kd-card center kd-soon">${OWL}<p><b>هذا المحتوى غير متاح في ملفك 🔒</b></p><p class="muted">اختار ولي أمرك الأقسام المناسبة لك. يمكنك أن تطلب منه فتحه.</p><button class="btn" data-go="kids">العودة للموسوعة</button></div></div>`; $('[data-go]').onclick = () => go('kids'); };
   const ageTxt = (a) => `${ar(a[0])}–${ar(a[1])} سنة`;
   const loader = () => { N.view.innerHTML = '<div class="loader"></div>'; };
   const failed = () => { N.view.innerHTML = '<div class="kd"><div class="kd-card center"><p>تعذّر تحميل الموسوعة. أعد فتح القسم.</p></div></div>'; };
@@ -134,7 +141,7 @@
     loader();
     let I; try { I = await index(); } catch { return failed(); }
     const k = me(); const pr = S.prog(); const stars = S.stars(); const lvl = levelOf(stars); const st = stageOf(k.age);
-    const fit = I.items.filter((it) => fitsAge(it, k.age));
+    const fit = I.items.filter((it) => fitsAge(it, k.age) && allowed(it));
     const done = fit.filter((it) => pr[it.id] && pr[it.id].done).length;
     const day = N.todayKey(); let h = 0; for (const ch of day) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     const pick = (arr, salt) => (arr.length ? arr[(h + salt) % arr.length] : null);
@@ -142,16 +149,16 @@
     const fact = pick(fit.filter((it) => it.c !== 'anbiya'), 7);
     const unseen = fit.filter((it) => !pr[it.id]);
     const discover = pick(unseen.length ? unseen : fit, 13);
-    const last = S.last(); const lastIt = last && I.items.find((x) => x.id === last.id);
-    const viewed = Object.entries(pr).filter(([, v]) => v.seen).sort((a, b) => b[1].seen - a[1].seen).slice(0, 6).map(([id]) => I.items.find((x) => x.id === id)).filter(Boolean);
-    const favs = S.fav().map((id) => I.items.find((x) => x.id === id)).filter(Boolean);
-    const newest = I.items.slice(-6).reverse();
+    const last = S.last(); const lastIt = last && I.items.find((x) => x.id === last.id && allowed(x));
+    const viewed = Object.entries(pr).filter(([, v]) => v.seen).sort((a, b) => b[1].seen - a[1].seen).slice(0, 6).map(([id]) => I.items.find((x) => x.id === id)).filter((x) => x && allowed(x));
+    const favs = S.fav().map((id) => I.items.find((x) => x.id === id)).filter((x) => x && allowed(x));
+    const newest = I.items.filter(allowed).slice(-6).reverse();
     const card = (it, label) => it ? `<button class="kd-mini" data-go="kidsitem/${it.c}/${it.id}"><span class="kd-mini-ic">${it.ic}</span><span><small>${label || ''}</small><b>${esc(it.t)}</b></span></button>` : '';
     const row = (title, items) => items.length ? `<h3 class="kd-h">${title}</h3><div class="kd-row">${items.map((it) => `<button class="kd-tile" data-go="kidsitem/${it.c}/${it.id}"><span>${it.ic}</span><b>${esc(it.t)}</b>${pr[it.id] && pr[it.id].done ? '<i>✓</i>' : ''}</button>`).join('')}</div>` : '';
     N.setTitle('موسوعة الطفل');
     N.view.innerHTML = `<div class="kd">
       <section class="kd-hero">
-        <div class="kd-hero-top">${OWL}<div class="kd-bubble">مرحباً يا <b>${esc(k.name)}</b> ${k.avatar}<br><small>${st[2]} • ${ar(k.age)} سنوات</small></div></div>
+        <div class="kd-hero-top">${OWL}<div class="kd-bubble">مرحباً يا <b>${esc(k.name)}</b> ${k.avatar}<br><small>${st[2]} • ${ar(k.age)} سنوات${minutesLeft() !== Infinity ? ` • ⏳ باقي ${ar(Math.max(0, Math.ceil(minutesLeft())))} دقيقة اليوم` : ''}</small></div></div>
         <div class="kd-stats"><div><b>⭐ ${ar(stars)}</b><small>نجمة</small></div><div><b>🏅 ${ar(lvl)}</b><small>المستوى</small></div><div><b>📚 ${ar(done)}/${ar(fit.length)}</b><small>درس مكتمل</small></div></div>
         <div class="kd-prog"><span style="width:${fit.length ? (done / fit.length) * 100 : 0}%"></span></div>
         ${lastIt ? `<button class="btn kd-big kd-cont" data-go="kidsitem/${lastIt.c}/${lastIt.id}">▶️ تابع التعلّم: ${esc(lastIt.t)}</button>` : ''}
@@ -161,22 +168,22 @@
         ${card(story, '📖 قصة اليوم')}${card(fact, '💡 معلومة اليوم')}
         <button class="kd-mini" id="kChal"><span class="kd-mini-ic">🎯</span><span><small>تحدي اليوم</small><b>${store.get(key('chal'), '') === day ? 'أنجزت تحدي اليوم ✓' : 'سؤال واحد، هل تعرف الإجابة؟'}</b></span></button>
         ${card(discover, '🧭 اكتشف شيئاً جديداً')}
-        ${(() => { const occ = I.items.filter((x) => x.hj).map((x) => [x, daysUntil(x.hj)]).filter((x) => x[1] != null).sort((a, b) => a[1] - b[1])[0]; return occ ? card(occ[0], `🌙 المناسبة القادمة: ${untilTxt(occ[1])}`) : ''; })()}
+        ${(() => { const occ = I.items.filter((x) => x.hj && allowed(x)).map((x) => [x, daysUntil(x.hj)]).filter((x) => x[1] != null).sort((a, b) => a[1] - b[1])[0]; return occ ? card(occ[0], `🌙 المناسبة القادمة: ${untilTxt(occ[1])}`) : ''; })()}
       </div>
       <h3 class="kd-h">أقسام الموسوعة</h3>
-      <div class="kd-cats">${I.cats.map((c) => { const n = fit.filter((x) => x.c === c.id).length; return `<button class="kd-cat" style="--cc:${c.color}" data-go="kidscat/${c.id}"><span class="kd-cat-ic">${c.ic}</span><b>${esc(c.n)}</b><small>${c.count ? `${ar(n)} مادة لعمرك` : 'قيد الإعداد'}</small></button>`; }).join('')}</div>
+      <div class="kd-cats">${I.cats.filter((c) => catAllowed(c.id)).map((c) => { const n = fit.filter((x) => x.c === c.id).length; return `<button class="kd-cat" style="--cc:${c.color}" data-go="kidscat/${c.id}"><span class="kd-cat-ic">${c.ic}</span><b>${esc(c.n)}</b><small>${c.count ? `${ar(n)} مادة لعمرك` : 'قيد الإعداد'}</small></button>`; }).join('')}</div>
       ${row('⭐ المفضلة', favs)}${row('👀 الأكثر مشاهدة عندك', viewed)}${row('🆕 المحتوى الجديد', newest)}
       <div class="kd-play"><button class="kd-pl" data-go="kidsgames"><span>🎮</span>الألعاب</button><button class="kd-pl" data-go="kidsweek"><span>🗓️</span>تحديات الأسبوع</button><button class="kd-pl" data-go="kidsjourney"><span>🗺️</span>رحلتي</button></div>
-      <div class="kd-links"><button class="chip" data-go="kidsbadges">🏅 شاراتي</button><button class="chip" data-go="kidssearch">🔍 البحث المتقدم</button><button class="chip" id="kProf">${k.avatar} تعديل ملفي</button>${P.list().length > 1 ? '<button class="chip" id="kSwitch">🔄 تبديل الطفل</button>' : '<button class="chip" id="kAdd">➕ إضافة طفل</button>'}</div>
+      <div class="kd-links"><button class="chip" data-go="kidsbadges">🏅 شاراتي</button><button class="chip" data-go="kidssearch">🔍 البحث المتقدم</button><button class="chip" id="kProf">${k.avatar} تعديل ملفي</button>${P.list().length > 1 ? '<button class="chip" id="kSwitch">🔄 تبديل الطفل</button>' : '<button class="chip" id="kAdd">➕ إضافة طفل</button>'}<button class="chip" data-go="kidsparent">👨‍👩‍👧 ولي الأمر</button></div>
     </div>`;
     $$('[data-go]', N.view).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
     $('#kQ').addEventListener('keydown', (e) => { if (e.key === 'Enter') { store.set('kd:q', e.target.value); go('kidssearch'); } });
     $('#kProf').onclick = () => renderSetup(true);
-    if ($('#kAdd')) $('#kAdd').onclick = () => { P.setActive(''); renderSetup(false); };
+    if ($('#kAdd')) $('#kAdd').onclick = () => parentGate(() => { P.setActive(''); renderSetup(false); });
     if ($('#kSwitch')) $('#kSwitch').onclick = () => {
       const sh = N.sheet(`<div class="kd"><div class="sheet-title">من يتعلّم الآن؟</div>${P.list().map((p) => `<button class="kd-mini" data-k="${p.id}"><span class="kd-mini-ic">${p.avatar}</span><span><b>${esc(p.name)}</b><small>${ar(p.age)} سنوات</small></span></button>`).join('')}<button class="btn ghost block" id="kNew">➕ إضافة طفل</button></div>`);
       $$('[data-k]', sh.el).forEach((b) => b.onclick = () => { P.setActive(b.dataset.k); sh.close(); renderHome(); });
-      $('#kNew', sh.el).onclick = () => { sh.close(); P.setActive(''); renderSetup(false); };
+      $('#kNew', sh.el).onclick = () => { sh.close(); parentGate(() => { P.setActive(''); renderSetup(false); }); };
     };
     $('#kChal').onclick = () => dailyChallenge(fit, h);
   }
@@ -207,11 +214,12 @@
     loader();
     let I, list; try { I = await index(); list = await catItems(cid); } catch { return failed(); }
     const C = I.cats.find((c) => c.id === cid); if (!C) return go('kids');
+    if (!catAllowed(cid)) return lockedPage();
     N.setTitle(C.n);
     const pr = S.prog(); const age = me().age;
     let sub = '', onlyAge = true;
     const draw = () => {
-      const items = list.filter((it) => (!sub || it.sub === sub) && (!onlyAge || fitsAge(it, age)));
+      const items = list.filter((it) => allowed(it) && (!sub || it.sub === sub) && (!onlyAge || fitsAge(it, age)));
       N.view.innerHTML = `<div class="kd">
         <section class="kd-hero kd-cathero" style="--cc:${C.color}"><span class="kd-cat-big">${C.ic}</span><div><b>${esc(C.n)}</b><small>${esc(C.desc)}</small></div></section>
         ${!list.length ? `<div class="kd-card center kd-soon">${OWL}<p><b>هذا القسم قيد الإعداد</b></p><p class="muted">نجهّز له محتوى موثّقاً ومراجَعاً، ولن نضع فيه شيئاً قبل التأكد منه. عُد إلينا قريباً بإذن الله!</p><button class="btn" data-go="kids">العودة للموسوعة</button></div>` : `
@@ -299,6 +307,7 @@
     loader();
     let it, I; try { I = await index(); it = await item(cid, id); } catch { return failed(); }
     if (!it) return go('kidscat/' + cid);
+    if (!allowed(it)) return lockedPage();
     const C = I.cats.find((c) => c.id === cid);
     N.setTitle(it.title);
     const pr = S.prog(); const p = pr[id] || { cat: cid };
@@ -311,7 +320,7 @@
       <section class="kd-hero kd-cathero" style="--cc:${C.color}"><span class="kd-cat-big">${it.icon || C.ic}</span><div><b>${esc(it.title)}</b>
         <span class="kd-tags kd-tags-l"><i class="${kCls}">${kLabel}</i><i>${ageTxt(it.age)}</i><i>${LEVEL[it.level]}</i></span></div></section>
       <div class="kd-tools">
-        ${TTS ? `<button class="btn kd-tool" id="kRead">🔊 اقرأ لي</button>${resumeAt > 0 ? '<button class="btn ghost kd-tool" id="kResume">⏯️ أكمل من حيث توقفت</button>' : ''}` : ''}
+        ${TTS && audioOn() ? `<button class="btn kd-tool" id="kRead">🔊 اقرأ لي</button>${resumeAt > 0 ? '<button class="btn ghost kd-tool" id="kResume">⏯️ أكمل من حيث توقفت</button>' : ''}` : ''}
         <button class="btn ghost kd-tool" id="kFav">${fav() ? '★ في المفضلة' : '☆ المفضلة'}</button>
         <button class="btn ghost kd-tool" id="kPrint">🖨️ للطباعة</button>
       </div>
@@ -346,7 +355,7 @@
     $('#kPrint').onclick = () => { stopTTS(); document.body.classList.add('kd-printing'); window.print(); setTimeout(() => document.body.classList.remove('kd-printing'), 500); };
     $('#kDone').onclick = () => finish(0);
     // قلب البطاقة ونطقها بصوت الجهاز (مفيد لتعلّم الحروف والكلمات)
-    const sayWord = (t) => { if (!TTS || ttsState) return; try { TTS.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ar'; const v = arVoice(); if (v) u.voice = v; u.rate = 0.8; TTS.speak(u); } catch { /* تجاهل */ } };
+    const sayWord = (t) => { if (!TTS || ttsState || !audioOn()) return; try { TTS.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ar'; const v = arVoice(); if (v) u.voice = v; u.rate = 0.8; TTS.speak(u); } catch { /* تجاهل */ } };
     $$('.kd-fc').forEach((b) => b.onclick = () => { b.classList.toggle('flip'); if (b.classList.contains('flip')) sayWord(`${b.querySelector('.kd-fc-f').textContent}، ${b.querySelector('.kd-fc-b').textContent.replace(/\p{Extended_Pictographic}/gu, '')}`); });
     $$('.kd-tl-e').forEach((b) => b.onclick = () => b.classList.toggle('open'));
     if (it.map) mountMap($('#kMap'), () => { S.addStars(1); bumpWeek('games'); });
@@ -357,7 +366,7 @@
       if (!ok) b.classList.add('wrong');
       $('#kSitFb').innerHTML = `<p class="kd-fb ${ok ? 'ok' : 'no'}">${ok ? '👏 تصرّف رائع!' : '🤗 لنفكّر معاً: التصرّف الأفضل هو: ' + esc(s.o[s.a])}</p>${s.e ? `<p class="muted">${qtext(s.e)}</p>` : ''}`;
     });
-    if (it.quiz) $('#kStartQ').onclick = () => runQuiz(it, (score) => finish(Math.min(2, score === it.quiz.length ? 2 : score >= it.quiz.length / 2 ? 1 : 0)));
+    if (it.quiz) $('#kStartQ').onclick = () => runQuiz(it, (score) => { const pq = S.prog(); const e = pq[id] || { cat: cid }; e.quiz = { s: score, n: it.quiz.length, at: Date.now(), best: Math.max(score, (e.quiz && e.quiz.best) || 0) }; pq[id] = e; S.setProg(pq); finish(Math.min(2, score === it.quiz.length ? 2 : score >= it.quiz.length / 2 ? 1 : 0)); });
     return () => stopTTS();
   }
 
@@ -397,7 +406,7 @@
     N.view.innerHTML = `<div class="kd">
       <input class="search" id="sQ" type="search" placeholder="ابحث باسم موضوع أو شخصية أو كلمة..." value="${esc(f.q)}">
       <div class="kd-sf">
-        <select id="sC"><option value="">كل الأقسام</option>${I.cats.filter((c) => c.count).map((c) => `<option value="${c.id}">${c.ic} ${esc(c.n)}</option>`).join('')}</select>
+        <select id="sC"><option value="">كل الأقسام</option>${I.cats.filter((c) => c.count && catAllowed(c.id)).map((c) => `<option value="${c.id}">${c.ic} ${esc(c.n)}</option>`).join('')}</select>
         <select id="sA"><option value="0">كل الأعمار</option>${STAGES.map((s) => `<option value="${s[0]}" ${f.age >= s[0] && f.age <= s[1] ? 'selected' : ''}>${ar(s[0])}–${ar(s[1])} سنة</option>`).join('')}</select>
         <select id="sK"><option value="">كل الأنواع</option><option value="موثق">موثّق</option><option value="علمي">علمي</option><option value="خيالي">قصة خيالية</option></select>
         <select id="sM"><option value="">كل الوسائط</option>${['اختبار', 'خطوات', 'بطاقات', 'آيات', 'خط زمني', 'تجربة', 'خريطة'].map((m) => `<option>${m}</option>`).join('')}</select>
@@ -406,7 +415,7 @@
     const ageSel = () => { const v = +$('#sA').value; const s = STAGES.find((x) => x[0] === v); return s ? [s[0], s[1]] : null; };
     const draw = () => {
       const t = norm(f.q.trim()); const a = ageSel();
-      const res = I.items.filter((it, i) => (!t || hay[i].includes(t)) && (!f.c || it.c === f.c) && (!a || (it.age[0] <= a[1] && it.age[1] >= a[0])) && (!f.k || it.k === f.k) && (!f.m || it.m.includes(f.m)) && (!f.l || it.l === f.l));
+      const res = I.items.filter((it, i) => allowed(it) && (!t || hay[i].includes(t)) && (!f.c || it.c === f.c) && (!a || (it.age[0] <= a[1] && it.age[1] >= a[0])) && (!f.k || it.k === f.k) && (!f.m || it.m.includes(f.m)) && (!f.l || it.l === f.l));
       $('#sR').innerHTML = res.length ? `<p class="muted kd-note">${ar(res.length)} نتيجة</p><div class="kd-list">${res.map((it) => `<button class="kd-item" data-go="kidsitem/${it.c}/${it.id}"><span class="kd-item-ic">${it.ic}</span><div><b>${esc(it.t)}</b><small>${esc(it.x.slice(0, 80))}…</small><span class="kd-tags"><i>${esc(I.cats.find((c) => c.id === it.c).n)}</i><i>${ageTxt(it.age)}</i><i>${LEVEL[it.l]}</i></span></div></button>`).join('')}</div>` : `<div class="kd-card center">${OWL}<p>لم أجد نتائج. جرّب كلمة أخرى أو غيّر الفلاتر.</p></div>`;
       $$('#sR [data-go]').forEach((b) => b.onclick = () => go(b.dataset.go));
     };
@@ -524,6 +533,7 @@
     if (!me()) return renderSetup(false);
     loader();
     if (kind === 'ayat') {
+      if (!catAllowed('quran')) return lockedPage();
       let A; try { A = await ayat(); } catch { return failed(); }
       const su = A.find((x) => String(x.s) === arg);
       if (su) {
@@ -540,6 +550,7 @@
     let all; try { all = await allItems(); } catch { return failed(); }
     if (kind && arg) {
       const it = all.find((x) => x.id === arg); if (!it) return go('kidsgames');
+      if (!allowed(it)) return lockedPage();
       N.setTitle(it.title);
       N.view.innerHTML = `<div class="kd"><div class="kd-card" id="gBox"></div><button class="btn ghost block" data-go="kidsitem/${it.cat}/${it.id}">📖 اقرأ الدرس</button></div>`;
       $('[data-go]').onclick = () => go(`kidsitem/${it.cat}/${it.id}`);
@@ -547,23 +558,193 @@
     }
     N.setTitle('الألعاب التعليمية');
     const age = me().age; const g = store.get(key('games'), {});
-    const list = all.filter((it) => fitsAge(it, age)).flatMap((it) => gameKinds(it).map(([k, l]) => ({ it, k, l })));
+    const list = all.filter((it) => fitsAge(it, age) && allowed(it)).flatMap((it) => gameKinds(it).map(([k, l]) => ({ it, k, l })));
     N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">العب وتعلّم! كل لعبة تفوز بها أول مرة تعطيك نجمة ⭐</div></div></section>
-      <button class="kd-mini" data-go="kidsgames/ayat"><span class="kd-mini-ic">📖</span><span><small>من المصحف الشريف</small><b>ترتيب آيات السور القصيرة</b></span></button>
+      ${catAllowed('quran') ? `<button class="kd-mini" data-go="kidsgames/ayat"><span class="kd-mini-ic">📖</span><span><small>من المصحف الشريف</small><b>ترتيب آيات السور القصيرة</b></span></button>` : ''}
       <h3 class="kd-h">🎮 ألعاب من دروس الموسوعة</h3>
       <div class="kd-list">${list.map(({ it, k, l }) => `<button class="kd-item" data-go="kidsgames/${k}/${it.id}"><span class="kd-item-ic">${it.icon || '🎮'}</span><div><b>${l}</b><small>${esc(it.title)}</small></div>${g[`${k}:${it.id}`] ? '<span class="kd-done">✓</span>' : ''}</button>`).join('')}</div></div>`;
     $$('[data-go]').forEach((b) => b.onclick = () => go(b.dataset.go));
   }
   const UNLOCK = [['🦄', 30], ['🐉', 60], ['🦋', 90], ['🚀', 150], ['🐳', 220], ['🦅', 300]];
 
+  // ================= لوحة ولي الأمر (المرحلة ٤) — على هذا الجهاز =================
+  const kget = (pid, k, d) => store.get(`kd:${pid}:${k}`, d);
+  // ---------- وقت الاستخدام اليومي ----------
+  const usage = (pid) => kget(pid, 'usage', {});
+  const usedSec = (pid, day = N.todayKey()) => usage(pid)[day] || 0;
+  const extraMin = (pid) => { const e = kget(pid, 'extra', null); return e && e.day === N.todayKey() ? e.min : 0; };
+  const minutesLeft = (p = me()) => { const r = rulesOf(p); if (!p || !r.minutes) return Infinity; return r.minutes + extraMin(p.id) - usedSec(p.id) / 60; };
+  const blocked = () => !!me() && minutesLeft() <= 0;
+  const TICK = 15;
+  setInterval(() => {
+    const p = me(); if (!p || document.visibilityState !== 'visible' || !/^#\/kids(?!parent)/.test(location.hash)) return;
+    const u = usage(p.id); const day = N.todayKey(); u[day] = (u[day] || 0) + TICK;
+    for (const d of Object.keys(u).sort().slice(0, -14)) delete u[d]; // نحتفظ بآخر أسبوعين فقط
+    store.set(`kd:${p.id}:usage`, u);
+    const left = minutesLeft(p);
+    if (left <= 5 && left > 0 && kget(p.id, 'warned', '') !== day) { store.set(`kd:${p.id}:warned`, day); toast(`⏳ باقي ${ar(Math.ceil(left))} دقائق على وقت التعلّم اليوم`); }
+    if (left <= 0) renderLimit();
+  }, TICK * 1000);
+  function renderLimit() {
+    stopTTS(); N.setTitle('موسوعة الطفل');
+    N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble"><b>انتهى وقت التعلّم لليوم 🌙</b><br>أحسنت يا ${esc(me().name)}! حان وقت الراحة واللعب مع أسرتك. نلتقي غداً بإذن الله.</div></div></section>
+      <button class="btn block kd-big" id="lHome">العودة إلى التطبيق</button>
+      <button class="btn ghost block" id="lMore">👨‍👩‍👧 ولي الأمر: إضافة ١٥ دقيقة</button></div>`;
+    $('#lHome').onclick = () => go('home');
+    $('#lMore').onclick = () => parentGate(() => { const p = me(); store.set(`kd:${p.id}:extra`, { day: N.todayKey(), min: extraMin(p.id) + 15 }); toast('أُضيفت ١٥ دقيقة لليوم ✓'); goHome(); });
+  }
+  const G = (fn) => (...a) => (blocked() ? renderLimit() : fn(...a));
+
+  // ---------- رمز ولي الأمر (PIN) ----------
+  // يُحفظ بصمةً (SHA-256 مع ملح عشوائي) لا الرمز نفسه
+  async function hashPin(pin, salt) {
+    const s = salt + ':' + pin;
+    if (window.crypto && crypto.subtle) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join(''); }
+    let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return 'f' + h.toString(16);
+  }
+  const PIN = { get: () => store.get('kd:parent', null), has: () => !!store.get('kd:parent', null) };
+  async function setPin(pin) { const salt = Array.from(crypto.getRandomValues(new Uint8Array(12)), (x) => x.toString(16).padStart(2, '0')).join(''); store.set('kd:parent', { salt, hash: await hashPin(pin, salt) }); }
+  let parentUntil = 0; // فتح مؤقت للوحة (٥ دقائق) في الذاكرة فقط
+  const unlocked = () => Date.now() < parentUntil;
+  const touch = () => { parentUntil = Date.now() + 5 * 60000; };
+  function askPin(title, sub) {
+    return new Promise((res) => {
+      let v = '';
+      const sh = N.sheet(`<div class="kd kd-pin"><div class="sheet-title">${esc(title)}</div>${sub ? `<p class="muted center">${esc(sub)}</p>` : ''}<div class="kd-dots" id="pD"></div><p class="kd-pin-err" id="pE"></p>
+        <div class="kd-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, '⌫'].map((d) => d === '' ? '<span></span>' : `<button data-d="${d}">${d === '⌫' ? d : ar(d)}</button>`).join('')}</div></div>`);
+      const draw = () => { $('#pD', sh.el).innerHTML = [0, 1, 2, 3].map((i) => `<i class="${i < v.length ? 'on' : ''}"></i>`).join(''); };
+      draw();
+      $$('[data-d]', sh.el).forEach((b) => b.onclick = () => {
+        const d = b.dataset.d;
+        if (d === '⌫') v = v.slice(0, -1); else if (v.length < 4) v += d;
+        draw();
+        if (v.length === 4) setTimeout(() => { sh.close(); res(v); }, 150);
+      });
+    });
+  }
+  async function verifyPin(title = 'رمز ولي الأمر') {
+    const f = store.get('kd:pinfail', { n: 0, until: 0 });
+    if (Date.now() < f.until) { toast(`محاولات كثيرة. انتظر ${ar(Math.ceil((f.until - Date.now()) / 1000))} ثانية`); return false; }
+    const pin = await askPin(title, 'أدخل الرمز المكوّن من ٤ أرقام');
+    const P0 = PIN.get();
+    if ((await hashPin(pin, P0.salt)) === P0.hash) { store.set('kd:pinfail', { n: 0, until: 0 }); touch(); return true; }
+    f.n++; if (f.n >= 5) { f.n = 0; f.until = Date.now() + 60000; }
+    store.set('kd:pinfail', f); toast('الرمز غير صحيح'); return false;
+  }
+  async function newPin() {
+    const a = await askPin('اختر رمزاً جديداً', '٤ أرقام لا يعرفها الطفل');
+    const b = await askPin('أعد كتابة الرمز للتأكيد');
+    if (a !== b) { toast('الرمزان غير متطابقين، حاول مرة أخرى'); return false; }
+    await setPin(a); touch(); toast('تم حفظ رمز ولي الأمر ✓'); return true;
+  }
+  // تنفيذ إجراء يحتاج إذن ولي الأمر
+  async function parentGate(fn) { if (!PIN.has() || unlocked() || (await verifyPin())) fn(); }
+  // استعادة الرمز المنسي: سؤال حساب لا يحلّه الطفل الصغير عادة
+  function forgotPin() {
+    const a = 12 + Math.floor(Math.random() * 37), b = 13 + Math.floor(Math.random() * 46);
+    const sh = N.sheet(`<div class="kd"><div class="sheet-title">نسيت الرمز؟</div><p>للتأكد من أنك ولي الأمر، اكتب ناتج: <b dir="ltr">${a} × ${b}</b></p><input class="search" id="fA" inputmode="numeric" autocomplete="off"><button class="btn block" id="fGo">تأكيد</button></div>`);
+    $('#fGo', sh.el).onclick = async () => { const n = parseInt(String($('#fA', sh.el).value).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10); sh.close(); if (n === a * b) { if (await newPin()) renderParent(); } else toast('الإجابة غير صحيحة'); };
+  }
+
+  // ---------- قواعد الطفل ----------
+  function rulesSheet(p, cats, done) {
+    const r = rulesOf(p); let lvl = r.maxLevel;
+    const sh = N.sheet(`<div class="kd"><div class="sheet-title">⚙️ إعدادات ${esc(p.name)} ${p.avatar}</div>
+      <label class="kd-lbl">⏱️ وقت الاستخدام اليومي</label>
+      <select class="search" id="rM">${[[0, 'بلا حد'], [15, '١٥ دقيقة'], [30, '٣٠ دقيقة'], [45, '٤٥ دقيقة'], [60, 'ساعة'], [90, 'ساعة ونصف'], [120, 'ساعتان']].map(([v, t]) => `<option value="${v}" ${r.minutes === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
+      <label class="kd-lbl">📶 أعلى مستوى صعوبة</label>
+      <div class="kd-ages kd-lvls">${[1, 2, 3].map((l) => `<button data-l="${l}" class="${l === lvl ? 'on' : ''}">${LEVEL[l]}</button>`).join('')}</div>
+      <label class="kd-chk kd-sw"><input type="checkbox" id="rA" ${r.audio ? 'checked' : ''}> 🔊 السماح بالقراءة بالصوت</label>
+      <label class="kd-lbl">📚 الأقسام المسموحة</label>
+      <label class="kd-chk"><input type="checkbox" id="rAll" ${!r.cats ? 'checked' : ''}> كل الأقسام</label>
+      <div class="kd-rcats">${cats.map((c) => `<label class="kd-chk"><input type="checkbox" data-c="${c.id}" ${!r.cats || r.cats.includes(c.id) ? 'checked' : ''}> ${c.ic} ${esc(c.n)}</label>`).join('')}</div>
+      <button class="btn block kd-big" id="rSave">حفظ</button></div>`);
+    $$('[data-l]', sh.el).forEach((b) => b.onclick = () => { lvl = +b.dataset.l; $$('[data-l]', sh.el).forEach((x) => x.classList.toggle('on', x === b)); });
+    $('#rAll', sh.el).onchange = (e) => $$('[data-c]', sh.el).forEach((x) => { x.checked = e.target.checked; });
+    $$('[data-c]', sh.el).forEach((x) => x.onchange = () => { $('#rAll', sh.el).checked = $$('[data-c]', sh.el).every((y) => y.checked); });
+    $('#rSave', sh.el).onclick = () => {
+      const sel = $$('[data-c]', sh.el).filter((x) => x.checked).map((x) => x.dataset.c);
+      if (!sel.length) return toast('اختر قسماً واحداً على الأقل');
+      const list = P.list(); const q = list.find((x) => x.id === p.id);
+      q.rules = { cats: sel.length === cats.length ? null : sel, maxLevel: lvl, minutes: +$('#rM', sh.el).value, audio: $('#rA', sh.el).checked };
+      P.save(list); touch(); sh.close(); toast('تم حفظ الإعدادات ✓'); done();
+    };
+  }
+  function removeChild(p) {
+    if (!confirm(`حذف ملف «${p.name}» وكل تقدّمه من هذا الجهاز؟ لا يمكن التراجع عن ذلك.`)) return false;
+    const pre = `noor:kd:${p.id}:`;
+    Object.keys(localStorage).filter((k) => k.startsWith(pre)).forEach((k) => localStorage.removeItem(k));
+    const list = P.list().filter((x) => x.id !== p.id); P.save(list);
+    if (P.activeId() === p.id) P.setActive(list[0] ? list[0].id : '');
+    toast('تم حذف الملف'); return true;
+  }
+
+  // ---------- اللوحة ----------
+  async function renderParent() {
+    N.setTitle('لوحة ولي الأمر');
+    if (!PIN.has()) {
+      N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">أهلاً بولي الأمر! أنشئ رمزاً سرياً من ٤ أرقام لحماية الإعدادات، حتى لا يغيّرها الطفل.</div></div></section>
+        <button class="btn block kd-big" id="pNew">🔐 إنشاء رمز ولي الأمر</button><p class="muted kd-note">الرمز والإعدادات محفوظة على هذا الجهاز فقط.</p></div>`;
+      $('#pNew').onclick = async () => { if (await newPin()) renderParent(); };
+      return;
+    }
+    if (!unlocked()) {
+      N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">هذه الصفحة لولي الأمر فقط 🔒</div></div></section>
+        <button class="btn block kd-big" id="pIn">🔑 أدخل الرمز</button><button class="btn ghost block" id="pForgot">نسيت الرمز؟</button></div>`;
+      const open = async () => { if (await verifyPin()) renderParent(); };
+      $('#pIn').onclick = open; $('#pForgot').onclick = forgotPin; open();
+      return;
+    }
+    touch(); loader();
+    let I; try { I = await index(); } catch { return failed(); }
+    const cats = I.cats.filter((c) => c.count);
+    const dates = Array.from({ length: 7 }, (_, i) => new Date(Date.now() - (6 - i) * 864e5));
+    const days = dates.map((d) => N.ymdIn(d, N.tz()).join('-')); // بنفس صيغة todayKey
+    const dayName = (i) => new Intl.DateTimeFormat('ar', { weekday: 'short' }).format(dates[i]);
+    const kids = P.list();
+    const card = (p) => {
+      const r = rulesOf(p); const pr = kget(p.id, 'prog', {}); const stars = kget(p.id, 'stars', 0);
+      const fit = I.items.filter((it) => fitsAge(it, p.age));
+      const done = Object.entries(pr).filter(([, v]) => v.done);
+      const quizzes = Object.values(pr).filter((v) => v.quiz);
+      const avg = quizzes.length ? Math.round((quizzes.reduce((s, v) => s + v.quiz.s / v.quiz.n, 0) / quizzes.length) * 100) : null;
+      const byCat = {}; done.forEach(([, v]) => { byCat[v.cat] = (byCat[v.cat] || 0) + 1; });
+      const recent = done.sort((a, b) => (b[1].at || 0) - (a[1].at || 0)).slice(0, 5).map(([id, v]) => [I.items.find((x) => x.id === id), v]).filter((x) => x[0]);
+      const mins = days.map((d) => Math.round(usedSec(p.id, d) / 60)); const mx = Math.max(10, ...mins);
+      const today = mins[mins.length - 1];
+      const games = Object.keys(kget(p.id, 'games', {})).length; const badges = Object.keys(kget(p.id, 'badges', {})).length;
+      const lastSeen = Math.max(0, ...Object.values(pr).map((v) => v.seen || 0));
+      return `<div class="kd-card kd-pk">
+        <div class="kd-pk-h"><span class="kd-pk-av">${p.avatar}</span><div><b>${esc(p.name)}</b><small>${ar(p.age)} سنوات • المستوى ${ar(levelOf(stars))}${lastSeen ? ` • آخر نشاط ${new Intl.DateTimeFormat('ar', { day: 'numeric', month: 'short' }).format(lastSeen)}` : ''}</small></div></div>
+        <div class="kd-stats kd-pk-s"><div><b>⭐ ${ar(stars)}</b><small>نجمة</small></div><div><b>📚 ${ar(done.length)}/${ar(fit.length)}</b><small>درس مكتمل</small></div><div><b>${avg == null ? '—' : ar(avg) + '٪'}</b><small>متوسط الاختبارات (${ar(quizzes.length)})</small></div><div><b>🎮 ${ar(games)}</b><small>لعبة</small></div><div><b>🏅 ${ar(badges)}</b><small>شارة</small></div></div>
+        <h4 class="kd-pk-t">⏱️ وقت الاستخدام: اليوم ${ar(today)} دقيقة${r.minutes ? ` من ${ar(r.minutes + extraMin(p.id))}` : ''}</h4>
+        <div class="kd-bars">${mins.map((m, i) => `<div><span style="height:${(m / mx) * 100}%"></span><small>${dayName(i)}</small><i>${m ? ar(m) : ''}</i></div>`).join('')}</div>
+        ${Object.keys(byCat).length ? `<h4 class="kd-pk-t">📊 التقدّم حسب القسم</h4>${cats.filter((c) => byCat[c.id]).map((c) => { const tot = fit.filter((x) => x.c === c.id).length || 1; return `<div class="kd-pk-c"><span>${c.ic} ${esc(c.n)}</span><div class="kd-prog kd-prog-s"><span style="width:${Math.min(100, (byCat[c.id] / tot) * 100)}%"></span></div><small>${ar(byCat[c.id])}/${ar(tot)}</small></div>`; }).join('')}` : ''}
+        ${recent.length ? `<h4 class="kd-pk-t">🕘 آخر الدروس المكتملة</h4><ul class="kd-pk-r">${recent.map(([it, v]) => `<li>${it.ic} ${esc(it.t)}${v.quiz ? ` <small>— الاختبار: ${ar(v.quiz.s)} من ${ar(v.quiz.n)}</small>` : ''}</li>`).join('')}</ul>` : '<p class="muted">لم يُكمل دروساً بعد.</p>'}
+        <p class="kd-pk-rules">⚙️ ${r.minutes ? `حد يومي ${ar(r.minutes)} دقيقة` : 'بلا حد يومي'} • حتى مستوى «${LEVEL[r.maxLevel]}» • ${r.cats ? `${ar(r.cats.length)} من ${ar(cats.length)} أقسام` : 'كل الأقسام'} • ${r.audio ? 'الصوت مسموح' : 'الصوت متوقف'}</p>
+        <div class="kd-row2"><button class="btn" data-set="${p.id}">⚙️ الإعدادات</button><button class="btn ghost" data-edit="${p.id}">✏️ الاسم والعمر</button><button class="btn ghost" data-del="${p.id}">🗑️ حذف</button></div></div>`;
+    };
+    N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">لوحة ولي الأمر 👨‍👩‍👧<br><small>تابع تقدّم أطفالك وحدّد ما يناسبهم. كل البيانات على هذا الجهاز فقط.</small></div></div></section>
+      ${kids.length ? kids.map(card).join('') : '<div class="kd-card center"><p>لا توجد ملفات أطفال بعد.</p></div>'}
+      <button class="btn block kd-big" id="pAdd">➕ إضافة طفل</button>
+      <div class="kd-links"><button class="chip" id="pPin">🔑 تغيير الرمز</button><button class="chip" id="pLock">🔒 قفل اللوحة</button></div></div>`;
+    $$('[data-set]').forEach((b) => b.onclick = () => rulesSheet(kids.find((x) => x.id === b.dataset.set), cats, renderParent));
+    $$('[data-edit]').forEach((b) => b.onclick = () => { P.setActive(b.dataset.edit); renderSetup(true); });
+    $$('[data-del]').forEach((b) => b.onclick = () => { if (removeChild(kids.find((x) => x.id === b.dataset.del))) renderParent(); });
+    $('#pAdd').onclick = () => { P.setActive(''); renderSetup(false); };
+    $('#pPin').onclick = async () => { if (await verifyPin('الرمز الحالي') && (await newPin())) renderParent(); };
+    $('#pLock').onclick = () => { parentUntil = 0; go('kids'); };
+  }
+
   Object.assign(routes, {
-    kids: { title: 'موسوعة الطفل', render: renderHome, back: 'home' },
-    kidscat: { title: 'موسوعة الطفل', render: renderCat, back: 'kids' },
-    kidsitem: { title: 'موسوعة الطفل', render: renderItem, back: 'kids' },
-    kidssearch: { title: 'البحث في الموسوعة', render: renderSearch, back: 'kids' },
-    kidsbadges: { title: 'شاراتي', render: renderBadges, back: 'kids' },
-    kidsgames: { title: 'الألعاب التعليمية', render: renderGames, back: 'kids' },
-    kidsweek: { title: 'تحديات الأسبوع', render: renderWeekly, back: 'kids' },
-    kidsjourney: { title: 'رحلة التعلّم', render: renderJourney, back: 'kids' },
+    kids: { title: 'موسوعة الطفل', render: G(renderHome), back: 'home' },
+    kidscat: { title: 'موسوعة الطفل', render: G(renderCat), back: 'kids' },
+    kidsitem: { title: 'موسوعة الطفل', render: G(renderItem), back: 'kids' },
+    kidssearch: { title: 'البحث في الموسوعة', render: G(renderSearch), back: 'kids' },
+    kidsbadges: { title: 'شاراتي', render: G(renderBadges), back: 'kids' },
+    kidsgames: { title: 'الألعاب التعليمية', render: G(renderGames), back: 'kids' },
+    kidsweek: { title: 'تحديات الأسبوع', render: G(renderWeekly), back: 'kids' },
+    kidsjourney: { title: 'رحلة التعلّم', render: G(renderJourney), back: 'kids' },
+    kidsparent: { title: 'لوحة ولي الأمر', render: renderParent, back: 'kids' },
   });
 });

@@ -1188,3 +1188,29 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .kd .kd-st-ic { font-size: 1.8rem; flex: none; } .kd .kd-st b { flex: 1; font-size: .9rem; } .kd .kd-st small { color: var(--muted); font-size: .75rem; }
 @keyframes kdBob { 50% { transform: translateY(-5px); } }
 .kd .kd-avs button.locked { opacity: .45; } .kd .kd-avs button small { display: block; font-size: .65rem; color: var(--muted); }
+/* موسوعة الطفل: لوحة ولي الأمر */
+.kd .kd-dots { display: flex; justify-content: center; gap: 14px; margin: 14px 0 6px; }
+.kd .kd-dots i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--kd-gold); }
+.kd .kd-dots i.on { background: var(--kd-gold); }
+.kd .kd-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 280px; margin: 10px auto 4px; direction: ltr; }
+.kd .kd-pad button { height: 58px; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; font-size: 1.4rem; font-weight: 700; }
+.kd .kd-pad button:active { transform: scale(.95); background: var(--kd-soft); }
+.kd .kd-sw { margin: 12px 0 4px; }
+.kd .kd-rcats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-bottom: 12px; }
+.kd .kd-rcats .kd-chk { font-size: .86rem; }
+.kd .kd-pk-h { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.kd .kd-pk-h > div { display: flex; flex-direction: column; } .kd .kd-pk-h small { color: var(--muted); font-size: .78rem; }
+.kd .kd-pk-av { font-size: 2.4rem; }
+.kd .kd-pk-s { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); background: var(--kd-soft); color: inherit; border-radius: 16px; padding: 8px; }
+.kd .kd-pk-s small { color: var(--muted); }
+.kd .kd-pk-t { margin: 14px 0 6px; font-size: .9rem; }
+.kd .kd-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 110px; align-items: end; }
+.kd .kd-bars > div { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.kd .kd-bars span { width: 70%; min-height: 3px; border-radius: 6px 6px 2px 2px; background: linear-gradient(var(--kd-gold), var(--primary)); }
+.kd .kd-bars small { font-size: .62rem; color: var(--muted); margin-top: 3px; white-space: nowrap; }
+.kd .kd-bars i { position: absolute; top: 0; font-style: normal; font-size: .65rem; color: var(--muted); }
+.kd .kd-pk-c { display: grid; grid-template-columns: 9.5em 1fr auto; gap: 8px; align-items: center; font-size: .82rem; margin-bottom: 4px; }
+.kd .kd-pk-c .kd-prog { margin: 0; }
+.kd .kd-pk-r { margin: 0; padding-inline-start: 18px; font-size: .86rem; line-height: 1.9; } .kd .kd-pk-r small { color: var(--muted); }
+.kd .kd-pk-rules { font-size: .78rem; color: var(--muted); background: var(--kd-soft); border-radius: 12px; padding: 8px 10px; margin: 12px 0 4px; }
+.kd .kd-lvls button { width: auto; flex: 1; padding: 0 10px; font-size: 1rem; }
