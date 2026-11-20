@@ -56,7 +56,7 @@
   const levelOf = (stars) => Math.floor(Math.sqrt(stars / 5)) + 1;
   const fitsAge = (it, age) => !age || (age >= it.age[0] - 1 && age <= it.age[1] + 1);
   // قواعد ولي الأمر لكل طفل (تُضبط من لوحة ولي الأمر)
-  const RULES0 = { cats: null, maxLevel: 3, minutes: 0, audio: true };
+  const RULES0 = { cats: null, maxLevel: 3, minutes: 0, audio: true, teacher: true };
   const rulesOf = (p) => Object.assign({}, RULES0, (p && p.rules) || {});
   const catAllowed = (c) => { const r = rulesOf(me()); return !r.cats || r.cats.includes(c); };
   const allowed = (it) => catAllowed(it.c || it.cat) && (it.l || it.level || 1) <= rulesOf(me()).maxLevel;
@@ -175,6 +175,7 @@
       <div class="kd-cats">${I.cats.filter((c) => catAllowed(c.id)).map((c) => { const n = fit.filter((x) => x.c === c.id).length; return `<button class="kd-cat" style="--cc:${c.color}" data-go="kidscat/${c.id}"><span class="kd-cat-ic">${c.ic}</span><b>${esc(c.n)}</b><small>${c.count ? `${ar(n)} مادة لعمرك` : 'قيد الإعداد'}</small></button>`; }).join('')}</div>
       ${row('⭐ المفضلة', favs)}${row('👀 الأكثر مشاهدة عندك', viewed)}${row('🆕 المحتوى الجديد', newest)}
       <div class="kd-play"><button class="kd-pl" data-go="kidsgames"><span>🎮</span>الألعاب</button><button class="kd-pl" data-go="kidsweek"><span>🗓️</span>تحديات الأسبوع</button><button class="kd-pl" data-go="kidsjourney"><span>🗺️</span>رحلتي</button></div>
+      ${teacherOn() ? `<button class="kd-mini kd-teach" data-go="kidsteacher"><span class="kd-mini-ic">🦉</span><span><small>اسأل، وتعلّم معاني الكلمات، وراجع دروسك</small><b>المعلم نور</b></span></button>` : ''}
       <div class="kd-links"><button class="chip" data-go="kidsbadges">🏅 شاراتي</button><button class="chip" data-go="kidssearch">🔍 البحث المتقدم</button><button class="chip" id="kProf">${k.avatar} تعديل ملفي</button>${P.list().length > 1 ? '<button class="chip" id="kSwitch">🔄 تبديل الطفل</button>' : '<button class="chip" id="kAdd">➕ إضافة طفل</button>'}<button class="chip" data-go="kidsparent">👨‍👩‍👧 ولي الأمر</button></div>
     </div>`;
     $$('[data-go]', N.view).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
@@ -339,6 +340,7 @@
       ${it.lessons ? `<div class="kd-card kd-lessons"><h3 class="kd-h3">🌟 ماذا تعلّمنا؟</h3>${it.lessons.map((x) => `<p>✔️ ${qtext(x)}</p>`).join('')}</div>` : ''}
       ${it.situation ? `<div class="kd-card kd-sit"><h3 class="kd-h3">🤔 ماذا تفعل لو كنت مكانه؟</h3><p>${qtext(it.situation.story)}</p><p class="kd-q">${esc(it.situation.q)}</p><div class="kd-opts" id="kSit">${it.situation.o.map((o, i) => `<button class="kd-opt" data-i="${i}">${esc(o)}</button>`).join('')}</div><div id="kSitFb"></div></div>` : ''}
       ${it.cards ? `<div class="kd-card"><h3 class="kd-h3">🃏 بطاقات المراجعة <small class="muted">(اضغط لتقلب البطاقة)</small></h3><div class="kd-flash">${it.cards.map((c) => `<button class="kd-fc"><span class="kd-fc-f">${esc(c.f)}</span><span class="kd-fc-b">${esc(c.b)}</span></button>`).join('')}</div></div>` : ''}
+      ${teacherOn() ? '<div class="kd-card kd-helper" id="kHelp"></div>' : ''}
       ${gameKinds(it).length ? `<div class="kd-card"><h3 class="kd-h3">🎮 العب وتعلّم</h3><div class="kd-row2">${gameKinds(it).map(([k, l]) => `<button class="btn ghost" data-game="${k}">${l}</button>`).join('')}</div><div id="kGame"></div></div>` : ''}
       ${it.quiz ? `<div class="kd-card" id="kQuiz"><h3 class="kd-h3">❓ اختبر نفسك</h3><button class="btn block kd-big" id="kStartQ">ابدأ الاختبار (${ar(it.quiz.length)} أسئلة)</button></div>` : ''}
       <button class="btn block kd-big" id="kDone">${p.done ? '✓ أكملت هذا الدرس' : '✅ أنهيت القراءة'}</button>
@@ -360,6 +362,7 @@
     $$('.kd-fc').forEach((b) => b.onclick = () => { b.classList.toggle('flip'); if (b.classList.contains('flip')) sayWord(`${b.querySelector('.kd-fc-f').textContent}، ${b.querySelector('.kd-fc-b').textContent.replace(/\p{Extended_Pictographic}/gu, '')}`); });
     $$('.kd-tl-e').forEach((b) => b.onclick = () => b.classList.toggle('open'));
     if (it.map) mountMap($('#kMap'), () => { S.addStars(1); bumpWeek('games'); });
+    if ($('#kHelp')) mountHelper(it, $('#kHelp'));
     $$('[data-game]').forEach((b) => b.onclick = () => { stopTTS(); playOn($('#kGame'), it, b.dataset.game); $('#kGame').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     if (it.situation) $$('#kSit .kd-opt').forEach((b) => b.onclick = () => {
       const s = it.situation; const ok = +b.dataset.i === s.a;
@@ -656,6 +659,7 @@
       <label class="kd-lbl">📶 أعلى مستوى صعوبة</label>
       <div class="kd-ages kd-lvls">${[1, 2, 3].map((l) => `<button data-l="${l}" class="${l === lvl ? 'on' : ''}">${LEVEL[l]}</button>`).join('')}</div>
       <label class="kd-chk kd-sw"><input type="checkbox" id="rA" ${r.audio ? 'checked' : ''}> 🔊 السماح بالقراءة بالصوت</label>
+      <label class="kd-chk kd-sw"><input type="checkbox" id="rT" ${r.teacher !== false ? 'checked' : ''}> 🦉 تفعيل المعلم نور (شرح الكلمات والملخص والتدريب)</label>
       <label class="kd-lbl">📚 الأقسام المسموحة</label>
       <label class="kd-chk"><input type="checkbox" id="rAll" ${!r.cats ? 'checked' : ''}> كل الأقسام</label>
       <div class="kd-rcats">${cats.map((c) => `<label class="kd-chk"><input type="checkbox" data-c="${c.id}" ${!r.cats || r.cats.includes(c.id) ? 'checked' : ''}> ${c.ic} ${esc(c.n)}</label>`).join('')}</div>
@@ -667,7 +671,7 @@
       const sel = $$('[data-c]', sh.el).filter((x) => x.checked).map((x) => x.dataset.c);
       if (!sel.length) return toast('اختر قسماً واحداً على الأقل');
       const list = P.list(); const q = list.find((x) => x.id === p.id);
-      q.upd = Date.now(); q.rules = { cats: sel.length === cats.length ? null : sel, maxLevel: lvl, minutes: +$('#rM', sh.el).value, audio: $('#rA', sh.el).checked };
+      q.upd = Date.now(); q.rules = { cats: sel.length === cats.length ? null : sel, maxLevel: lvl, minutes: +$('#rM', sh.el).value, audio: $('#rA', sh.el).checked, teacher: $('#rT', sh.el).checked };
       P.save(list); touch(); sh.close(); toast('تم حفظ الإعدادات ✓'); done();
     };
   }
@@ -838,7 +842,7 @@
         <div class="kd-bars">${mins.map((m, i) => `<div><span style="height:${(m / mx) * 100}%"></span><small>${dayName(i)}</small><i>${m ? ar(m) : ''}</i></div>`).join('')}</div>
         ${Object.keys(byCat).length ? `<h4 class="kd-pk-t">📊 التقدّم حسب القسم</h4>${cats.filter((c) => byCat[c.id]).map((c) => { const tot = fit.filter((x) => x.c === c.id).length || 1; return `<div class="kd-pk-c"><span>${c.ic} ${esc(c.n)}</span><div class="kd-prog kd-prog-s"><span style="width:${Math.min(100, (byCat[c.id] / tot) * 100)}%"></span></div><small>${ar(byCat[c.id])}/${ar(tot)}</small></div>`; }).join('')}` : ''}
         ${recent.length ? `<h4 class="kd-pk-t">🕘 آخر الدروس المكتملة</h4><ul class="kd-pk-r">${recent.map(([it, v]) => `<li>${it.ic} ${esc(it.t)}${v.quiz ? ` <small>— الاختبار: ${ar(v.quiz.s)} من ${ar(v.quiz.n)}</small>` : ''}</li>`).join('')}</ul>` : '<p class="muted">لم يُكمل دروساً بعد.</p>'}
-        <p class="kd-pk-rules">⚙️ ${r.minutes ? `حد يومي ${ar(r.minutes)} دقيقة` : 'بلا حد يومي'} • حتى مستوى «${LEVEL[r.maxLevel]}» • ${r.cats ? `${ar(r.cats.length)} من ${ar(cats.length)} أقسام` : 'كل الأقسام'} • ${r.audio ? 'الصوت مسموح' : 'الصوت متوقف'}</p>
+        <p class="kd-pk-rules">⚙️ ${r.minutes ? `حد يومي ${ar(r.minutes)} دقيقة` : 'بلا حد يومي'} • حتى مستوى «${LEVEL[r.maxLevel]}» • ${r.cats ? `${ar(r.cats.length)} من ${ar(cats.length)} أقسام` : 'كل الأقسام'} • ${r.audio ? 'الصوت مسموح' : 'الصوت متوقف'} • ${r.teacher !== false ? 'المعلم نور مفعّل' : 'المعلم نور متوقف'}</p>
         <div class="kd-row2"><button class="btn" data-set="${p.id}">⚙️ الإعدادات</button><button class="btn ghost" data-edit="${p.id}">✏️ الاسم والعمر</button><button class="btn ghost" data-del="${p.id}">🗑️ حذف</button></div></div>`;
     };
     N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">لوحة ولي الأمر 👨‍👩‍👧<br><small>تابع تقدّم أطفالك وحدّد ما يناسبهم. كل البيانات على هذا الجهاز فقط.</small></div></div></section>
@@ -855,6 +859,145 @@
     bindSync();
   }
 
+  // ================= المعلم نور (المرحلة ٦) — مجاني ومن محتوى الموسوعة الموثّق فقط، بلا محادثة حرة =================
+  const teacherOn = () => rulesOf(me()).teacher !== false;
+  let dictP = null;
+  const dict = () => (dictP = dictP || fetch('data/kids/dict.json').then((r) => r.json()).catch((e) => { dictP = null; throw e; }));
+  const DIAC = '[\\u064B-\\u0652\\u0670\\u0640]*';
+  const wordRx = (w) => new RegExp(`(^|[^\\u0621-\\u064A\\u064B-\\u0652])((?:[وفبلك]${DIAC})?)(${[...w].map((ch) => (ch === ' ' ? '\\s+' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) + DIAC).join('')})(?![\\u0621-\\u064A])`);
+  const plain = (t) => t.replace(/[ً-ْٰـ]/g, '');
+  // تمييز كلمات القاموس في نص الدرس (أول ظهور لكل كلمة)، مع استثناء الآيات
+  async function markWords(it, root) {
+    let D; try { D = await dict(); } catch { return []; }
+    const found = [];
+    const list = D.map((d, i) => ({ d, i })).filter(({ d }) => !d.in || d.in.includes(it.cat)).sort((a, b) => b.d.w.length - a.d.w.length);
+    const nodes = []; const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentElement.closest('.kd-qr, .kd-w, button, .kd-tl-y') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+    while (tw.nextNode()) nodes.push(tw.currentNode);
+    for (const { d, i } of list) {
+      const rxs = [d.w, ...(d.f || [])].map(wordRx);
+      outer: for (const n of nodes) {
+        if (!n.parentNode) continue;
+        for (const rx of rxs) {
+          const m = rx.exec(n.nodeValue); if (!m) continue;
+          const start = m.index + m[1].length + m[2].length; const word = m[3];
+          const after = n.splitText(start); after.splitText(word.length);
+          const b = document.createElement('button'); b.className = 'kd-w'; b.dataset.w = i; b.textContent = word;
+          after.parentNode.replaceChild(b, after); if (b.nextSibling) nodes.push(b.nextSibling);
+          found.push(d); break outer;
+        }
+      }
+    }
+    root.addEventListener('click', (e) => { const b = e.target.closest('.kd-w'); if (b) { e.preventDefault(); wordSheet(D[+b.dataset.w]); } });
+    return found;
+  }
+  function wordSheet(d) {
+    const sh = N.sheet(`<div class="kd"><div class="kd-tw">${OWL}<div><small>🦉 نور يشرح لك</small><div class="sheet-title">${esc(d.w)}</div></div></div><p class="kd-tm">${esc(d.m)}</p>${TTS && audioOn() ? '<button class="btn ghost block" id="wSay">🔊 اسمع المعنى</button>' : ''}</div>`);
+    const s = $('#wSay', sh.el); if (s) s.onclick = () => { try { TTS.cancel(); const u = new SpeechSynthesisUtterance(`${d.w}: ${d.m}`); u.lang = 'ar'; const v = arVoice(); if (v) u.voice = v; u.rate = 0.85; TTS.speak(u); } catch { /* تجاهل */ } };
+  }
+  // ---------- ملخص على قدر العمر (مستخرج من الدرس نفسه) ----------
+  const firstSentence = (t) => (t.split(/(?<=[.!؟])\s+/)[0] || t);
+  function summary(it, age) {
+    const L = it.lessons || [];
+    const parts = [`<p class="kd-sm-i">💡 ${qtext(age <= 7 ? firstSentence(it.intro) : it.intro)}</p>`];
+    if (age >= 8) {
+      const heads = (it.sections || []).filter((s) => s.h).map((s) => age >= 12 ? `<li><b>${qtext(s.h)}:</b> ${qtext(firstSentence(s.p[0] || ''))}</li>` : `<li>${qtext(s.h)}</li>`);
+      const steps = (it.steps || []).map((s) => `<li>${qtext(s.t)}</li>`);
+      const tl = (it.timeline || []).slice(0, age >= 12 ? 8 : 4).map((e) => `<li><b>${esc(e.y)}</b>: ${esc(e.t)}</li>`);
+      if (heads.length) parts.push(`<h4>📌 أهم ما في الدرس</h4><ul>${heads.join('')}</ul>`);
+      if (steps.length) parts.push(`<h4>👣 الخطوات</h4><ol>${steps.join('')}</ol>`);
+      if (tl.length) parts.push(`<h4>🗓️ أحداث مهمة</h4><ul>${tl.join('')}</ul>`);
+    }
+    if (L.length) parts.push(`<h4>🌟 ماذا نتعلّم؟</h4>${L.slice(0, age <= 7 ? 2 : L.length).map((x) => `<p>✔️ ${qtext(x)}</p>`).join('')}`);
+    return parts.join('');
+  }
+  // ---------- أسئلة تدريب مولّدة من محتوى الدرس الموثّق ----------
+  async function practiceSet(it) {
+    const Q = []; const pick = (arr, n, not) => shuffle(arr.filter((x) => x !== not)).slice(0, n);
+    for (const q of it.quiz || []) Q.push({ q: q.q, o: q.o, a: q.a, e: q.e });
+    const cards = (it.cards || []).filter((c) => c.f !== c.b);
+    if (cards.length >= 3) for (const c of cards) { const wrong = pick(cards.map((x) => x.b), 2, c.b); if (wrong.length === 2) Q.push({ q: `اختر ما يناسب: «${c.f}»`, o: [c.b, ...wrong], a: 0 }); }
+    if (gameKinds(it).some(([k]) => k === 'steps')) { const S = it.steps.map((s) => s.t.replace(/^[٠-٩0-9]+\.\s*/, '')); S.slice(0, -1).forEach((t, i) => { const wrong = pick(S, 2, S[i + 1]).filter((x) => x !== t); if (wrong.length >= 2) Q.push({ q: `ما الخطوة التي تأتي بعد «${t}»؟`, o: [S[i + 1], ...wrong.slice(0, 2)], a: 0 }); }); }
+    if (it.timeline && it.timeline.length >= 3) for (let k = 0; k < 3; k++) { const [x, y] = shuffle(it.timeline.map((e, i) => i)).slice(0, 2); const a = Math.min(x, y), b = Math.max(x, y); Q.push({ q: 'أيّ الحدثين وقع أولاً؟', o: [it.timeline[a].t, it.timeline[b].t], a: 0, e: `${it.timeline[a].t} (${it.timeline[a].y}) ثم ${it.timeline[b].t} (${it.timeline[b].y}).` }); }
+    try { const D = await dict(); const words = $$('.kd-w').map((b) => D[+b.dataset.w]); for (const d of words) { const wrong = pick(D.map((x) => x.m), 2, d.m); Q.push({ q: `ما معنى «${d.w}»؟`, o: [d.m, ...wrong], a: 0 }); } } catch { /* بلا قاموس */ }
+    return shuffle(Q).slice(0, 6);
+  }
+  function runPractice(box, it, Q) {
+    let i = 0, score = 0;
+    const show = () => {
+      if (i >= Q.length) { box.innerHTML = `<div class="center"><p style="font-size:2.4rem;margin:0">${score === Q.length ? '🏆' : '🌱'}</p><h3>${ar(score)} من ${ar(Q.length)}</h3><p class="muted">${score === Q.length ? 'رائع! فهمت الدرس جيداً.' : 'كل محاولة تقرّبك من الفهم. راجع الدرس وجرّب مرة أخرى.'}</p></div>`; if (score >= Math.ceil(Q.length / 2)) gameWon(`prac:${it.id}`, 1); return; }
+      const q = Q[i]; const order = shuffle(q.o.map((_, k) => k));
+      box.innerHTML = `<p class="muted">سؤال ${ar(i + 1)} من ${ar(Q.length)}</p><p class="kd-q">${qtext(q.q)}</p><div class="kd-opts">${order.map((k) => `<button class="kd-opt" data-k="${k}">${qtext(q.o[k])}</button>`).join('')}</div><div id="pFb"></div>`;
+      $$('.kd-opt', box).forEach((b) => b.onclick = () => {
+        const ok = +b.dataset.k === q.a; if (ok) score++;
+        $$('.kd-opt', box).forEach((x) => { x.disabled = true; if (+x.dataset.k === q.a) x.classList.add('right'); });
+        if (!ok) b.classList.add('wrong');
+        $('#pFb', box).innerHTML = `<p class="kd-fb ${ok ? 'ok' : 'no'}">${ok ? '✅ أحسنت!' : '🤗 الإجابة الصحيحة مظلّلة بالأخضر'}</p>${q.e ? `<p class="muted">${qtext(q.e)}</p>` : ''}<button class="btn block" id="pNext">${i + 1 < Q.length ? 'التالي ←' : 'النتيجة'}</button>`;
+        $('#pNext', box).onclick = () => { i++; show(); };
+      });
+    };
+    show();
+  }
+  // ---------- اقتراحات: ماذا أتعلّم بعد؟ ----------
+  async function suggestions(cur, n = 4) {
+    const I = await index(); const pr = S.prog(); const age = me().age;
+    const curTags = new Set((cur && (cur.tags || [])) || []);
+    const pool = I.items.filter((x) => (!cur || x.id !== cur.id) && fitsAge(x, age) && allowed(x) && !(pr[x.id] && pr[x.id].done));
+    const score = (x) => (cur ? (x.c === (cur.cat || cur.c) ? 3 : 0) + (x.sub && x.sub === cur.sub ? 2 : 0) + x.tags.filter((t) => curTags.has(t)).length : 0) + (pr[x.id] ? 1 : 0) + (x.l <= levelOf(S.stars()) ? 1 : 0);
+    return pool.map((x) => [x, score(x) + Math.random() * 0.5]).sort((a, b) => b[1] - a[1]).slice(0, n).map((x) => x[0]);
+  }
+  async function reviewList() {
+    const I = await index(); const pr = S.prog();
+    return Object.entries(pr).filter(([, v]) => v.quiz && v.quiz.best / v.quiz.n < 0.6).map(([id, v]) => [I.items.find((x) => x.id === id), v]).filter((x) => x[0] && allowed(x[0]));
+  }
+  const itemBtn = (x, note) => `<button class="kd-mini" data-go="kidsitem/${x.c}/${x.id}"><span class="kd-mini-ic">${x.ic}</span><span><small>${note || ''}</small><b>${esc(x.t)}</b></span></button>`;
+  // بطاقة «نور يساعدك» في صفحة الدرس
+  async function mountHelper(it, box) {
+    const words = await markWords(it, $('.kd-body'));
+    if ($('.kd-lessons')) words.push(...(await markWords(it, $('.kd-lessons'))));
+    box.innerHTML = `<div class="kd-tw">${OWL}<div><b>🦉 نور يساعدك</b><small>من محتوى هذا الدرس فقط</small></div></div>
+      <div class="kd-row2"><button class="btn ghost" data-h="sum">📝 الملخص</button><button class="btn ghost" data-h="words">📖 كلمات الدرس${words.length ? ` (${ar(words.length)})` : ''}</button><button class="btn ghost" data-h="prac">🎯 تدرّب أكثر</button><button class="btn ghost" data-h="next">🧭 ماذا بعد؟</button></div>
+      ${words.length ? '<p class="muted kd-note">الكلمات المظلّلة في الدرس لها شرح: اضغط عليها.</p>' : ''}<div id="hOut"></div>`;
+    const out = $('#hOut', box);
+    $$('[data-h]', box).forEach((b) => b.onclick = async () => {
+      stopTTS(); const h = b.dataset.h;
+      if (h === 'sum') out.innerHTML = `<div class="kd-sm">${summary(it, me().age)}</div>`;
+      if (h === 'words') out.innerHTML = words.length ? `<div class="kd-wl">${words.map((d) => `<div><b>${esc(d.w)}</b><span>${esc(d.m)}</span></div>`).join('')}</div>` : '<p class="muted">لا توجد كلمات صعبة في هذا الدرس 👍</p>';
+      if (h === 'prac') { const Q = await practiceSet(it); if (!Q.length) { out.innerHTML = '<p class="muted">لا توجد أسئلة تدريب لهذا الدرس بعد.</p>'; return; } runPractice(out, it, Q); }
+      if (h === 'next') { const s = await suggestions(it); out.innerHTML = s.length ? s.map((x) => itemBtn(x, x.c === it.cat ? 'من القسم نفسه' : 'قد يعجبك')).join('') : '<p class="muted">أكملت كل الدروس المناسبة لك، ما شاء الله! 🌟</p>'; $$('[data-go]', out).forEach((x) => x.onclick = () => go(x.dataset.go)); }
+      out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+  // ---------- صفحة «المعلم نور» ----------
+  const QWORDS = /(^|\s)(ما|من|ماذا|معنى|كلمة|هو|هي|كيف|لماذا|لم|أين|متى|هل|عن|اشرح|أريد|اعرف|أعرف|يعني|شرح|عرفني|قصة)(?=\s|$)/g;
+  async function renderTeacher() {
+    if (!me()) return renderSetup(false);
+    if (!teacherOn()) return lockedPage();
+    loader();
+    let I, D; try { [I, D] = await Promise.all([index(), dict()]); } catch { return failed(); }
+    const rev = await reviewList(); const sug = await suggestions(S.last() && I.items.find((x) => x.id === S.last().id), 4);
+    N.setTitle('المعلم نور');
+    N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">أنا <b>نور</b>! اكتب كلمة أو موضوعاً، وسأبحث لك عنه في الموسوعة 🔍<br><small>أجيب من دروس الموسوعة الموثّقة فقط.</small></div></div></section>
+      <div class="kd-card"><input class="search" id="tQ" type="search" placeholder="مثلاً: ما معنى الصبر؟ أو: الكواكب" autocomplete="off"><div id="tA"></div></div>
+      ${rev.length ? `<h3 class="kd-h">🔁 راجع هذه الدروس</h3>${rev.map(([x, v]) => itemBtn(x, `نتيجتك ${ar(v.quiz.best)} من ${ar(v.quiz.n)}: جرّب مرة أخرى`)).join('')}` : ''}
+      ${sug.length ? `<h3 class="kd-h">🧭 اقتراحات لك</h3>${sug.map((x) => itemBtn(x, LEVEL[x.l])).join('')}` : ''}
+      <h3 class="kd-h">📖 قاموس نور (${ar(D.length)} كلمة)</h3><div class="kd-wl" id="tD">${D.slice().sort((a, b) => plain(a.w).replace(/^ال/, '').localeCompare(plain(b.w).replace(/^ال/, ''), 'ar')).map((d) => `<div><b>${esc(d.w)}</b><span>${esc(d.m)}</span></div>`).join('')}</div></div>`;
+    $$('[data-go]').forEach((b) => b.onclick = () => go(b.dataset.go));
+    const ask = () => {
+      const raw = N.normAr(plain($('#tQ').value)).replace(/[؟?!.,،]/g, ' ').replace(QWORDS, ' ').trim();
+      const box = $('#tA'); if (!raw) { box.innerHTML = ''; return; }
+      const terms = raw.split(/\s+/).filter((t) => t.length > 1);
+      const key = (s) => N.normAr(plain(s)).replace(/^(ال|وال|بال)/, '');
+      const ws = D.filter((d) => [d.w, ...(d.f || [])].some((w) => terms.some((t) => key(w) === key(t) || (key(t).length >= 3 && key(w).startsWith(key(t))))));
+      const hay = (x) => N.normAr(plain([x.t, x.sub, ...x.tags, x.x].join(' ')));
+      const its = I.items.filter((x) => fitsAge(x, me().age) && allowed(x)).map((x) => [x, terms.filter((t) => hay(x).includes(key(t))).length]).filter((x) => x[1]).sort((a, b) => b[1] - a[1]).slice(0, 5).map((x) => x[0]);
+      box.innerHTML = (ws.length ? ws.slice(0, 3).map((d) => `<div class="kd-ans"><b>📖 ${esc(d.w)}</b><p>${esc(d.m)}</p></div>`).join('') : '') +
+        (its.length ? `<p class="kd-lbl">📚 دروس عن هذا الموضوع:</p>${its.map((x) => itemBtn(x)).join('')}` : '') +
+        (!ws.length && !its.length ? `<div class="kd-ans"><p>🌱 لم أجد هذا في الموسوعة بعد. اسأل والديك أو معلّمك، وجرّب كلمة أخرى!</p></div>` : '');
+      $$('[data-go]', box).forEach((b) => b.onclick = () => go(b.dataset.go));
+    };
+    let t; $('#tQ').addEventListener('input', () => { clearTimeout(t); t = setTimeout(ask, 250); });
+  }
+
   Object.assign(routes, {
     kids: { title: 'موسوعة الطفل', render: G(renderHome), back: 'home' },
     kidscat: { title: 'موسوعة الطفل', render: G(renderCat), back: 'kids' },
@@ -865,5 +1008,6 @@
     kidsweek: { title: 'تحديات الأسبوع', render: G(renderWeekly), back: 'kids' },
     kidsjourney: { title: 'رحلة التعلّم', render: G(renderJourney), back: 'kids' },
     kidsparent: { title: 'لوحة ولي الأمر', render: renderParent, back: 'kids' },
+    kidsteacher: { title: 'المعلم نور', render: G(renderTeacher), back: 'kids' },
   });
 });

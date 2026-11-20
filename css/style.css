@@ -1217,3 +1217,19 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 /* موسوعة الطفل: رمز العائلة */
 .kd .kd-code { font-family: ui-monospace, monospace; font-size: 1.35rem; font-weight: 800; letter-spacing: 2px; text-align: center; padding: 14px; margin: 10px 0; border-radius: 16px; border: 2px dashed var(--kd-gold); background: var(--kd-soft); user-select: all; }
 .kd .kd-sync .kd-row2 { justify-content: flex-start; }
+/* موسوعة الطفل: المعلم نور */
+.kd .kd-w { all: unset; cursor: pointer; border-bottom: 2px dotted var(--kd-gold); background: color-mix(in srgb, var(--kd-gold) 14%, transparent); border-radius: 4px; padding: 0 2px; }
+.kd .kd-w:active { background: color-mix(in srgb, var(--kd-gold) 35%, transparent); }
+.kd .kd-tw { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.kd .kd-tw > div { display: flex; flex-direction: column; } .kd .kd-tw small { color: var(--muted); font-size: .76rem; }
+.kd .kd-tw svg { width: 46px; height: 46px; flex: none; }
+.kd .kd-tm { font-size: 1.05rem; line-height: 1.9; background: var(--kd-soft); border-radius: 14px; padding: 12px; }
+.kd .kd-helper { border: 2px solid color-mix(in srgb, var(--kd-gold) 45%, var(--border)); }
+.kd .kd-helper .kd-row2 { justify-content: flex-start; }
+.kd .kd-sm { margin-top: 12px; line-height: 1.9; } .kd .kd-sm h4 { margin: 12px 0 4px; font-size: .92rem; } .kd .kd-sm ul, .kd .kd-sm ol { margin: 0; padding-inline-start: 20px; }
+.kd .kd-sm-i { background: var(--kd-soft); border-radius: 12px; padding: 10px; margin: 0; }
+.kd .kd-wl { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.kd .kd-wl > div { display: flex; flex-direction: column; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.kd .kd-wl b { color: var(--primary); } .kd .kd-wl span { font-size: .9rem; line-height: 1.8; }
+.kd .kd-ans { margin-top: 10px; padding: 12px; border-radius: 14px; background: var(--kd-soft); } .kd .kd-ans p { margin: 4px 0 0; line-height: 1.8; }
+.kd .kd-teach { border-color: var(--kd-gold); margin-top: 10px; }
