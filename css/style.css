@@ -1128,7 +1128,7 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .kd-cele { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); background: var(--surface); color: var(--text); border-radius: 26px; padding: 16px 22px; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; gap: 6px; animation: kd-pop .5s; text-align: center; max-width: 80vw; }
 .kd-cele .kd-owl { width: 80px; height: 80px; }
 @media (prefers-reduced-motion: reduce) { .kd .kd-owl, .kd .kd-owl .kd-eye, .kd-confetti i { animation: none; } }
-@media (min-width: 700px) { .kd .kd-cats { grid-template-columns: repeat(5, 1fr); } .kd .kd-today { grid-template-columns: repeat(4, 1fr); } .kd .kd-flash { grid-template-columns: repeat(4, 1fr); } .kd .kd-sf { grid-template-columns: repeat(5, 1fr); } .kd .kd-badges { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 700px) { .kd .kd-cats { grid-template-columns: repeat(5, 1fr); } .kd .kd-flash { grid-template-columns: repeat(4, 1fr); } .kd .kd-sf { grid-template-columns: repeat(5, 1fr); } .kd .kd-badges { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 360px) { .kd .kd-cats { grid-template-columns: repeat(2, 1fr); } .kd .kd-today { grid-template-columns: 1fr; } }
 @media print { body.kd-printing .topbar, body.kd-printing .tabbar, body.kd-printing .kd-tools, body.kd-printing #kDone, body.kd-printing #kQuiz, body.kd-printing .kd-sit { display: none !important; } body.kd-printing .kd-hero { color: #000; background: none; box-shadow: none; } body.kd-printing .kd-src { display: block; } }
 /* موسوعة الطفل: الخط الزمني والتجارب وعدّاد المناسبات */
