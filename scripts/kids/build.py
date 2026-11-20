@@ -78,8 +78,14 @@ def load(q, bukhari, muslim, stats):
                 if 'sections' in it:
                     row['sections'] = [{'h': s.get('h', ''), 'p': [ex(p) for p in s['p']]} for s in it['sections']]
                 if 'steps' in it:
-                    row['steps'] = [{'t': s['t'], 'd': ex(s.get('d', ''))} for s in it['steps']]
+                    row['steps'] = [{'t': ex(s['t']), 'd': ex(s.get('d', ''))} for s in it['steps']]
                 if 'facts' in it: row['facts'] = it['facts']
+                if 'timeline' in it:  # خط زمني: [{y: الزمن، t: العنوان، d: الوصف}]
+                    row['timeline'] = [{'y': e['y'], 't': e['t'], 'd': ex(e.get('d', ''))} for e in it['timeline']]
+                if 'hijri' in it:  # موعد المناسبة بالتقويم الهجري لعدّاد الأيام: {m: الشهر 1-12، d: اليوم}
+                    hj = it['hijri']
+                    if not (1 <= hj.get('m', 0) <= 12 and 1 <= hj.get('d', 0) <= 30): die(f'{w}: تاريخ هجري غير صحيح')
+                    row['hijri'] = {'m': hj['m'], 'd': hj['d']}
                 if 'lessons' in it: row['lessons'] = [ex(x) for x in it['lessons']]
                 if 'situation' in it:
                     s = it['situation']
@@ -110,6 +116,11 @@ def load(q, bukhari, muslim, stats):
                     qz.append({'q': ex(x['q']), 'o': [ex(o, True) for o in x['o']], 'a': x['a'], 'e': ex(x.get('e', ''))})
                 if qz: row['quiz'] = qz
                 if 'cards' in it: row['cards'] = it['cards']
+                if 'experiment' in it:  # تجربة منزلية آمنة: أدوات وخطوات وتنبيه سلامة إلزامي
+                    e = it['experiment']
+                    if not e.get('safety'): die(f'{w}: التجربة تحتاج تنبيه سلامة')
+                    row['experiment'] = {'tools': e['tools'], 'steps': e['steps'], 'why': e.get('why', ''), 'safety': e['safety']}
+                if 'hijri' in it: row.setdefault('hijri', it['hijri'])
                 items.append(row)
     return items
 
@@ -130,8 +141,8 @@ def main():
         for it in lst:  # فهرس مختصر للبحث والصفحة الرئيسية دون تحميل كل المحتوى
             index['items'].append({'id': it['id'], 'c': cid, 't': it['title'], 'k': it['kind'], 'age': it['age'], 'l': it['level'],
                                    'ic': it.get('icon', ic), 'sub': it.get('sub', ''), 'tags': it.get('tags', []),
-                                   'm': sorted({'نص'} | ({'اختبار'} if it.get('quiz') else set()) | ({'خطوات'} if it.get('steps') else set()) | ({'بطاقات'} if it.get('cards') else set()) | ({'آيات'} if any(e['k'] == 'q' for e in it.get('evidence', [])) else set())),
-                                   'x': (it['intro'][:140])})
+                                   'm': sorted({'نص'} | ({'اختبار'} if it.get('quiz') else set()) | ({'خطوات'} if it.get('steps') else set()) | ({'بطاقات'} if it.get('cards') else set()) | ({'آيات'} if any(e['k'] == 'q' for e in it.get('evidence', [])) else set()) | ({'خط زمني'} if it.get('timeline') else set()) | ({'تجربة'} if it.get('experiment') else set())),
+                                   'x': (it['intro'][:140]), **({'hj': it['hijri']} if it.get('hijri') else {})})
     json.dump(index, open(os.path.join(OUT, 'index.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('✓ مواد الموسوعة', len(items), dict(stats))
     for c in index['cats']: print(f"  {c['ic']} {c['n']}: {c['count']}")

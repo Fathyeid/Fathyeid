@@ -1131,3 +1131,17 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 @media (min-width: 700px) { .kd .kd-cats { grid-template-columns: repeat(5, 1fr); } .kd .kd-today { grid-template-columns: repeat(4, 1fr); } .kd .kd-flash { grid-template-columns: repeat(4, 1fr); } .kd .kd-sf { grid-template-columns: repeat(5, 1fr); } .kd .kd-badges { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 360px) { .kd .kd-cats { grid-template-columns: repeat(2, 1fr); } .kd .kd-today { grid-template-columns: 1fr; } }
 @media print { body.kd-printing .topbar, body.kd-printing .tabbar, body.kd-printing .kd-tools, body.kd-printing #kDone, body.kd-printing #kQuiz, body.kd-printing .kd-sit { display: none !important; } body.kd-printing .kd-hero { color: #000; background: none; box-shadow: none; } body.kd-printing .kd-src { display: block; } }
+/* موسوعة الطفل: الخط الزمني والتجارب وعدّاد المناسبات */
+.kd .kd-tl { position: relative; margin: 6px 0 4px; padding-inline-start: 4px; }
+.kd .kd-tl::before { content: ''; position: absolute; top: 8px; bottom: 8px; inset-inline-start: 96px; width: 3px; border-radius: 3px; background: linear-gradient(var(--kd-gold), var(--kd-em)); }
+.kd .kd-tl-e { position: relative; display: grid; grid-template-columns: 84px 24px 1fr; align-items: start; gap: 6px; width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: right; padding: 8px 0; }
+.kd .kd-tl-y { font-size: .78rem; font-weight: 800; color: var(--kd-em); padding-top: 3px; } :root[data-theme="dark"] .kd .kd-tl-y { color: var(--kd-gold); }
+.kd .kd-tl-dot { width: 16px; height: 16px; margin: 4px auto 0; border-radius: 50%; background: var(--surface); border: 3px solid var(--kd-gold); z-index: 1; transition: transform .2s; }
+.kd .kd-tl-c { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border-radius: 16px; background: var(--kd-soft); line-height: 1.7; }
+.kd .kd-tl-d { display: none; font-size: .9rem; color: var(--muted); }
+.kd .kd-tl-e.open .kd-tl-d { display: block; } .kd .kd-tl-e.open .kd-tl-dot { transform: scale(1.3); background: var(--kd-gold); }
+.kd .kd-count { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 18px; margin-bottom: 12px; background: color-mix(in srgb, var(--kd-gold) 22%, var(--surface)); }
+.kd .kd-count b { font-size: 1.15rem; } .kd .kd-count small { color: var(--muted); font-size: .76rem; }
+.kd .kd-exp ol { padding-inline-start: 22px; line-height: 2; margin: 6px 0; }
+.kd .kd-exp details summary { font-weight: 800; cursor: pointer; margin-top: 6px; }
+.kd .kd-safe { background: color-mix(in srgb, #e76f51 14%, var(--surface)); border-radius: 12px; padding: 8px 12px; font-weight: 700; font-size: .9rem; }
