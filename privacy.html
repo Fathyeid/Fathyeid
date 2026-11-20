@@ -25,7 +25,7 @@
 
   <section>
     <h2>باختصار</h2>
-    <p>التطبيق لا يجمع أي بيانات شخصية، ولا يحتاج إلى تسجيل حساب، ولا يحتوي على إعلانات أو أدوات تتبّع، ولا يشارك أي بيانات مع أي جهة.</p>
+    <p>التطبيق لا يجمع أي بيانات شخصية، ولا يحتاج إلى تسجيل حساب (والنسخ الاحتياطي الاختياري لموسوعة الطفل برمز عائلة لا يطلب بريداً)، ولا يحتوي على إعلانات أو أدوات تتبّع، ولا يشارك أي بيانات مع أي جهة.</p>
     <p><b>عدّاد المستخدمين:</b> لمعرفة عدد مستخدمي التطبيق فقط، يرسل التطبيق مرة واحدة يومياً إلى خادمه على Supabase رقماً عشوائياً مجهولاً يُولَّد على جهازك، مع نوع النسخة (أندرويد / ويب) ورقم الإصدار. لا يُرسل معه أي اسم أو موقع أو معرّف للجهاز، ولا يمكن ربطه بشخصك. ويُحذف الرقم من جهازك بحذف التطبيق أو مسح بياناته.</p>
 
     <h2>الموقع الجغرافي</h2>
@@ -53,8 +53,9 @@
     <h2>الإشعارات</h2>
     <p>يستخدم التطبيق الإشعارات لتنبيهك بمواقيت الصلاة فقط، وتُجدول هذه الإشعارات على جهازك. يمكنك إيقافها من إعدادات التطبيق في أي وقت.</p>
 
-    <h2>الأطفال</h2>
-    <p>لا يجمع التطبيق أي بيانات شخصية من أي مستخدم، بمن في ذلك الأطفال (سوى الرقم العشوائي المجهول لعدّاد المستخدمين).</p>
+    <h2>الأطفال (موسوعة الطفل)</h2>
+    <p>لا يطلب التطبيق من الطفل أي بيانات شخصية: يكتب الطفل اسماً مستعاراً وعمره فقط، ويُنصح بعدم كتابة الاسم الكامل. تُحفظ ملفات الأطفال وتقدّمهم وإعدادات ولي الأمر على الجهاز، ويُحفظ رمز ولي الأمر (PIN) بصمةً مشفّرة لا الرمز نفسه. لا توجد في الموسوعة إعلانات ولا دردشة ولا تعليقات عامة ولا روابط خارجية.</p>
+    <p><b>النسخ الاحتياطي برمز العائلة (اختياري):</b> إذا فعّله ولي الأمر من «لوحة ولي الأمر»، تُرسل نسخة من ملفات الأطفال (الاسم المستعار، العمر، الشخصية، الإعدادات، والتقدّم في الدروس والألعاب) وبصمة رمز ولي الأمر إلى خادم التطبيق على Supabase، مرتبطةً برمز عائلة عشوائي يحتفظ به ولي الأمر. لا يُطلب بريد إلكتروني ولا رقم هاتف، ولا يُخزَّن الرمز نفسه على الخادم بل بصمته، ولا يمكن الوصول إلى هذه البيانات إلا بالرمز. لا تُشارك مع أي جهة ولا تُستخدم لأي غرض آخر. يستطيع ولي الأمر حذفها نهائياً في أي وقت من زر «حذف البيانات من السحابة».</p>
 
     <h2>التواصل</h2>
     <p>لأي استفسار عن الخصوصية: <a href="https://github.com/Fathyeid/Fathyeid/issues">github.com/Fathyeid/Fathyeid/issues</a></p>
@@ -67,6 +68,7 @@
     <p><b>Location:</b> if you choose automatic location, your approximate location is used on your device only to calculate prayer times and the Qibla direction. It is never sent to a server. You can pick a city from the list instead.</p>
     <p><b>On-device data:</b> settings and progress (last read, bookmarks, khatma, prayer tracker, tasbih counter, zakat inputs) are stored only on your device and are removed when you uninstall the app or clear its data.</p>
     <p><b>Network:</b> the app downloads Quran text, tafsir and translations from api.alquran.cloud, recitation audio from cdn.islamic.network, and fonts from Google Fonts. No information about you is sent. These services may log your IP address under their own policies.</p>
+    <p><b>Children (Kids Encyclopedia):</b> children enter only a nickname and age. Profiles, progress and parent settings are stored on the device; the parent PIN is stored as a salted hash. No ads, chat, public comments or external links. <b>Optional family-code backup:</b> if a parent enables it, a copy of the children's profiles (nickname, age, avatar, settings, learning progress) and the PIN hash is stored on the app's Supabase server under a random family code kept by the parent. No email or phone number is collected; only a hash of the code is stored; the data is reachable only with the code, is never shared, and the parent can delete it permanently at any time.</p>
     <p><b>Notifications:</b> used only for prayer-time alerts scheduled on your device. You can turn them off in the app settings.</p>
     <p><b>Contact:</b> <a href="https://github.com/Fathyeid/Fathyeid/issues">github.com/Fathyeid/Fathyeid/issues</a></p>
   </section>

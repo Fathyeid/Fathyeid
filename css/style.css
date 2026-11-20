@@ -1214,3 +1214,6 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .kd .kd-pk-r { margin: 0; padding-inline-start: 18px; font-size: .86rem; line-height: 1.9; } .kd .kd-pk-r small { color: var(--muted); }
 .kd .kd-pk-rules { font-size: .78rem; color: var(--muted); background: var(--kd-soft); border-radius: 12px; padding: 8px 10px; margin: 12px 0 4px; }
 .kd .kd-lvls button { width: auto; flex: 1; padding: 0 10px; font-size: 1rem; }
+/* موسوعة الطفل: رمز العائلة */
+.kd .kd-code { font-family: ui-monospace, monospace; font-size: 1.35rem; font-weight: 800; letter-spacing: 2px; text-align: center; padding: 14px; margin: 10px 0; border-radius: 16px; border: 2px dashed var(--kd-gold); background: var(--kd-soft); user-select: all; }
+.kd .kd-sync .kd-row2 { justify-content: flex-start; }
