@@ -149,6 +149,22 @@ def main():
     SHORT = [1, 112, 113, 114, 108, 103, 110, 105, 106, 107, 109, 111, 102, 101]
     ayat = [{'s': su, 'n': q.name(su), 'v': [q.text(su, a) for a in range(1, q.sur[su]['total_verses'] + 1)]} for su in SHORT]
     json.dump(ayat, open(os.path.join(OUT, 'ayat.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    # قاموس «المعلم نور»: نتحقق أن كل كلمة وردت فعلاً في دروس أقسامها، وأن المعاني خالية من نص قرآني منسوخ يدوياً
+    D = json.load(open(os.path.join(SRC, '_dict.json'), encoding='utf-8'))['words']
+    strip = lambda t: re.sub(r'[\u064B-\u0652\u0670\u0640]', '', t)
+    def body(it):
+        return strip(' '.join([it.get('intro', '')] + [x for s_ in it.get('sections', []) for x in s_['p'] + [s_.get('h', '')]] + [s_['t'] + ' ' + s_.get('d', '') for s_ in it.get('steps', [])] + it.get('lessons', []) + [e['t'] + ' ' + e['d'] for e in it.get('timeline', [])]))
+    seen, missing = set(), []
+    for d in D:
+        assert d['w'] not in seen, f"كلمة مكررة في القاموس: {d['w']}"; seen.add(d['w'])
+        assert d.get('m'), f"معنى فارغ: {d['w']}"; check_text('القاموس: ' + d['w'], d['m'])
+        forms = [d['w']] + d.get('f', [])
+        pool = [it for it in items if not d.get('in') or it['cat'] in d['in']]
+        hits = sum(1 for it in pool if any(re.search(r'(?<![\u0621-\u064A])(?:[وفبلك])?' + re.escape(strip(w)) + r'(?![\u0621-\u064A])', body(it)) for w in forms))
+        if not hits: missing.append(d['w'])
+    if missing: die('كلمات في القاموس لم ترد في أي درس من أقسامها: ' + '، '.join(missing))
+    json.dump(D, open(os.path.join(OUT, 'dict.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    print('✓ قاموس المعلم نور:', len(D), 'كلمة')
     print('✓ مواد الموسوعة', len(items), dict(stats))
     for c in index['cats']: print(f"  {c['ic']} {c['n']}: {c['count']}")
 
