@@ -110,7 +110,7 @@
         <label class="kd-lbl">العمر</label>
         <div class="kd-ages">${Array.from({ length: 13 }, (_, i) => i + 3).map((a) => `<button data-a="${a}" class="${p && p.age === a ? 'on' : ''}">${ar(a)}</button>`).join('')}</div>
         <label class="kd-lbl">اختر شخصيتك</label>
-        <div class="kd-avs">${AVATARS.map((x) => `<button data-v="${x}" class="${x === av ? 'on' : ''}">${x}</button>`).join('')}</div>
+        <div class="kd-avs">${[...AVATARS, ...UNLOCK.filter(([, n]) => p && S.stars() >= n).map(([x]) => x)].map((x) => `<button data-v="${x}" class="${x === av ? 'on' : ''}">${x}</button>`).join('')}</div>
         <button class="btn block kd-big" id="kSave">${p ? 'حفظ' : 'ابدأ الرحلة 🚀'}</button>
         <p class="muted kd-note">تُحفظ هذه البيانات على هذا الجهاز فقط.</p>
       </div></div>`;
@@ -166,6 +166,7 @@
       <h3 class="kd-h">أقسام الموسوعة</h3>
       <div class="kd-cats">${I.cats.map((c) => { const n = fit.filter((x) => x.c === c.id).length; return `<button class="kd-cat" style="--cc:${c.color}" data-go="kidscat/${c.id}"><span class="kd-cat-ic">${c.ic}</span><b>${esc(c.n)}</b><small>${c.count ? `${ar(n)} مادة لعمرك` : 'قيد الإعداد'}</small></button>`; }).join('')}</div>
       ${row('⭐ المفضلة', favs)}${row('👀 الأكثر مشاهدة عندك', viewed)}${row('🆕 المحتوى الجديد', newest)}
+      <div class="kd-play"><button class="kd-pl" data-go="kidsgames"><span>🎮</span>الألعاب</button><button class="kd-pl" data-go="kidsweek"><span>🗓️</span>تحديات الأسبوع</button><button class="kd-pl" data-go="kidsjourney"><span>🗺️</span>رحلتي</button></div>
       <div class="kd-links"><button class="chip" data-go="kidsbadges">🏅 شاراتي</button><button class="chip" data-go="kidssearch">🔍 البحث المتقدم</button><button class="chip" id="kProf">${k.avatar} تعديل ملفي</button>${P.list().length > 1 ? '<button class="chip" id="kSwitch">🔄 تبديل الطفل</button>' : '<button class="chip" id="kAdd">➕ إضافة طفل</button>'}</div>
     </div>`;
     $$('[data-go]', N.view).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
@@ -328,13 +329,14 @@
       ${it.lessons ? `<div class="kd-card kd-lessons"><h3 class="kd-h3">🌟 ماذا تعلّمنا؟</h3>${it.lessons.map((x) => `<p>✔️ ${qtext(x)}</p>`).join('')}</div>` : ''}
       ${it.situation ? `<div class="kd-card kd-sit"><h3 class="kd-h3">🤔 ماذا تفعل لو كنت مكانه؟</h3><p>${qtext(it.situation.story)}</p><p class="kd-q">${esc(it.situation.q)}</p><div class="kd-opts" id="kSit">${it.situation.o.map((o, i) => `<button class="kd-opt" data-i="${i}">${esc(o)}</button>`).join('')}</div><div id="kSitFb"></div></div>` : ''}
       ${it.cards ? `<div class="kd-card"><h3 class="kd-h3">🃏 بطاقات المراجعة <small class="muted">(اضغط لتقلب البطاقة)</small></h3><div class="kd-flash">${it.cards.map((c) => `<button class="kd-fc"><span class="kd-fc-f">${esc(c.f)}</span><span class="kd-fc-b">${esc(c.b)}</span></button>`).join('')}</div></div>` : ''}
+      ${gameKinds(it).length ? `<div class="kd-card"><h3 class="kd-h3">🎮 العب وتعلّم</h3><div class="kd-row2">${gameKinds(it).map(([k, l]) => `<button class="btn ghost" data-game="${k}">${l}</button>`).join('')}</div><div id="kGame"></div></div>` : ''}
       ${it.quiz ? `<div class="kd-card" id="kQuiz"><h3 class="kd-h3">❓ اختبر نفسك</h3><button class="btn block kd-big" id="kStartQ">ابدأ الاختبار (${ar(it.quiz.length)} أسئلة)</button></div>` : ''}
       <button class="btn block kd-big" id="kDone">${p.done ? '✓ أكملت هذا الدرس' : '✅ أنهيت القراءة'}</button>
       ${it.sources ? `<details class="kd-card kd-src"><summary>📚 المصادر والمراجع</summary><ul>${it.sources.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>${it.reviewed ? `<small class="muted">آخر مراجعة: ${esc(it.reviewed)}</small>` : ''}</details>` : ''}
     </div>`;
     const finish = (extra) => {
       const pr2 = S.prog(); const q = pr2[id] || { cat: cid };
-      if (!q.done) { q.done = true; q.at = Date.now(); S.addStars(1 + (extra || 0)); q.stars = Math.max(q.stars || 0, 1 + (extra || 0)); pr2[id] = q; S.setProg(pr2); celebrate(`أحسنت يا ${me().name}! +${ar(1 + (extra || 0))} ⭐`); checkBadges(); }
+      if (!q.done) { bumpWeek('lessons'); q.done = true; q.at = Date.now(); S.addStars(1 + (extra || 0)); q.stars = Math.max(q.stars || 0, 1 + (extra || 0)); pr2[id] = q; S.setProg(pr2); celebrate(`أحسنت يا ${me().name}! +${ar(1 + (extra || 0))} ⭐`); checkBadges(); }
       else if (extra && extra + 1 > (q.stars || 0)) { S.addStars(extra + 1 - (q.stars || 0)); q.stars = extra + 1; pr2[id] = q; S.setProg(pr2); celebrate('نتيجة أفضل! ⭐'); checkBadges(); }
       $('#kDone').textContent = '✓ أكملت هذا الدرس';
     };
@@ -347,7 +349,8 @@
     const sayWord = (t) => { if (!TTS || ttsState) return; try { TTS.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ar'; const v = arVoice(); if (v) u.voice = v; u.rate = 0.8; TTS.speak(u); } catch { /* تجاهل */ } };
     $$('.kd-fc').forEach((b) => b.onclick = () => { b.classList.toggle('flip'); if (b.classList.contains('flip')) sayWord(`${b.querySelector('.kd-fc-f').textContent}، ${b.querySelector('.kd-fc-b').textContent.replace(/\p{Extended_Pictographic}/gu, '')}`); });
     $$('.kd-tl-e').forEach((b) => b.onclick = () => b.classList.toggle('open'));
-    if (it.map) mountMap($('#kMap'), () => { S.addStars(1); });
+    if (it.map) mountMap($('#kMap'), () => { S.addStars(1); bumpWeek('games'); });
+    $$('[data-game]').forEach((b) => b.onclick = () => { stopTTS(); playOn($('#kGame'), it, b.dataset.game); $('#kGame').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     if (it.situation) $$('#kSit .kd-opt').forEach((b) => b.onclick = () => {
       const s = it.situation; const ok = +b.dataset.i === s.a;
       $$('#kSit .kd-opt').forEach((x) => { x.disabled = true; if (+x.dataset.i === s.a) x.classList.add('right'); });
@@ -366,7 +369,7 @@
         const all = score === it.quiz.length;
         box.innerHTML = `<div class="center"><p style="font-size:2.6rem;margin:0">${all ? '🏆' : score ? '👏' : '🌱'}</p><h3>${ar(score)} من ${ar(it.quiz.length)}</h3><p class="muted">${all ? 'ممتاز! كل إجاباتك صحيحة.' : 'أحسنت المحاولة، يمكنك إعادة الاختبار متى شئت.'}</p><button class="btn ghost" id="kAgain">🔁 أعد الاختبار</button></div>`;
         $('#kAgain').onclick = () => { i = 0; score = 0; show(); };
-        onEnd(score); return;
+        bumpWeek('quizzes'); onEnd(score); return;
       }
       const q = it.quiz[i];
       box.innerHTML = `<h3 class="kd-h3">❓ السؤال ${ar(i + 1)} من ${ar(it.quiz.length)}</h3><div class="kd-prog kd-prog-s"><span style="width:${(i / it.quiz.length) * 100}%"></span></div>
@@ -425,11 +428,142 @@
       <div class="kd-badges">${BADGES.map(([id, ic, name]) => `<div class="kd-badge ${got[id] ? 'on' : ''}"><span>${ic}</span><b>${name}</b>${got[id] ? '<small>✓ حصلت عليها</small>' : '<small>لم تحصل عليها بعد</small>'}</div>`).join('')}</div></div>`;
   }
 
+  // ================= الألعاب والتحفيز (المرحلة ٣) =================
+  const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  // نجوم اللعبة: مرة واحدة لكل لعبة ومادة، حتى لا يتحوّل التعلّم إلى تكرار لجمع النقاط
+  function gameWon(gkey, n) {
+    bumpWeek('games');
+    const g = store.get(key('games'), {});
+    if (g[gkey]) { celebrate('أحسنت! 👏'); return; }
+    g[gkey] = Date.now(); store.set(key('games'), g); S.addStars(n); celebrate(`فزت! +${ar(n)} ⭐`); checkBadges();
+  }
+  // ---------- التحديات الأسبوعية ----------
+  const weekId = () => { const d = new Date(); const t = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); const day = (new Date(t).getUTCDay() + 1) % 7; return Math.floor((t / 864e5 - day + 3) / 7); }; // الأسبوع يبدأ السبت
+  const WEEKLY = [['lessons', 5, 'أكمل ٥ دروس', 3, '📚'], ['quizzes', 3, 'أنهِ ٣ اختبارات', 2, '❓'], ['games', 3, 'العب ٣ ألعاب تعليمية', 2, '🎮']];
+  const week = () => { const w = store.get(key('week'), null); return w && w.w === weekId() ? w : { w: weekId(), lessons: 0, quizzes: 0, games: 0, claimed: {} }; };
+  function bumpWeek(k) { if (!me()) return; const w = week(); w[k] = (w[k] || 0) + 1; store.set(key('week'), w); }
+  function renderWeekly() {
+    if (!me()) return renderSetup(false);
+    const w = week();
+    N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">تحديات هذا الأسبوع! خطوة صغيرة كل يوم تكفي، ولا تنسَ وقت اللعب والراحة 🌿</div></div></section>
+      ${WEEKLY.map(([k, goal, title, stars, ic]) => { const v = Math.min(goal, w[k] || 0); const done = v >= goal; const got = w.claimed[k]; return `<div class="kd-card kd-wk"><div class="kd-wk-t"><span>${ic}</span><b>${title}</b><small>${ar(v)} / ${ar(goal)}</small></div><div class="kd-prog kd-prog-s"><span style="width:${(v / goal) * 100}%"></span></div>${got ? '<small class="kd-wk-ok">✓ حصلت على المكافأة</small>' : done ? `<button class="btn block" data-claim="${k}">🎁 افتح المكافأة (+${ar(stars)} ⭐)</button>` : ''}</div>`; }).join('')}
+      <p class="muted kd-note">تتجدد التحديات كل يوم سبت.</p></div>`;
+    $$('[data-claim]').forEach((b) => b.onclick = () => { const k = b.dataset.claim; const w2 = week(); if (w2.claimed[k]) return; const c = WEEKLY.find((x) => x[0] === k); w2.claimed[k] = Date.now(); store.set(key('week'), w2); S.addStars(c[3]); celebrate(`مكافأة الأسبوع! +${ar(c[3])} ⭐`); checkBadges(); renderWeekly(); });
+  }
+  // ---------- خريطة رحلة التعلّم ----------
+  const STATIONS = [[0, 'بداية الرحلة', '🚩'], [10, 'المستكشف', '🧭'], [25, 'القارئ النشيط', '📖'], [50, 'الباحث الذكي', '🔍'], [100, 'العالِم الصغير', '🔬'], [200, 'نجم المعرفة', '🌟'], [350, 'سفير العلم', '🏆']];
+  function renderJourney() {
+    if (!me()) return renderSetup(false);
+    const stars = S.stars(); const cur = STATIONS.filter((s) => stars >= s[0]).length - 1; const next = STATIONS[cur + 1];
+    N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">أنت في محطة <b>${STATIONS[cur][2]} ${STATIONS[cur][1]}</b>${next ? `<br><small>باقي ${ar(next[0] - stars)} ⭐ للوصول إلى «${next[1]}»</small>` : '<br><small>وصلت إلى آخر محطة، ما شاء الله!</small>'}</div></div></section>
+      <div class="kd-journey">${STATIONS.map((s, i) => `<div class="kd-st ${i <= cur ? 'on' : ''} ${i === cur ? 'cur' : ''}" style="--i:${i}"><span class="kd-st-ic">${i === cur ? me().avatar : s[2]}</span><b>${s[1]}</b><small>${ar(s[0])} ⭐</small></div>`).join('')}</div>
+      <h3 class="kd-h">🎁 صندوق المكافآت: شخصيات جديدة</h3>
+      <div class="kd-avs">${UNLOCK.map(([x, n]) => `<button class="${stars >= n ? '' : 'locked'}" ${stars >= n ? `data-av="${x}"` : 'disabled'} title="${ar(n)} نجمة">${stars >= n ? x : '🔒'}<small>${ar(n)}⭐</small></button>`).join('')}</div>
+      <p class="muted kd-note">اضغط على شخصية مفتوحة لتختارها.</p></div>`;
+    $$('[data-av]').forEach((b) => b.onclick = () => { const list = P.list(); list.find((p) => p.id === P.activeId()).avatar = b.dataset.av; P.save(list); toast('تم تغيير شخصيتك ' + b.dataset.av); renderJourney(); });
+  }
+  // ---------- الألعاب ----------
+  let ayatP = null;
+  const ayat = () => (ayatP = ayatP || fetch('data/kids/ayat.json').then((r) => r.json()).catch((e) => { ayatP = null; throw e; }));
+  async function allItems() { const I = await index(); return (await Promise.all(I.cats.filter((c) => c.count).map((c) => catItems(c.id)))).flat(); }
+  // لعبة الترتيب: اضغط العناصر بالترتيب الصحيح
+  function orderGame(box, title, list, gkey, opts = {}) {
+    let picked = [];
+    const order = shuffle(list.map((_, i) => i));
+    const draw = () => {
+      box.innerHTML = `<h3 class="kd-h3">🔢 ${esc(title)}</h3><p class="muted">اضغط على العناصر بالترتيب الصحيح.</p>
+        <div class="kd-ordl">${picked.map((i, n) => `<div class="kd-ord-p${opts.quran ? ' kd-qr' : ''}"><span>${ar(n + 1)}</span>${esc(list[i])}</div>`).join('')}</div>
+        <div class="kd-opts">${order.filter((i) => !picked.includes(i)).map((i) => `<button class="kd-opt${opts.quran ? ' kd-qr' : ''}" data-o="${i}">${esc(list[i])}</button>`).join('')}</div>
+        <div class="kd-row2"><button class="btn ghost" id="gReset">↺ من جديد</button></div><div id="gFb"></div>`;
+      $$('[data-o]', box).forEach((b) => b.onclick = () => {
+        const i = +b.dataset.o;
+        if (i !== picked.length) { b.classList.add('wrong'); navigator.vibrate && navigator.vibrate(30); setTimeout(() => b.classList.remove('wrong'), 400); return; } // يتعلّم بالمحاولة: الخطأ لا يُحسب
+        picked.push(i); draw();
+        if (picked.length === list.length) { $('#gFb', box).innerHTML = '<p class="kd-fb ok">🎉 ترتيب صحيح!</p>'; gameWon(gkey, 1); }
+      });
+      $('#gReset', box).onclick = () => { picked = []; draw(); };
+    };
+    draw();
+  }
+  // لعبة الذاكرة: اقلب بطاقتين متطابقتين
+  function memoryGame(box, title, pairs, gkey) {
+    const tiles = shuffle(pairs.flatMap((p, i) => [{ i, t: p.f }, { i, t: p.b }]));
+    let open = [], done = new Set(), moves = 0, lock = false;
+    box.innerHTML = `<h3 class="kd-h3">🧠 ${esc(title)}</h3><p class="muted">اقلب بطاقتين: الكلمة ومعناها.</p><div class="kd-mem">${tiles.map((t, n) => `<button class="kd-mt" data-n="${n}"><span>${esc(t.t)}</span></button>`).join('')}</div><p class="muted kd-note" id="gMv"></p>`;
+    $$('.kd-mt', box).forEach((b) => b.onclick = () => {
+      const n = +b.dataset.n; if (lock || done.has(n) || open.includes(n)) return;
+      b.classList.add('up'); open.push(n);
+      if (open.length < 2) return;
+      moves++; const [a, c] = open;
+      if (tiles[a].i === tiles[c].i) { done.add(a); done.add(c); $$('.kd-mt', box).filter((x) => [a, c].includes(+x.dataset.n)).forEach((x) => x.classList.add('ok')); open = []; if (done.size === tiles.length) { $('#gMv', box).textContent = `أنهيتها في ${ar(moves)} محاولات!`; gameWon(gkey, 1); } }
+      else { lock = true; setTimeout(() => { $$('.kd-mt', box).filter((x) => [a, c].includes(+x.dataset.n)).forEach((x) => x.classList.remove('up')); open = []; lock = false; }, 800); }
+    });
+  }
+  // لعبة التوصيل: اختر من العمود الأول ثم ما يناسبه من الثاني
+  function matchGame(box, title, pairs, gkey) {
+    const right = shuffle(pairs.map((_, i) => i)); let sel = null; const done = new Set();
+    box.innerHTML = `<h3 class="kd-h3">🔗 ${esc(title)}</h3><p class="muted">اضغط على عنصر من اليمين ثم ما يناسبه من اليسار.</p>
+      <div class="kd-match"><div>${pairs.map((p, i) => `<button class="kd-mb" data-l="${i}">${esc(p.f)}</button>`).join('')}</div><div>${right.map((i) => `<button class="kd-mb" data-r="${i}">${esc(pairs[i].b)}</button>`).join('')}</div></div><div id="gFb"></div>`;
+    $$('[data-l]', box).forEach((b) => b.onclick = () => { if (done.has(+b.dataset.l)) return; $$('[data-l]', box).forEach((x) => x.classList.remove('sel')); b.classList.add('sel'); sel = +b.dataset.l; });
+    $$('[data-r]', box).forEach((b) => b.onclick = () => {
+      if (sel == null || done.has(+b.dataset.r)) return;
+      if (+b.dataset.r === sel) { done.add(sel); b.classList.add('ok'); $(`[data-l="${sel}"]`, box).classList.add('ok'); $(`[data-l="${sel}"]`, box).classList.remove('sel'); sel = null; if (done.size === pairs.length) { $('#gFb', box).innerHTML = '<p class="kd-fb ok">🎉 وصّلت الكل!</p>'; gameWon(gkey, 1); } }
+      else { b.classList.add('wrong'); setTimeout(() => b.classList.remove('wrong'), 400); }
+    });
+  }
+  // تشغيل لعبة على مادة (من صفحة المادة أو من صفحة الألعاب)
+  function playOn(box, it, kind) {
+    const cards = shuffle((it.cards || []).filter((c) => c.f !== c.b)); // بطاقة وجهاها متطابقان لا تصلح للعب
+    if (kind === 'mem') return memoryGame(box, it.title, cards.slice(0, 6), `mem:${it.id}`);
+    if (kind === 'match') return matchGame(box, it.title, cards.slice(0, 5), `match:${it.id}`);
+    if (kind === 'tl') { const t = it.timeline; const step = Math.max(1, Math.floor(t.length / 6)); const pick = t.filter((_, i) => i % step === 0).slice(0, 6); return orderGame(box, `رتّب الأحداث: ${it.title}`, pick.map((e) => e.t), `tl:${it.id}`); }
+    if (kind === 'steps') return orderGame(box, `رتّب الخطوات: ${it.title}`, it.steps.map((s) => s.t.replace(/^[٠-٩0-9]+\.\s*/, '')), `steps:${it.id}`);
+  }
+  const gameKinds = (it) => [...(it.cards && it.cards.length >= 4 ? [['mem', '🧠 الذاكرة'], ['match', '🔗 التوصيل']] : []), ...(it.timeline && it.timeline.length >= 4 ? [['tl', '🔢 رتّب الأحداث']] : []), ...(it.steps && it.steps.length >= 4 && /^[٠-٩0-9]+\./.test(it.steps[0].t) ? [['steps', '👣 رتّب الخطوات']] : [])];
+  async function renderGames(kind, arg) {
+    if (!me()) return renderSetup(false);
+    loader();
+    if (kind === 'ayat') {
+      let A; try { A = await ayat(); } catch { return failed(); }
+      const su = A.find((x) => String(x.s) === arg);
+      if (su) {
+        N.setTitle(`ترتيب آيات سورة ${su.n}`);
+        N.view.innerHTML = `<div class="kd"><div class="kd-card" id="gBox"></div><button class="btn ghost block" data-go="kidsgames/ayat">سورة أخرى</button></div>`;
+        $('[data-go]').onclick = () => go('kidsgames/ayat');
+        return orderGame($('#gBox'), `رتّب آيات سورة ${su.n}`, su.v.slice(0, 8), `ayat:${su.s}`, { quran: true });
+      }
+      N.setTitle('ترتيب الآيات');
+      N.view.innerHTML = `<div class="kd"><div class="kd-card"><p>📖 اختر سورة ورتّب آياتها كما في المصحف. النصوص من المصحف الشريف برواية حفص.</p></div><div class="kd-list">${A.map((x) => `<button class="kd-item" data-go="kidsgames/ayat/${x.s}"><span class="kd-item-ic">📖</span><div><b>سورة ${esc(x.n)}</b><small>${ar(Math.min(8, x.v.length))} آيات</small></div>${store.get(key('games'), {})[`ayat:${x.s}`] ? '<span class="kd-done">✓</span>' : ''}</button>`).join('')}</div></div>`;
+      $$('[data-go]').forEach((b) => b.onclick = () => go(b.dataset.go));
+      return;
+    }
+    let all; try { all = await allItems(); } catch { return failed(); }
+    if (kind && arg) {
+      const it = all.find((x) => x.id === arg); if (!it) return go('kidsgames');
+      N.setTitle(it.title);
+      N.view.innerHTML = `<div class="kd"><div class="kd-card" id="gBox"></div><button class="btn ghost block" data-go="kidsitem/${it.cat}/${it.id}">📖 اقرأ الدرس</button></div>`;
+      $('[data-go]').onclick = () => go(`kidsitem/${it.cat}/${it.id}`);
+      return playOn($('#gBox'), it, kind);
+    }
+    N.setTitle('الألعاب التعليمية');
+    const age = me().age; const g = store.get(key('games'), {});
+    const list = all.filter((it) => fitsAge(it, age)).flatMap((it) => gameKinds(it).map(([k, l]) => ({ it, k, l })));
+    N.view.innerHTML = `<div class="kd"><section class="kd-hero"><div class="kd-hero-top">${OWL}<div class="kd-bubble">العب وتعلّم! كل لعبة تفوز بها أول مرة تعطيك نجمة ⭐</div></div></section>
+      <button class="kd-mini" data-go="kidsgames/ayat"><span class="kd-mini-ic">📖</span><span><small>من المصحف الشريف</small><b>ترتيب آيات السور القصيرة</b></span></button>
+      <h3 class="kd-h">🎮 ألعاب من دروس الموسوعة</h3>
+      <div class="kd-list">${list.map(({ it, k, l }) => `<button class="kd-item" data-go="kidsgames/${k}/${it.id}"><span class="kd-item-ic">${it.icon || '🎮'}</span><div><b>${l}</b><small>${esc(it.title)}</small></div>${g[`${k}:${it.id}`] ? '<span class="kd-done">✓</span>' : ''}</button>`).join('')}</div></div>`;
+    $$('[data-go]').forEach((b) => b.onclick = () => go(b.dataset.go));
+  }
+  const UNLOCK = [['🦄', 30], ['🐉', 60], ['🦋', 90], ['🚀', 150], ['🐳', 220], ['🦅', 300]];
+
   Object.assign(routes, {
     kids: { title: 'موسوعة الطفل', render: renderHome, back: 'home' },
     kidscat: { title: 'موسوعة الطفل', render: renderCat, back: 'kids' },
     kidsitem: { title: 'موسوعة الطفل', render: renderItem, back: 'kids' },
     kidssearch: { title: 'البحث في الموسوعة', render: renderSearch, back: 'kids' },
     kidsbadges: { title: 'شاراتي', render: renderBadges, back: 'kids' },
+    kidsgames: { title: 'الألعاب التعليمية', render: renderGames, back: 'kids' },
+    kidsweek: { title: 'تحديات الأسبوع', render: renderWeekly, back: 'kids' },
+    kidsjourney: { title: 'رحلة التعلّم', render: renderJourney, back: 'kids' },
   });
 });

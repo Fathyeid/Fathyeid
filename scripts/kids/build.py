@@ -145,6 +145,10 @@ def main():
                                    'm': sorted({'نص'} | ({'اختبار'} if it.get('quiz') else set()) | ({'خطوات'} if it.get('steps') else set()) | ({'بطاقات'} if it.get('cards') else set()) | ({'آيات'} if any(e['k'] == 'q' for e in it.get('evidence', [])) else set()) | ({'خط زمني'} if it.get('timeline') else set()) | ({'تجربة'} if it.get('experiment') else set()) | ({'خريطة'} if it.get('map') else set())),
                                    'x': (it['intro'][:140]), **({'hj': it['hijri']} if it.get('hijri') else {})})
     json.dump(index, open(os.path.join(OUT, 'index.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    # سور قصيرة بنصها العثماني من المصحف للعبة «ترتيب الآيات» (لا يُكتب أي نص يدوياً)
+    SHORT = [1, 112, 113, 114, 108, 103, 110, 105, 106, 107, 109, 111, 102, 101]
+    ayat = [{'s': su, 'n': q.name(su), 'v': [q.text(su, a) for a in range(1, q.sur[su]['total_verses'] + 1)]} for su in SHORT]
+    json.dump(ayat, open(os.path.join(OUT, 'ayat.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('✓ مواد الموسوعة', len(items), dict(stats))
     for c in index['cats']: print(f"  {c['ic']} {c['n']}: {c['count']}")
 
