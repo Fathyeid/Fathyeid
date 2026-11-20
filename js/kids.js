@@ -83,6 +83,20 @@
   // الانتقال إلى رئيسية الموسوعة (أو إعادة عرضها إن كنا عليها، لأن تغيير العنوان للعنوان نفسه لا يعيد العرض)
   const goHome = () => { if (location.hash === '#/kids') renderHome(); else go('kids'); };
 
+  // ---------- عدّاد المناسبات: الأيام الباقية حتى تاريخ هجري (تقويم أم القرى مع تعديل المستخدم) ----------
+  const hjFmt = (() => { try { return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { month: 'numeric', day: 'numeric' }); } catch { return null; } })();
+  function daysUntil(hj) {
+    if (!hjFmt || !hj) return null;
+    const adj = (N.settings && N.settings.hijriAdj) || 0;
+    for (let i = 0; i < 400; i++) {
+      const p = hjFmt.formatToParts(new Date(Date.now() + (i + adj) * 864e5));
+      const m = +p.find((x) => x.type === 'month').value, d = +p.find((x) => x.type === 'day').value;
+      if (m === hj.m && d === hj.d) return i;
+    }
+    return null;
+  }
+  const untilTxt = (n) => (n === 0 ? 'اليوم! 🎉' : n === 1 ? 'غداً' : `بعد ${ar(n)} يوماً`);
+
   // ---------- إنشاء ملف الطفل ----------
   function renderSetup(edit) {
     const p = edit ? me() : null;
@@ -147,6 +161,7 @@
         ${card(story, '📖 قصة اليوم')}${card(fact, '💡 معلومة اليوم')}
         <button class="kd-mini" id="kChal"><span class="kd-mini-ic">🎯</span><span><small>تحدي اليوم</small><b>${store.get(key('chal'), '') === day ? 'أنجزت تحدي اليوم ✓' : 'سؤال واحد، هل تعرف الإجابة؟'}</b></span></button>
         ${card(discover, '🧭 اكتشف شيئاً جديداً')}
+        ${(() => { const occ = I.items.filter((x) => x.hj).map((x) => [x, daysUntil(x.hj)]).filter((x) => x[1] != null).sort((a, b) => a[1] - b[1])[0]; return occ ? card(occ[0], `🌙 المناسبة القادمة: ${untilTxt(occ[1])}`) : ''; })()}
       </div>
       <h3 class="kd-h">أقسام الموسوعة</h3>
       <div class="kd-cats">${I.cats.map((c) => { const n = fit.filter((x) => x.c === c.id).length; return `<button class="kd-cat" style="--cc:${c.color}" data-go="kidscat/${c.id}"><span class="kd-cat-ic">${c.ic}</span><b>${esc(c.n)}</b><small>${c.count ? `${ar(n)} مادة لعمرك` : 'قيد الإعداد'}</small></button>`; }).join('')}</div>
@@ -260,8 +275,11 @@
       <div class="kd-card kd-body">
         ${say(it.intro, 'p', 'kd-lead')}
         ${(it.sections || []).map((s) => `${s.h ? say(s.h, 'h3') : ''}${s.p.map((x) => say(x)).join('')}`).join('')}
+        ${it.hijri && daysUntil(it.hijri) != null ? `<div class="kd-count">🗓️ <b>${untilTxt(daysUntil(it.hijri))}</b><small>حسب تقويم أم القرى، وقد يختلف يوماً حسب رؤية الهلال في بلدك</small></div>` : ''}
+        ${it.timeline ? `<div class="kd-tl">${it.timeline.map((e, i) => `<button class="kd-tl-e" data-tl="${i}"><span class="kd-tl-y">${esc(e.y)}</span><span class="kd-tl-dot"></span><span class="kd-tl-c"><b>${esc(e.t)}</b><span class="kd-tl-d">${qtext(e.d)}</span></span></button>`).join('')}</div>` : ''}
         ${it.steps ? `<div class="kd-steps">${it.steps.map((s, i) => `<div class="kd-step"><span>${ar(i + 1)}</span><div>${say(s.t, 'b')}${s.d ? say(s.d) : ''}</div></div>`).join('')}</div>` : ''}
       </div>
+      ${it.experiment ? `<div class="kd-card kd-exp"><h3 class="kd-h3">🧪 جرّبها بنفسك</h3><p class="kd-safe">⚠️ ${esc(it.experiment.safety)}</p><b>الأدوات:</b><div class="kd-chips">${it.experiment.tools.map((x) => `<span>${esc(x)}</span>`).join('')}</div><b>الخطوات:</b><ol>${it.experiment.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>${it.experiment.why ? `<details><summary>🤔 لماذا حدث ذلك؟</summary><p>${esc(it.experiment.why)}</p></details>` : ''}</div>` : ''}
       ${it.facts ? `<div class="kd-card"><h3 class="kd-h3">👥 الشخصيات والأماكن</h3>${it.facts.people ? `<div class="kd-chips">${it.facts.people.map((x) => `<span>👤 ${esc(x)}</span>`).join('')}</div>` : ''}${it.facts.places ? `<div class="kd-chips">${it.facts.places.map((x) => `<span>📍 ${esc(x)}</span>`).join('')}</div>` : ''}</div>` : ''}
       ${it.evidence ? `<div class="kd-card"><h3 class="kd-h3">📜 من القرآن والسنة</h3>${it.evidence.map((e) => e.k === 'q' ? `<div class="kd-ev"><span class="kd-qr">﴿${esc(e.x)}﴾</span><small>${esc(e.r)}</small></div>` : `<div class="kd-ev">«${esc(e.x)}»<small>${esc(e.r)} • ${esc(e.g)}</small></div>`).join('')}</div>` : ''}
       ${it.lessons ? `<div class="kd-card kd-lessons"><h3 class="kd-h3">🌟 ماذا تعلّمنا؟</h3>${it.lessons.map((x) => `<p>✔️ ${qtext(x)}</p>`).join('')}</div>` : ''}
@@ -283,6 +301,7 @@
     $('#kPrint').onclick = () => { stopTTS(); document.body.classList.add('kd-printing'); window.print(); setTimeout(() => document.body.classList.remove('kd-printing'), 500); };
     $('#kDone').onclick = () => finish(0);
     $$('.kd-fc').forEach((b) => b.onclick = () => b.classList.toggle('flip'));
+    $$('.kd-tl-e').forEach((b) => b.onclick = () => b.classList.toggle('open'));
     if (it.situation) $$('#kSit .kd-opt').forEach((b) => b.onclick = () => {
       const s = it.situation; const ok = +b.dataset.i === s.a;
       $$('#kSit .kd-opt').forEach((x) => { x.disabled = true; if (+x.dataset.i === s.a) x.classList.add('right'); });
@@ -332,7 +351,7 @@
         <select id="sC"><option value="">كل الأقسام</option>${I.cats.filter((c) => c.count).map((c) => `<option value="${c.id}">${c.ic} ${esc(c.n)}</option>`).join('')}</select>
         <select id="sA"><option value="0">كل الأعمار</option>${STAGES.map((s) => `<option value="${s[0]}" ${f.age >= s[0] && f.age <= s[1] ? 'selected' : ''}>${ar(s[0])}–${ar(s[1])} سنة</option>`).join('')}</select>
         <select id="sK"><option value="">كل الأنواع</option><option value="موثق">موثّق</option><option value="علمي">علمي</option><option value="خيالي">قصة خيالية</option></select>
-        <select id="sM"><option value="">كل الوسائط</option>${['اختبار', 'خطوات', 'بطاقات', 'آيات'].map((m) => `<option>${m}</option>`).join('')}</select>
+        <select id="sM"><option value="">كل الوسائط</option>${['اختبار', 'خطوات', 'بطاقات', 'آيات', 'خط زمني', 'تجربة'].map((m) => `<option>${m}</option>`).join('')}</select>
         <select id="sL"><option value="0">كل المستويات</option>${[1, 2, 3].map((l) => `<option value="${l}">${LEVEL[l]}</option>`).join('')}</select>
       </div><div id="sR"></div></div>`;
     const ageSel = () => { const v = +$('#sA').value; const s = STAGES.find((x) => x[0] === v); return s ? [s[0], s[1]] : null; };
