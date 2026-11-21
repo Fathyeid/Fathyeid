@@ -1233,3 +1233,10 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .kd .kd-wl b { color: var(--primary); } .kd .kd-wl span { font-size: .9rem; line-height: 1.8; }
 .kd .kd-ans { margin-top: 10px; padding: 12px; border-radius: 14px; background: var(--kd-soft); } .kd .kd-ans p { margin: 4px 0 0; line-height: 1.8; }
 .kd .kd-teach { border-color: var(--kd-gold); margin-top: 10px; }
+
+/* مذكّر الذكر المستمر */
+.dhikr-banner { position: fixed; inset-inline: 16px; bottom: calc(110px + env(safe-area-inset-bottom)); z-index: 60; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 16px 14px; text-align: center; box-shadow: var(--shadow); animation: dhikrIn .35s ease; }
+:root[data-theme="dark"] .dhikr-banner { box-shadow: 0 12px 32px rgba(0, 0, 0, .5); }
+.dhikr-phrase { font-family: var(--quran-font); font-size: 1.7rem; line-height: 2; color: var(--gold); }
+.dhikr-hint { margin-top: 6px; font-size: .75rem; color: var(--muted); }
+@keyframes dhikrIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }

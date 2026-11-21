@@ -340,6 +340,99 @@
     { t: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ وَرِضَا نَفْسِهِ وَزِنَةَ عَرْشِهِ وَمِدَادَ كَلِمَاتِهِ', f: 'رواه مسلم' },
   ];
   const dayRem = () => Object.assign({ every: 3, from: '09:00', to: '21:00', after: false }, store.get('az:rem2', {}));
+
+  // ---------- مذكّر الذكر المستمر (كل بضع دقائق) ----------
+  // الأذكار الأربعة التي طلبها المستخدم تُعرض بالتناوب؛ رقم الفترة الزمنية يحدد الذكر فيثبت التناوب بين الإشعارات والبطاقة داخل التطبيق
+  const PHRASES = ['سُبْحَانَ اللَّهِ', 'الْحَمْدُ لِلَّهِ', 'اللَّهُ أَكْبَرُ', 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ ﷺ'];
+  const DHIKR_BASE = 3300;
+  const dCfg = () => Object.assign({ every: 0, sound: true, from: '00:00', to: '23:59' }, store.get('dhikr:rem', {}));
+  const minsOf = (s) => { const [h, m] = String(s || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+  const inDWindow = (d, c) => { const f = minsOf(c.from), t = minsOf(c.to), x = d.getHours() * 60 + d.getMinutes(); return f <= t ? x >= f && x <= t : x >= f || x <= t; };
+  let dhikrHide = null;
+  function showDhikr(z) {
+    let b = document.getElementById('dhikrBanner');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'dhikrBanner';
+      b.className = 'dhikr-banner';
+      b.hidden = true;
+      b.innerHTML = '<div class="dhikr-phrase"></div><div class="dhikr-hint">اضغط للإخفاء</div>';
+      b.addEventListener('click', () => { b.hidden = true; });
+      document.body.appendChild(b);
+    }
+    b.querySelector('.dhikr-phrase').textContent = z;
+    b.hidden = false;
+    clearTimeout(dhikrHide);
+    dhikrHide = setTimeout(() => { b.hidden = true; }, 12000);
+  }
+  function speakDhikr(text) {
+    try {
+      if (!('speechSynthesis' in window)) return false;
+      const u = new SpeechSynthesisUtterance(text.replace(/ﷺ/g, '').trim());
+      u.lang = 'ar-SA';
+      u.rate = 0.9;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
+  }
+  let dhikrCtx = null;
+  function chime() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      dhikrCtx = dhikrCtx || new AC();
+      const t0 = dhikrCtx.currentTime;
+      [523.25, 783.99].forEach((f, i) => {
+        const o = dhikrCtx.createOscillator(), g = dhikrCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0, t0 + i * 0.35);
+        g.gain.linearRampToValueAtTime(0.18, t0 + i * 0.35 + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.35 + 0.8);
+        o.connect(g); g.connect(dhikrCtx.destination);
+        o.start(t0 + i * 0.35); o.stop(t0 + i * 0.35 + 0.9);
+      });
+    } catch (e) { /* */ }
+  }
+  window.addEventListener('noor:audio', (e) => { if (e.detail !== 'dhikr' && 'speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch { /* */ } } });
+  function fireDhikr(z, c) {
+    showDhikr(z);
+    if (c.sound && document.visibilityState === 'visible') {
+      window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'dhikr' }));
+      if (!speakDhikr(z)) chime();
+    }
+    if (!N.NATIVE && 'Notification' in window && Notification.permission === 'granted') {
+      try { new Notification('أثر — مذكّر الذكر', { body: z, icon: 'icons/icon.svg' }); } catch { /* تجاهل */ }
+    }
+  }
+  async function scheduleDhikr() {
+    const ln = LN(); if (!ln) return;
+    try {
+      await ln.cancel({ notifications: Array.from({ length: 100 }, (_, i) => ({ id: DHIKR_BASE + i })) });
+      const c = dCfg();
+      if (!c.every) return;
+      let perm = await ln.checkPermissions();
+      if (perm.display !== 'granted') perm = await ln.requestPermissions();
+      if (perm.display !== 'granted') return;
+      await ln.createChannel({ id: 'dhikr', name: 'مذكّر الذكر', description: 'ذكر قصير على فترات منتظمة', importance: 4, visibility: 1 });
+      // نجدول ٢٤ إشعاراً قادماً ضمن ١٢ ساعة (تغطي ساعتين على خيار الخمس دقائق) وتُعاد الجدولة عند فتح التطبيق
+      const step = c.every * 60000;
+      const now = Date.now();
+      const horizon = now + 12 * 36e5;
+      let t = Math.floor(now / step) * step + step;
+      const list = [];
+      while (list.length < 24 && t < horizon) {
+        const d = new Date(t);
+        if (inDWindow(d, c)) {
+          const slot = Math.floor(t / step);
+          const z = PHRASES[slot % PHRASES.length];
+          list.push({ id: DHIKR_BASE + list.length, title: TITLES[slot % TITLES.length], body: z, largeBody: z, channelId: 'dhikr', extra: { route: 'tasbih' }, schedule: { at: d, allowWhileIdle: true }, autoCancel: true });
+        }
+        t += step;
+      }
+      if (list.length) await ln.schedule({ notifications: list });
+    } catch (e) { console.warn('dhikr schedule', e); }
+  }
   function daySlots(D) {
     if (!D.every) return [];
     const m = (s) => { const [h, x] = s.split(':').map(Number); return h * 60 + x; };
@@ -351,6 +444,7 @@
   function renderSet() {
     const R = store.get('az:rem', {});
     const D = dayRem();
+    const DC = dCfg();
     N.view.innerHTML = `<div class="card"><h3>⏰ تذكيرات الأذكار</h3>
       ${N.NATIVE ? '' : '<p class="muted" style="font-size:.9rem">التذكيرات تعمل في تطبيق أندرويد. في المتصفح تُحفظ الأوقات فقط.</p>'}
       ${REM.map((r) => `<div class="az-rem"><label><input type="checkbox" data-on="${r.k}" ${R[r.k] ? 'checked' : ''}> ${esc(r.t)}</label><input type="time" data-time="${r.k}" value="${R[r.k] || r.def}"></div>`).join('')}
@@ -361,10 +455,43 @@
       <div class="seg" id="every" style="flex-wrap:wrap">${[[0, 'إيقاف'], [1, 'كل ساعة'], [2, 'كل ساعتين'], [3, 'كل ٣ ساعات'], [4, 'كل ٤ ساعات']].map(([v, t]) => `<button data-v="${v}" class="${D.every === v ? 'active' : ''}">${t}</button>`).join('')}</div>
       <div class="az-rem"><span>من الساعة</span><input type="time" id="dFrom" value="${D.from}"></div>
       <div class="az-rem"><span>حتى الساعة</span><input type="time" id="dTo" value="${D.to}"></div>
+      </div>
+      <div class="card"><h3>🔔 مذكّر الذكر المستمر</h3>
+      <p class="muted" style="font-size:.88rem;margin-top:0">ذكر قصير كل بضع دقائق بالتناوب: سبحان الله، الحمد لله، الله أكبر، اللهم صلِّ وسلم على نبينا محمد ﷺ.</p>
+      <div class="seg" id="dkEvery" style="flex-wrap:wrap">${[[0, 'إيقاف'], [5, 'كل ٥ دقائق'], [10, 'كل ١٠ دقائق'], [15, 'كل ١٥ دقيقة'], [30, 'كل ٣٠ دقيقة']].map(([v, t]) => `<button data-v="${v}" class="${DC.every === v ? 'active' : ''}">${t}</button>`).join('')}</div>
+      <div class="az-rem"><label><input type="checkbox" id="dkSound" ${DC.sound ? 'checked' : ''}> قراءة الذكر بصوت مسموع أثناء فتح التطبيق</label></div>
+      <div class="az-rem"><span>من الساعة</span><input type="time" id="dkFrom" value="${DC.from}"></div>
+      <div class="az-rem"><span>حتى الساعة</span><input type="time" id="dkTo" value="${DC.to}"></div>
+      <button class="btn ghost block" id="dkTest" style="margin-top:10px">🔔 تجربة الذكر الآن</button>
+      <small class="muted" style="display:block;margin-top:8px">${N.NATIVE ? 'يصلك إشعار بالذكر حتى والتطبيق مقفول (بصوت تنبيه الهاتف)، والقراءة الصوتية تعمل أثناء فتح التطبيق.' : 'في المتصفح يعمل المذكّر أثناء فتح التطبيق: تظهر بطاقة الذكر وتُقرأ بصوت مسموع، مع إشعار من النظام إن سمحت له. لتصلك الإشعارات والتطبيق مقفول ثبّت تطبيق أندرويد.'}</small>
       </div>`;
     const save = () => { const R2 = {}; REM.forEach((r) => { if ($(`[data-on="${r.k}"]`).checked) R2[r.k] = $(`[data-time="${r.k}"]`).value || r.def; }); store.set('az:rem', R2); D.after = $('#afterP').checked; D.from = $('#dFrom').value || '09:00'; D.to = $('#dTo').value || '22:00'; store.set('az:rem2', D); scheduleRem(); toast('تم حفظ التذكيرات'); };
     $$('[data-on],[data-time],#afterP,#dFrom,#dTo').forEach((x) => { x.onchange = save; });
     $$('#every button').forEach((b) => { b.onclick = () => { D.every = +b.dataset.v; $$('#every button').forEach((x) => x.classList.toggle('active', x === b)); save(); }; });
+    // ----- مذكّر الذكر المستمر -----
+    const dSave = () => { store.set('dhikr:rem', DC); scheduleDhikr(); toast('تم حفظ مذكّر الذكر'); };
+    $$('#dkEvery button').forEach((b) => { b.onclick = () => { DC.every = +b.dataset.v; $$('#dkEvery button').forEach((x) => x.classList.toggle('active', x === b)); if (DC.every && !N.NATIVE && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch { /* */ } } dSave(); }; });
+    $('#dkSound').onchange = () => { DC.sound = $('#dkSound').checked; dSave(); };
+    $('#dkFrom').onchange = () => { DC.from = $('#dkFrom').value || '00:00'; dSave(); };
+    $('#dkTo').onchange = () => { DC.to = $('#dkTo').value || '23:59'; dSave(); };
+    $('#dkTest').onclick = () => {
+      const c = dCfg();
+      const step = (c.every || 5) * 60000;
+      fireDhikr(PHRASES[Math.floor(Date.now() / step) % PHRASES.length], Object.assign({}, c, { sound: true }));
+      const ln = LN();
+      if (ln) {
+        (async () => {
+          try {
+            let p = await ln.checkPermissions();
+            if (p.display !== 'granted') p = await ln.requestPermissions();
+            if (p.display !== 'granted') { toast('فعّل الإشعارات للتطبيق لتصلك التجربة والهاتف مقفول'); return; }
+            await ln.createChannel({ id: 'dhikr', name: 'مذكّر الذكر', description: 'ذكر قصير على فترات منتظمة', importance: 4, visibility: 1 });
+            await ln.schedule({ notifications: [{ id: DHIKR_BASE + 99, title: '📿 تجربة مذكّر الذكر', body: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', channelId: 'dhikr', extra: { route: 'tasbih' }, schedule: { at: new Date(Date.now() + 10000), allowWhileIdle: true }, autoCancel: true }] });
+            toast('سيصلك إشعار تجريبي بعد ١٠ ثوانٍ، يمكنك قفل الهاتف');
+          } catch (e) { /* */ }
+        })();
+      }
+    };
   }
   function renderAbout() {
     N.view.innerHTML = `<div class="card"><h3>📚 المصادر</h3><ul style="line-height:2;margin:0;padding-inline-start:18px">${DB.sources.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
@@ -394,5 +521,23 @@
     // إعادة الجدولة عند فتح التطبيق (مرة كل ٦ ساعات على الأكثر) ليبقى أسبوع كامل من التذكير مجدولاً
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - store.get('az:sched', 0) > 6 * 36e5) { store.set('az:sched', Date.now()); scheduleRem(); } });
     try { ln.addListener('localNotificationActionPerformed', (e) => { const r = e && e.notification && e.notification.extra && e.notification.extra.route; if (r) go(r); }); } catch (e) { /* */ }
+  }
+
+  // محرك مذكّر الذكر أثناء فتح التطبيق: يفحص كل ١٠ ثوانٍ هل دخلنا فترة جديدة فيعرض الذكر ويقرأه
+  setInterval(() => {
+    const c = dCfg();
+    if (!c.every) return;
+    const now = new Date();
+    if (!inDWindow(now, c)) return;
+    const step = c.every * 60000;
+    const slot = Math.floor(now.getTime() / step);
+    if (store.get('dhikr:last') === slot) return;
+    store.set('dhikr:last', slot);
+    fireDhikr(PHRASES[slot % PHRASES.length], c);
+  }, 10000);
+  if (LN()) {
+    setTimeout(scheduleDhikr, 4200);
+    // إعادة جدولة إشعارات الذكر عند فتح التطبيق (كل ١٠ دقائق على الأكثر) ليبقى الغطاء الزمني ممتداً
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - store.get('dhikr:sched', 0) > 10 * 60000) { store.set('dhikr:sched', Date.now()); scheduleDhikr(); } });
   }
 });
