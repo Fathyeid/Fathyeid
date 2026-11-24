@@ -1375,3 +1375,43 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .ch-confetti { position: fixed; inset: 0; z-index: 200; pointer-events: none; overflow: hidden; }
 .ch-confetti i { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; animation: chFall linear forwards; }
 @keyframes chFall { to { transform: translateY(105vh) rotate(720deg); opacity: .8; } }
+
+/* ---------- أكاديمية القرآن ---------- */
+.qa-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.qa-stats > div { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 6px; text-align: center; }
+.qa-stats b { display: block; font-size: 1.15rem; color: var(--gold); }
+.qa-stats small { color: var(--muted, #777); font-size: .75rem; }
+.qa-main { display: grid; gap: 10px; margin: 12px 0; }
+.qa-sub { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.qa-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
+.qa-chk { display: block; margin: 10px 0; font-size: .92rem; }
+.qa-ayat { font-family: 'Amiri Quran', 'Scheherazade New', 'Amiri', serif; font-size: 1.55rem; line-height: 2.5; text-align: justify; direction: rtl; margin: 10px 0; }
+.qa-end { color: var(--gold); font-size: 1.1rem; }
+.qa-w { display: inline-block; padding: 0 4px; border-radius: 8px; cursor: pointer; }
+.qa-w.ok { background: rgba(46, 160, 100, .22); }
+.qa-w.un { background: rgba(230, 200, 40, .32); }
+.qa-w.bad { background: rgba(220, 60, 60, .30); }
+.qa-w.rep { background: rgba(240, 150, 40, .32); }
+.qa-w.stop { background: rgba(140, 140, 140, .28); }
+.qa-w.rp { outline: 2px dashed rgba(240, 150, 40, .9); }
+.qa-legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; font-size: .8rem; }
+.qa-acc { font-size: 2.6rem; font-weight: 800; color: var(--gold); }
+.qa-mic { width: 92px; height: 92px; margin: 18px auto 4px; border-radius: 50%; display: grid; place-items: center; font-size: 2.4rem; background: linear-gradient(135deg, #0d3b2e, #1d7a5c); color: #fff; box-shadow: var(--shadow); cursor: pointer; }
+.qa-mic.on { animation: qaPulse 1.2s infinite; background: #b3261e; }
+@keyframes qaPulse { 0% { box-shadow: 0 0 0 0 rgba(179, 38, 30, .5); } 100% { box-shadow: 0 0 0 26px rgba(179, 38, 30, 0); } }
+.qa-opt.qa-right, .qa-right { background: rgba(46, 160, 100, .35) !important; }
+.qa-opt.qa-wrong, .qa-wrong { background: rgba(220, 60, 60, .35) !important; }
+.qa-wrong-dim { opacity: .6; }
+.qa-log { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.qa-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.qa-cell { border-radius: 12px; border: 1px solid var(--border); padding: 8px 4px; text-align: center; background: var(--surface); }
+.qa-cell b { display: block; } .qa-cell small { font-size: .68rem; }
+.qa-cell.prog { background: rgba(230, 200, 40, .3); } .qa-cell.mem { background: rgba(46, 160, 100, .35); }
+.qa-cell.due { background: rgba(240, 150, 40, .35); } .qa-cell.mas { background: rgba(184, 145, 58, .5); }
+.qa-legend .qa-cell { padding: 4px 10px; font-size: .78rem; }
+.qa-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 90px; margin-top: 10px; }
+.qa-bars > div { flex: 1; text-align: center; } .qa-bars i { display: block; width: 60%; margin: 0 auto 4px; background: var(--gold); border-radius: 6px; }
+.qa-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 8px; }
+.qa-d { aspect-ratio: 1; border-radius: 6px; background: var(--border); } .qa-d.l1 { background: rgba(46, 160, 100, .4); } .qa-d.l2 { background: rgba(46, 160, 100, .65); } .qa-d.l3 { background: #2ea064; }
+.qa-ex { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.qa-prog { height: 10px; border-radius: 6px; background: var(--border); margin: 10px 0 6px; overflow: hidden; } .qa-prog i { display: block; height: 100%; background: linear-gradient(90deg, #1d7a5c, var(--gold)); }
