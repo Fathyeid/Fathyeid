@@ -190,7 +190,7 @@
         <button class="btn block" data-go="qaplan">📖 احفظ آيات جديدة</button>
         <button class="btn block" data-go="qarev">🔁 راجع محفوظاتي${due.length ? ` (${ar(Math.min(due.length, 99))})` : ''}</button>
         <button class="btn block" data-go="qataj">🎓 تعلّم أحكام التجويد</button></div>
-      <div class="qa-sub"><button class="chip" data-go="qatest">📝 اختبار من الحفظ</button><button class="chip" data-go="qamap">🗺️ خريطة الحفظ</button><button class="chip" data-go="qastats">📊 التقارير</button><button class="chip" data-go="qapr">🎧 استمع ورددّ</button><button class="chip" data-go="qaask">🧑‍🏫 المعلّم</button><button class="chip" data-go="audio">📻 المكتبة الصوتية</button><button class="chip" data-go="qakids">🧒 ركن الأطفال</button></div>
+      <div class="qa-sub"><button class="chip" data-go="qatest">📝 اختبار من الحفظ</button><button class="chip" data-go="qamap">🗺️ خريطة الحفظ</button><button class="chip" data-go="qastats">📊 التقارير</button><button class="chip" data-go="qarecs">🎙️ تسجيلاتي والمقارنة</button><button class="chip" data-go="qachat">💬 محادثة المعلّم</button><button class="chip" data-go="qaplans">⚙️ الباقات والنسخ الاحتياطي</button><button class="chip" data-go="qapr">🎧 استمع ورددّ</button><button class="chip" data-go="qaask">🧑‍🏫 المعلّم</button><button class="chip" data-go="audio">📻 المكتبة الصوتية</button><button class="chip" data-go="qakids">🧒 ركن الأطفال</button></div>
       ${NOTE}`;
     bind();
   }
@@ -227,22 +227,26 @@
     loading();
     let E; try { await meta(); E = await wordsOf(s, a, b); } catch { failMsg(); return; }
     const src = SRC();
+    const useModel = () => !!(window.QA3 && window.QA3.supported && store.get('qa:eng', false)); let rec3 = null; let pendingBlob = null;
     let text = ''; let listening = false; let handles = []; let rec = null; let acc = '', cur = '';
     const draw = () => {
       N.view.innerHTML = `<div class="card center"><b>سورة ${sName(s)} • الآيات ${ar(a)}–${ar(b)}</b><br><small class="muted">${show ? 'وضع التعلّم: النص ظاهر' : 'وضع الاختبار: النص مخفي، سمّع من حفظك'}</small>
         ${show ? `<div class="qa-ayat">${await_text()}</div>` : ''}
         <div class="qa-mic ${listening ? 'on' : ''}" id="qaMic">${listening ? '⏹' : '🎙️'}</div>
-        <div class="muted" id="qaLive" style="min-height:44px;margin-top:8px">${listening ? esc(text) || 'أنا أستمع… ابدأ القراءة' : (src ? 'اضغط الميكروفون وابدأ، ثم اضغط مرة أخرى عند الانتهاء' : '')}</div>
-        ${src ? '' : (N.NATIVE ? '<p class="muted" style="font-size:.85rem">هذه النسخة المثبّتة من أثر لا تدعم التسميع الصوتي. ثبّت آخر نسخة مرة واحدة:</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تثبيت آخر نسخة</a><p class="muted" style="font-size:.85rem">أو افتح الإعدادات ثم «التحقق من وجود تحديث». وفي الأثناء يعمل التسميع الذاتي.</p>' : '<p class="muted" style="font-size:.85rem">متصفحك لا يدعم التعرّف على الكلام (جرّب Chrome)، أو استخدم تطبيق أندرويد. يمكنك الآن استخدام التسميع الذاتي.</p>')}
+        <div class="muted" id="qaLive" style="min-height:44px;margin-top:8px">${listening ? esc(text) || 'أنا أستمع… ابدأ القراءة' : ((src || useModel()) ? 'اضغط الميكروفون وابدأ، ثم اضغط مرة أخرى عند الانتهاء' : '')}</div>
+        ${(src || useModel()) ? '' : (N.NATIVE ? '<p class="muted" style="font-size:.85rem">هذه النسخة المثبّتة من أثر لا تدعم التسميع الصوتي. ثبّت آخر نسخة مرة واحدة:</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تثبيت آخر نسخة</a><p class="muted" style="font-size:.85rem">أو افتح الإعدادات ثم «التحقق من وجود تحديث». وفي الأثناء يعمل التسميع الذاتي.</p>' : '<p class="muted" style="font-size:.85rem">متصفحك لا يدعم التعرّف على الكلام (جرّب Chrome)، أو استخدم تطبيق أندرويد. يمكنك الآن استخدام التسميع الذاتي.</p>')}
+        ${window.QA3 && window.QA3.supported ? `<label class="qa-chk"><input type="checkbox" id="qaEng" ${store.get('qa:eng', false) ? 'checked' : ''}> نموذج القرآن المتخصص (أدق في آيات القرآن، يعمل دون إنترنت بعد تحميل نحو ٩٥ ميجا مرة واحدة)</label><label class="qa-chk"><input type="checkbox" id="qaKeep" ${store.get('qa:keep', true) ? 'checked' : ''}> احتفظ بتسجيلي على جهازي (للمقارنة بالقارئ، ويمكنك حذفه)</label>` : ''}
         <label class="qa-chk"><input type="checkbox" id="qaInst" ${store.get('qa:inst', false) ? 'checked' : ''}> تصحيح فوري أثناء القراءة (ينبّهك للكلمة الخاطئة وقت قراءتها)</label>
         <button class="btn ghost block" id="qaSelf" style="margin-top:10px">✍️ تسميع ذاتي (أكشف النص وأعلّم أخطائي)</button></div>${NOTE}`;
+      const ce = $('#qaEng'); if (ce) ce.onchange = () => { store.set('qa:eng', ce.checked); draw(); };
+      const ck = $('#qaKeep'); if (ck) ck.onchange = () => store.set('qa:keep', ck.checked);
       const ci = $('#qaInst'); if (ci) ci.onchange = () => store.set('qa:inst', ci.checked);
       const mic = $('#qaMic'); if (mic) mic.onclick = () => (listening ? stopRec() : startRec());
       $('#qaSelf').onclick = () => { if (listening) cancelRec(); selfMode(); };
     };
     const tcache = await surah(s);
     const await_text = () => { let o = ''; for (let i = a; i <= b; i++) o += `${tcache[i - 1]} <span class="qa-end">﴿${ar(i)}﴾</span> `; return o; };
-    const cancelRec = async () => { listening = false; try { const P = nativeSR(); if (P) { await P.stop(); await P.removeAllListeners(); } } catch { /* لا شيء */ } try { rec && rec.abort(); } catch { /* لا شيء */ } handles = []; rec = null; };
+    const cancelRec = async () => { listening = false; if (rec3) { try { await rec3.stop(); } catch { /* لا شيء */ } rec3 = null; } try { const P = nativeSR(); if (P) { await P.stop(); await P.removeAllListeners(); } } catch { /* لا شيء */ } try { rec && rec.abort(); } catch { /* لا شيء */ } handles = []; rec = null; };
     const upd = () => {
       text = `${acc} ${cur}`.trim(); const l = $('#qaLive'); if (!l) return;
       l.textContent = text || 'أنا أستمع… ابدأ القراءة';
@@ -254,6 +258,10 @@
     };
     async function startRec() {
       acc = ''; cur = ''; text = '';
+      if (useModel()) {
+        try { rec3 = await window.QA3.record(); listening = true; draw(); const l = $('#qaLive'); if (l) l.textContent = '🔴 جارٍ التسجيل… اقرأ ثم اضغط للإنهاء'; } catch (e) { console.warn(e); toast('تعذّر الوصول للميكروفون. تأكد من الإذن، وفي أندرويد قد تحتاج آخر نسخة'); rec3 = null; listening = false; draw(); }
+        return;
+      }
       try {
         if (src === 'native') {
           const P = nativeSR();
@@ -277,6 +285,18 @@
     }
     async function restart(P) { try { await P.start({ language: 'ar-SA', maxResults: 1, partialResults: true, popup: false, continuousPTT: true, muteRecognizerBeep: true }); } catch { /* لا شيء */ } }
     async function stopRec() {
+      if (rec3) {
+        const r3 = rec3; rec3 = null; listening = false;
+        const blob = await r3.stop();
+        N.view.innerHTML = '<div class="card center"><div class="loader" style="margin:16px auto"></div><b id="qaPg">جارٍ تجهيز نموذج القرآن…</b><p class="muted" id="qaPg2">أول مرة فقط يُحمَّل نحو ٩٥ ميجا ويُحفظ على جهازك. يُفضَّل أن تكون على واي فاي.</p></div>';
+        try {
+          const txt = await window.QA3.transcribe(blob, (m) => { const e = $('#qaPg'); if (e) e.textContent = m; });
+          pendingBlob = blob;
+          if (!txt.trim()) { toast('لم أتبيّن كلاماً. أعد التسجيل بصوت أوضح'); draw(); return; }
+          showResult(analyze(txt));
+        } catch (e) { console.warn(e); toast('تعذّر تشغيل النموذج. تأكد من الإنترنت في أول مرة، أو استخدم محرك Google'); draw(); }
+        return;
+      }
       const final = `${acc} ${cur}`.trim(); await cancelRec();
       if (!final) { toast('لم أسمع شيئاً. جرّب مرة أخرى بصوت أوضح وقرب الميكروفون'); draw(); return; }
       showResult(analyze(final));
@@ -312,6 +332,7 @@
           if (logOnce.done) { go('qa'); return; } logOnce.done = true;
           const byV = {}; E.forEach((w, i) => { const bad = ['subst', 'forgot', 'reorder', 'stop'].includes(A.res[i].st); byV[w.a] = byV[w.a] || (R.self ? false : false) || bad; });
           const lst = []; for (let v = a; v <= b; v++) { const bad = !!byV[v] && true; const g = gOf(s, v); if (R.self || !sm.unclear) { recordVerse(g, !bad); if (!bad) lst.push(g); } }
+          if (pendingBlob && store.get('qa:keep', true) && window.QA3) { window.QA3.saveRec({ s, a, b, acc: sm.acc }, pendingBlob).catch(() => {}); pendingBlob = null; }
           S.ses.push({ t: Date.now(), s, a, b, acc: sm.acc, w: sm.total, e: errs, self: R.self ? 1 : 0, show: show ? 1 : 0 }); touchDay('s'); save();
           const perfect = lst.length;
           if (perfect && !show) { hifzSet(lst, 1); toast(`حُفظت النتيجة. أُضيفت ${ar(perfect)} آية سلمت من الأخطاء إلى محفوظاتك`); } else toast('حُفظت النتيجة وجُدولت المراجعة');

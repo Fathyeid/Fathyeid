@@ -1,9 +1,9 @@
 /* عامل الخدمة: أحدث نسخة من الشبكة دائماً، والذاكرة عند انقطاع الإنترنت */
-const VERSION = 'noor-v59';
+const VERSION = 'noor-v60';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/app.js', 'js/data.js', 'js/praytimes.js',
   'js/native-flags.js', 'js/quran-meta.js', 'js/academy-data.js', 'js/audio-lib.js', 'js/academy.js',
-  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js', 'js/dawah.js', 'js/azkar-data.js', 'js/azkar.js', 'js/challenge-data.js', 'js/challenge.js', 'js/qa.js', 'js/qa2.js', 'js/radio.js', 'js/ibtihal.js', 'js/encyc-data.js', 'js/encyc.js', 'js/library.js', 'js/prayer-quran.js', 'js/calc-faraid.js', 'js/calc.js', 'js/calc-debts.js', 'js/calc-fin.js', 'js/calc-kaff.js', 'js/calc-ibadat.js', 'js/calc-contract.js', 'js/fiqh.js', 'js/fiqh-ask.js', 'js/share.js', 'js/quiz.js', 'js/kids.js', 'data/kids/index.json', 'data/kids/world.json', 'data/kids/ayat.json', 'data/kids/dict.json', 'data/kids/quran.json', 'data/kids/anbiya.json', 'data/kids/seerah.json', 'data/kids/sahaba.json', 'data/kids/ibadat.json', 'data/kids/akhlaq.json', 'data/kids/science.json', 'data/kids/history.json', 'data/kids/geo.json', 'data/kids/arabic.json', 'data/kids/stories.json', 'data/kids/people.json', 'data/kids/occasions.json', 'data/kids/puzzles.json', 'data/kids/skills.json', 'data/quiz/index.json', 'data/quiz/quran.json', 'data/quiz/tafsir.json', 'data/quiz/hadith.json', 'data/quiz/seerah.json', 'data/quiz/anbiya.json', 'data/quiz/sahaba.json', 'data/quiz/fiqh.json', 'data/quiz/salah.json', 'data/quiz/siyam.json', 'data/quiz/aqeedah.json', 'data/quiz/akhlaq.json', 'data/quiz/adhkar.json', 'data/quiz/tarikh.json', 'data/quiz/general.json', 'data/quiz/muamalat.json', 'data/enc-wiki.json', 'data/lib-index.json',
+  'js/hadith-meta.js', 'js/hadith.js', 'js/hifz.js', 'js/dawah.js', 'js/azkar-data.js', 'js/azkar.js', 'js/challenge-data.js', 'js/challenge.js', 'js/qa.js', 'js/qa2.js', 'js/qa3.js', 'js/radio.js', 'js/ibtihal.js', 'js/encyc-data.js', 'js/encyc.js', 'js/library.js', 'js/prayer-quran.js', 'js/calc-faraid.js', 'js/calc.js', 'js/calc-debts.js', 'js/calc-fin.js', 'js/calc-kaff.js', 'js/calc-ibadat.js', 'js/calc-contract.js', 'js/fiqh.js', 'js/fiqh-ask.js', 'js/share.js', 'js/quiz.js', 'js/kids.js', 'data/kids/index.json', 'data/kids/world.json', 'data/kids/ayat.json', 'data/kids/dict.json', 'data/kids/quran.json', 'data/kids/anbiya.json', 'data/kids/seerah.json', 'data/kids/sahaba.json', 'data/kids/ibadat.json', 'data/kids/akhlaq.json', 'data/kids/science.json', 'data/kids/history.json', 'data/kids/geo.json', 'data/kids/arabic.json', 'data/kids/stories.json', 'data/kids/people.json', 'data/kids/occasions.json', 'data/kids/puzzles.json', 'data/kids/skills.json', 'data/quiz/index.json', 'data/quiz/quran.json', 'data/quiz/tafsir.json', 'data/quiz/hadith.json', 'data/quiz/seerah.json', 'data/quiz/anbiya.json', 'data/quiz/sahaba.json', 'data/quiz/fiqh.json', 'data/quiz/salah.json', 'data/quiz/siyam.json', 'data/quiz/aqeedah.json', 'data/quiz/akhlaq.json', 'data/quiz/adhkar.json', 'data/quiz/tarikh.json', 'data/quiz/general.json', 'data/quiz/muamalat.json', 'data/enc-wiki.json', 'data/lib-index.json',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/father.jpg', 'icons/art/mosque.svg', 'icons/art/pattern.svg', 'icons/art/lantern.svg', 'icons/art/mosque-dark.svg', 'icons/art/pattern-dark.svg', 'icons/art/lantern-dark.svg', 'adhan/adhan.mp3',
 ];
 
@@ -17,7 +17,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION && !k.startsWith('noor-audio') && !k.startsWith('noor-data')).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION && !k.startsWith('noor-audio') && !k.startsWith('noor-data') && !k.startsWith('transformers')).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -35,7 +35,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   // لا نخزّن ملفات الصوت لكبر حجمها
-  if (/islamic\.network|mp3quran\.net|everyayah\.com|hadith-api|supabase\.co|ytimg\.com|youtube/.test(url.hostname + url.pathname) || req.headers.has('range')) return;
+  if (/islamic\.network|mp3quran\.net|everyayah\.com|huggingface\.co|hf\.co|jsdelivr\.net|hadith-api|supabase\.co|ytimg\.com|youtube/.test(url.hostname + url.pathname) || req.headers.has('range')) return;
 
   if (url.origin === self.location.origin) {
     // ملفات التطبيق: الشبكة أولاً (بدون ذاكرة المتصفح) ثم النسخة المحفوظة
