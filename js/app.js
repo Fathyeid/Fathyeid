@@ -153,7 +153,7 @@
     $('#pageTitle').textContent = route.title;
     $('#backBtn').hidden = !route.back;
     $('#backBtn').onclick = () => history.length > 1 ? history.back() : go(route.back);
-    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran', hifz: 'quran', hifzs: 'quran', hifzp: 'quran', hifzplan: 'quran', qa: 'quran', qarecs: 'quran', qachat: 'quran', qaplans: 'quran', qapr: 'quran', qaask: 'quran', qakids: 'quran', qakid: 'quran', qakp: 'quran', qarec: 'quran', qarev: 'quran', qatest: 'quran', qaplan: 'quran', qamap: 'quran', qastats: 'quran', qataj: 'quran', azcat: 'azkar', azsearch: 'azkar', azfav: 'azkar', azlists: 'azkar', azlist: 'azkar', azset: 'azkar', azabout: 'azkar', ptable: 'prayers', mpage: 'quran', surah: 'quran' }[name] || name;
+    const tab = { surah: 'quran', juz: 'quran', zikr: 'azkar', audio: 'quran', reciter: 'quran', player: 'quran', compare: 'quran', playlist: 'quran', repeat: 'quran', hifz: 'quran', hifzs: 'quran', hifzp: 'quran', hifzplan: 'quran', hj: 'home', qa: 'quran', qarecs: 'quran', qachat: 'quran', qaplans: 'quran', qapr: 'quran', qaask: 'quran', qakids: 'quran', qakid: 'quran', qakp: 'quran', qarec: 'quran', qarev: 'quran', qatest: 'quran', qaplan: 'quran', qamap: 'quran', qastats: 'quran', qataj: 'quran', azcat: 'azkar', azsearch: 'azkar', azfav: 'azkar', azlists: 'azkar', azlist: 'azkar', azset: 'azkar', azabout: 'azkar', ptable: 'prayers', mpage: 'quran', surah: 'quran' }[name] || name;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.route === tab));
     view.innerHTML = '';
     view.className = 'fade-in';
@@ -264,7 +264,7 @@
     ['«خيركم من تعلّم القرآن وعلّمه»', 'رواه البخاري'],
     ['﴿وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ﴾', 'البقرة: ٤٥'],
   ];
-  const DASH_TILES = [['qa', '🕋', 'أكاديمية القرآن'], ['ch30', '🌙', 'تحدي ٣٠ يوم'], ['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['enc', '🏛️', 'الموسوعات'], ['lib/all', '📚', 'المكتبة'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qz', '🎯', 'اختبر علمك'], ['kids', '🧒', 'موسوعة الطفل'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['calc', '🧮', 'الحاسبات'], ['fiqh', '⚖️', 'الموسوعة الفقهية'], ['bookmarks', '🔖', 'العلامات']];
+  const DASH_TILES = [['hj', '🕋', 'الحج والعمرة'], ['qa', '🕋', 'أكاديمية القرآن'], ['ch30', '🌙', 'تحدي ٣٠ يوم'], ['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['enc', '🏛️', 'الموسوعات'], ['lib/all', '📚', 'المكتبة'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qz', '🎯', 'اختبر علمك'], ['kids', '🧒', 'موسوعة الطفل'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['calc', '🧮', 'الحاسبات'], ['fiqh', '⚖️', 'الموسوعة الفقهية'], ['bookmarks', '🔖', 'العلامات']];
   function renderDash() {
     const now = new Date();
     const t = timesFor(now);
