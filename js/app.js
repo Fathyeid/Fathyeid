@@ -201,6 +201,7 @@
         <button class="tile" data-go="quran"><span class="ic">📖</span>القرآن</button>
         <button class="tile" data-go="audio"><span class="ic">🎧</span>المكتبة الصوتية</button>
         <button class="tile" data-go="radio"><span class="ic">📻</span>إذاعة القرآن</button>
+        <button class="tile" data-go="ch30"><span class="ic">🌙</span>تحدي ٣٠ يوم</button>
         <button class="tile" data-go="ibtihal"><span class="ic">🎙️</span>الابتهالات</button>
         <button class="tile" data-go="enc"><span class="ic">🏛️</span>الموسوعات</button>
         <button class="tile" data-go="lib/all"><span class="ic">📚</span>المكتبة العلمية</button>
@@ -262,7 +263,7 @@
     ['«خيركم من تعلّم القرآن وعلّمه»', 'رواه البخاري'],
     ['﴿وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ﴾', 'البقرة: ٤٥'],
   ];
-  const DASH_TILES = [['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['enc', '🏛️', 'الموسوعات'], ['lib/all', '📚', 'المكتبة'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qz', '🎯', 'اختبر علمك'], ['kids', '🧒', 'موسوعة الطفل'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['calc', '🧮', 'الحاسبات'], ['fiqh', '⚖️', 'الموسوعة الفقهية'], ['bookmarks', '🔖', 'العلامات']];
+  const DASH_TILES = [['ch30', '🌙', 'تحدي ٣٠ يوم'], ['quran', '📖', 'القرآن'], ['audio', '🎧', 'الصوتيات'], ['radio', '📻', 'الإذاعة'], ['ibtihal', '🎙️', 'الابتهالات'], ['enc', '🏛️', 'الموسوعات'], ['lib/all', '📚', 'المكتبة'], ['azkar', '📿', 'الأذكار'], ['hifz', '🧠', 'الحفظ'], ['hadith', '📜', 'الحديث'], ['dawah', '🎬', 'الدعوية'], ['academy', '🎓', 'الأكاديمية'], ['qz', '🎯', 'اختبر علمك'], ['kids', '🧒', 'موسوعة الطفل'], ['qibla', '🧭', 'القبلة'], ['names', '✨', 'الأسماء'], ['tasbih', '🤍', 'السبحة'], ['calendar', '📅', 'التقويم'], ['khatma', '📗', 'الختمة'], ['tracker', '✅', 'صلواتي'], ['calc', '🧮', 'الحاسبات'], ['fiqh', '⚖️', 'الموسوعة الفقهية'], ['bookmarks', '🔖', 'العلامات']];
   function renderDash() {
     const now = new Date();
     const t = timesFor(now);
