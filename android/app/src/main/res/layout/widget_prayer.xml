@@ -18,23 +18,14 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView
-            android:id="@+id/wg_app_icon"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@mipmap/ic_launcher"
-            android:contentDescription="@string/app_name" />
-
         <TextView
             android:id="@+id/wg_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
             android:text="@string/app_name"
             android:textColor="#E9D9B0"
             android:textSize="14sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.04" />
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/wg_hijri"
@@ -44,7 +35,7 @@
             android:gravity="center"
             android:singleLine="true"
             android:textColor="#B9C8C0"
-            android:textSize="10.5sp" />
+            android:textSize="11sp" />
 
         <TextView
             android:id="@+id/wg_refresh"
@@ -157,34 +148,34 @@
         android:orientation="horizontal"
         android:weightSum="5">
 
-        <LinearLayout style="@style/WidgetCell">
-            <ImageView android:id="@+id/c1_icon" style="@style/WidgetCellIcon" />
-            <TextView android:id="@+id/c1_name" style="@style/WidgetCellName" />
-            <TextView android:id="@+id/c1_time" style="@style/WidgetCellTime" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <ImageView android:id="@+id/c1_icon" android:layout_width="20dp" android:layout_height="20dp" android:layout_marginBottom="2dp" />
+            <TextView android:id="@+id/c1_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CFD8D3" android:textSize="10sp" android:singleLine="true" />
+            <TextView android:id="@+id/c1_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#F6F1E6" android:textSize="12sp" android:textStyle="bold" android:singleLine="true" />
         </LinearLayout>
 
-        <LinearLayout style="@style/WidgetCell">
-            <ImageView android:id="@+id/c2_icon" style="@style/WidgetCellIcon" />
-            <TextView android:id="@+id/c2_name" style="@style/WidgetCellName" />
-            <TextView android:id="@+id/c2_time" style="@style/WidgetCellTime" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <ImageView android:id="@+id/c2_icon" android:layout_width="20dp" android:layout_height="20dp" android:layout_marginBottom="2dp" />
+            <TextView android:id="@+id/c2_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CFD8D3" android:textSize="10sp" android:singleLine="true" />
+            <TextView android:id="@+id/c2_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#F6F1E6" android:textSize="12sp" android:textStyle="bold" android:singleLine="true" />
         </LinearLayout>
 
-        <LinearLayout style="@style/WidgetCell">
-            <ImageView android:id="@+id/c3_icon" style="@style/WidgetCellIcon" />
-            <TextView android:id="@+id/c3_name" style="@style/WidgetCellName" />
-            <TextView android:id="@+id/c3_time" style="@style/WidgetCellTime" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <ImageView android:id="@+id/c3_icon" android:layout_width="20dp" android:layout_height="20dp" android:layout_marginBottom="2dp" />
+            <TextView android:id="@+id/c3_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CFD8D3" android:textSize="10sp" android:singleLine="true" />
+            <TextView android:id="@+id/c3_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#F6F1E6" android:textSize="12sp" android:textStyle="bold" android:singleLine="true" />
         </LinearLayout>
 
-        <LinearLayout style="@style/WidgetCell">
-            <ImageView android:id="@+id/c4_icon" style="@style/WidgetCellIcon" />
-            <TextView android:id="@+id/c4_name" style="@style/WidgetCellName" />
-            <TextView android:id="@+id/c4_time" style="@style/WidgetCellTime" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <ImageView android:id="@+id/c4_icon" android:layout_width="20dp" android:layout_height="20dp" android:layout_marginBottom="2dp" />
+            <TextView android:id="@+id/c4_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CFD8D3" android:textSize="10sp" android:singleLine="true" />
+            <TextView android:id="@+id/c4_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#F6F1E6" android:textSize="12sp" android:textStyle="bold" android:singleLine="true" />
         </LinearLayout>
 
-        <LinearLayout style="@style/WidgetCell">
-            <ImageView android:id="@+id/c5_icon" style="@style/WidgetCellIcon" />
-            <TextView android:id="@+id/c5_name" style="@style/WidgetCellName" />
-            <TextView android:id="@+id/c5_time" style="@style/WidgetCellTime" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <ImageView android:id="@+id/c5_icon" android:layout_width="20dp" android:layout_height="20dp" android:layout_marginBottom="2dp" />
+            <TextView android:id="@+id/c5_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CFD8D3" android:textSize="10sp" android:singleLine="true" />
+            <TextView android:id="@+id/c5_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#F6F1E6" android:textSize="12sp" android:textStyle="bold" android:singleLine="true" />
         </LinearLayout>
     </LinearLayout>
 
