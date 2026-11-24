@@ -33,7 +33,7 @@
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   // الثيم الفاتح هو الافتراضي؛ من لم يختر ثيماً بنفسه ينتقل إلى الفاتح
   if (settings.theme === 'auto' && !store.get('themeChosen', false)) settings.theme = 'light';
-  const saveSettings = () => { store.set('settings', settings); if (typeof scheduleAdhan === 'function') scheduleAdhan(); };
+  const saveSettings = () => { store.set('settings', settings); if (typeof scheduleAdhan === 'function') scheduleAdhan(); syncPrayerWidget(); };
 
   const RECITERS = {
     'ar.alafasy': { name: 'مشاري راشد العفاسي', br: 128 },
@@ -375,7 +375,8 @@
         <div class="card" style="margin-top:16px">
           <div class="muted" style="font-size:.85rem">📍 ${esc(settings.location.name)} • ${PrayTimes.METHODS[settings.method].name} • العصر: ${settings.asr === 2 ? 'الحنفي' : 'الجمهور'}</div>
           <button class="btn ghost block" style="margin-top:10px" id="toSettings">تغيير الموقع وطريقة الحساب</button>
-        </div>`;
+        </div>
+        ${NATIVE ? `<div class="card" style="margin-top:12px"><div class="muted" style="font-size:.85rem">💡 لعرض المواقيت على شاشتك الرئيسية: اضغط مطولاً على مكان فارغ في الشاشة ← «الودجت» ← «أثر»</div></div>` : ''}`;
       $('#prev').onclick = () => { offset--; draw(); };
       $('#next').onclick = () => { offset++; draw(); };
       $('#toSettings').onclick = () => go('settings');
@@ -1333,6 +1334,12 @@
     scheduleAdhan();
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') scheduleAdhan(); });
   }
+  if (NATIVE) {
+    setTimeout(syncPrayerWidget, 4500);
+    // تحديث دوري خفيف ليبقى الودجت على يومه الحالي حتى بلا فتح متكرر للتطبيق
+    setInterval(syncPrayerWidget, 30 * 60000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncPrayerWidget(); });
+  }
 
 
   // ---------- التحديثات (تطبيق أندرويد المثبّت من الرابط) ----------
@@ -1347,6 +1354,24 @@
   if (UPD) UPD.notifyAppReady().catch(() => {});
   async function nativeLevel() {
     try { const i = await PLUG.App.getInfo(); const m = /^\d+\.(\d+)\./.exec(i.version || ''); return m ? +m[1] : 1; } catch { return 1; }
+  }
+  // ---------- ويدجت الشاشة الرئيسية (مواقيت الصلاة) ----------
+  // يرسل المواقيت المحسوبة لليوم وغداً (بموقع المستخدم وطريقته وتعديلاته) إلى الودجت الأصلي
+  async function syncPrayerWidget() {
+    try {
+      const W = NATIVE && window.Capacitor.Plugins && window.Capacitor.Plugins.PrayerWidget;
+      if (!W || !W.update) return;
+      const now = new Date();
+      const day = (off) => {
+        const d = new Date(now.getTime() + off * 86400000);
+        const t = timesFor(d);
+        const [y, m, dd] = ymdIn(d, tz());
+        const times = {}, labels = {};
+        PRAYERS.forEach((p) => { times[p.key] = t[p.key].getTime(); labels[p.key] = fmtTime(t[p.key]); });
+        return { date: `${y}-${pad(m)}-${pad(dd)}`, times, labels };
+      };
+      await W.update({ location: settings.location.name || '', hijri: hijri(now), greg: greg(now), days: [day(0), day(1)] });
+    } catch { /* الودجت غير متاح في هذه النسخة */ }
   }
   // يعيد { version_code, web_code, native_level, web_url, web_sha256, apk_url } أو يرمي خطأ إن تعذّرت كل المصادر
   async function latestRelease() {

@@ -344,6 +344,37 @@
   // ---------- مذكّر الذكر المستمر (كل بضع دقائق) ----------
   // الأذكار الأربعة التي طلبها المستخدم تُعرض بالتناوب؛ رقم الفترة الزمنية يحدد الذكر فيثبت التناوب بين الإشعارات والبطاقة داخل التطبيق
   const PHRASES = ['سُبْحَانَ اللَّهِ', 'الْحَمْدُ لِلَّهِ', 'اللَّهُ أَكْبَرُ', 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ ﷺ'];
+  // مقاطع الذكر المنطوقة: صوت الإشعار في الخلفية والقراءة داخل التطبيق
+  const ZIKR_FILES = ['zikr_subhan.mp3', 'zikr_alhamd.mp3', 'zikr_akbar.mp3', 'zikr_salli.mp3'];
+  const ZIKR_NAMES = ['سبحان الله', 'الحمد لله', 'الله أكبر', 'الصلاة على النبي'];
+  const zikrVoiced = () => N.NATIVE && window.NOOR_NATIVE_ZIKR === true;
+  // أندرويد يثبّت صوت قناة الإشعارات عند إنشائها، فلكل ذكر قناة خاصة بصوته المنطوق
+  async function dhikrChannels(ln) {
+    if (zikrVoiced()) {
+      for (let i = 0; i < PHRASES.length; i++) {
+        await ln.createChannel({ id: `dhikr_${i}`, name: `مذكّر الذكر (${ZIKR_NAMES[i]})`, description: 'ذكر قصير على فترات منتظمة يُقرأ بصوت مسموع', importance: 4, visibility: 1, sound: ZIKR_FILES[i] });
+      }
+      try { await ln.deleteChannel({ id: 'dhikr' }); } catch { /* القناة القديمة قد لا توجد */ }
+      return true;
+    }
+    await ln.createChannel({ id: 'dhikr', name: 'مذكّر الذكر', description: 'ذكر قصير على فترات منتظمة', importance: 4, visibility: 1 });
+    return false;
+  }
+  const dhikrChannel = (slot, voiced) => (voiced ? `dhikr_${slot % PHRASES.length}` : 'dhikr');
+  // تشغيل التسجيل المنطوق داخل التطبيق، مع الرجوع إلى قراءة الجهاز ثم النغمة عند تعذره
+  function playZikrFile(i) {
+    return new Promise((resolve) => {
+      try {
+        const a = new Audio(`zikr/${ZIKR_FILES[i]}`);
+        let done = false;
+        const fin = (ok) => { if (!done) { done = true; resolve(ok); } };
+        a.onended = () => fin(true);
+        a.onerror = () => fin(false);
+        setTimeout(() => fin(true), 12000);
+        a.play().catch(() => fin(false));
+      } catch { resolve(false); }
+    });
+  }
   const DHIKR_BASE = 3300;
   const dCfg = () => Object.assign({ every: 0, sound: true, from: '00:00', to: '23:59' }, store.get('dhikr:rem', {}));
   const minsOf = (s) => { const [h, m] = String(s || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
@@ -395,11 +426,12 @@
     } catch (e) { /* */ }
   }
   window.addEventListener('noor:audio', (e) => { if (e.detail !== 'dhikr' && 'speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch { /* */ } } });
-  function fireDhikr(z, c) {
+  async function fireDhikr(z, c) {
     showDhikr(z);
     if (c.sound && document.visibilityState === 'visible') {
       window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'dhikr' }));
-      if (!speakDhikr(z)) chime();
+      const i = PHRASES.indexOf(z);
+      if (i < 0 || !(await playZikrFile(i))) { if (!speakDhikr(z)) chime(); }
     }
     if (!N.NATIVE && 'Notification' in window && Notification.permission === 'granted') {
       try { new Notification('أثر — مذكّر الذكر', { body: z, icon: 'icons/icon.svg' }); } catch { /* تجاهل */ }
@@ -414,7 +446,7 @@
       let perm = await ln.checkPermissions();
       if (perm.display !== 'granted') perm = await ln.requestPermissions();
       if (perm.display !== 'granted') return;
-      await ln.createChannel({ id: 'dhikr', name: 'مذكّر الذكر', description: 'ذكر قصير على فترات منتظمة', importance: 4, visibility: 1 });
+      const voiced = await dhikrChannels(ln);
       // نجدول ٢٤ إشعاراً قادماً ضمن ١٢ ساعة (تغطي ساعتين على خيار الخمس دقائق) وتُعاد الجدولة عند فتح التطبيق
       const step = c.every * 60000;
       const now = Date.now();
@@ -426,7 +458,7 @@
         if (inDWindow(d, c)) {
           const slot = Math.floor(t / step);
           const z = PHRASES[slot % PHRASES.length];
-          list.push({ id: DHIKR_BASE + list.length, title: TITLES[slot % TITLES.length], body: z, largeBody: z, channelId: 'dhikr', extra: { route: 'tasbih' }, schedule: { at: d, allowWhileIdle: true }, autoCancel: true });
+          list.push({ id: DHIKR_BASE + list.length, title: TITLES[slot % TITLES.length], body: z, largeBody: z, channelId: dhikrChannel(slot, voiced), extra: { route: 'tasbih' }, schedule: { at: d, allowWhileIdle: true }, autoCancel: true });
         }
         t += step;
       }
@@ -463,7 +495,7 @@
       <div class="az-rem"><span>من الساعة</span><input type="time" id="dkFrom" value="${DC.from}"></div>
       <div class="az-rem"><span>حتى الساعة</span><input type="time" id="dkTo" value="${DC.to}"></div>
       <button class="btn ghost block" id="dkTest" style="margin-top:10px">🔔 تجربة الذكر الآن</button>
-      <small class="muted" style="display:block;margin-top:8px">${N.NATIVE ? 'يصلك إشعار بالذكر حتى والتطبيق مقفول (بصوت تنبيه الهاتف)، والقراءة الصوتية تعمل أثناء فتح التطبيق.' : 'في المتصفح يعمل المذكّر أثناء فتح التطبيق: تظهر بطاقة الذكر وتُقرأ بصوت مسموع، مع إشعار من النظام إن سمحت له. لتصلك الإشعارات والتطبيق مقفول ثبّت تطبيق أندرويد.'}</small>
+      <small class="muted" style="display:block;margin-top:8px">${N.NATIVE ? 'يصلك الإشعار والتطبيق مقفول بصوت الذكر منطوقاً بدل نغمة الهاتف (يتبع حالة الصوت والوضع الصامت في هاتفك)، ويُقرأ بنفس الصوت أثناء فتح التطبيق.' : 'في المتصفح يعمل المذكّر أثناء فتح التطبيق: تظهر بطاقة الذكر وتُقرأ بصوت مسموع، مع إشعار من النظام إن سمحت له. لتصلك الإشعارات والتطبيق مقفول ثبّت تطبيق أندرويد.'}</small>
       </div>`;
     const save = () => { const R2 = {}; REM.forEach((r) => { if ($(`[data-on="${r.k}"]`).checked) R2[r.k] = $(`[data-time="${r.k}"]`).value || r.def; }); store.set('az:rem', R2); D.after = $('#afterP').checked; D.from = $('#dFrom').value || '09:00'; D.to = $('#dTo').value || '22:00'; store.set('az:rem2', D); scheduleRem(); toast('تم حفظ التذكيرات'); };
     $$('[data-on],[data-time],#afterP,#dFrom,#dTo').forEach((x) => { x.onchange = save; });
@@ -485,9 +517,9 @@
             let p = await ln.checkPermissions();
             if (p.display !== 'granted') p = await ln.requestPermissions();
             if (p.display !== 'granted') { toast('فعّل الإشعارات للتطبيق لتصلك التجربة والهاتف مقفول'); return; }
-            await ln.createChannel({ id: 'dhikr', name: 'مذكّر الذكر', description: 'ذكر قصير على فترات منتظمة', importance: 4, visibility: 1 });
-            await ln.schedule({ notifications: [{ id: DHIKR_BASE + 99, title: '📿 تجربة مذكّر الذكر', body: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', channelId: 'dhikr', extra: { route: 'tasbih' }, schedule: { at: new Date(Date.now() + 10000), allowWhileIdle: true }, autoCancel: true }] });
-            toast('سيصلك إشعار تجريبي بعد ١٠ ثوانٍ، يمكنك قفل الهاتف');
+            const voiced = await dhikrChannels(ln);
+            await ln.schedule({ notifications: [{ id: DHIKR_BASE + 99, title: '📿 تجربة مذكّر الذكر', body: PHRASES[0], channelId: dhikrChannel(0, voiced), extra: { route: 'tasbih' }, schedule: { at: new Date(Date.now() + 10000), allowWhileIdle: true }, autoCancel: true }] });
+            toast(voiced ? 'سيصلك إشعار تجريبي بعد ١٠ ثوانٍ يقرأ الذكر بصوت مسموع، يمكنك قفل الهاتف' : 'سيصلك إشعار تجريبي بعد ١٠ ثوانٍ، يمكنك قفل الهاتف');
           } catch (e) { /* */ }
         })();
       }

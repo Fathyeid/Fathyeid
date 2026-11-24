@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ويدجت مواقيت الصلاة: عناصر يدعمها RemoteViews فقط -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/wg_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="#E9D9B0"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/wg_hijri"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textColor="#E9D9B0"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/wg_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:text="↻"
+            android:textColor="#E9D9B0"
+            android:textSize="16sp"
+            android:contentDescription="@string/widget_refresh" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/wg_loc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:singleLine="true"
+        android:textColor="#CFD8D3"
+        android:textSize="11sp" />
+
+    <LinearLayout
+        android:id="@+id/row_fajr"
+        style="@style/WidgetPrayerRow">
+        <TextView android:id="@+id/name_fajr" style="@style/WidgetPrayerName" android:text="الفجر" />
+        <TextView android:id="@+id/time_fajr" style="@style/WidgetPrayerTime" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_sunrise"
+        style="@style/WidgetPrayerRow">
+        <TextView android:id="@+id/name_sunrise" style="@style/WidgetPrayerName" android:text="الشروق" />
+        <TextView android:id="@+id/time_sunrise" style="@style/WidgetPrayerTime" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_dhuhr"
+        style="@style/WidgetPrayerRow">
+        <TextView android:id="@+id/name_dhuhr" style="@style/WidgetPrayerName" android:text="الظهر" />
+        <TextView android:id="@+id/time_dhuhr" style="@style/WidgetPrayerTime" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_asr"
+        style="@style/WidgetPrayerRow">
+        <TextView android:id="@+id/name_asr" style="@style/WidgetPrayerName" android:text="العصر" />
+        <TextView android:id="@+id/time_asr" style="@style/WidgetPrayerTime" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_maghrib"
+        style="@style/WidgetPrayerRow">
+        <TextView android:id="@+id/name_maghrib" style="@style/WidgetPrayerName" android:text="المغرب" />
+        <TextView android:id="@+id/time_maghrib" style="@style/WidgetPrayerTime" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_isha"
+        style="@style/WidgetPrayerRow">
+        <TextView android:id="@+id/name_isha" style="@style/WidgetPrayerName" android:text="العشاء" />
+        <TextView android:id="@+id/time_isha" style="@style/WidgetPrayerTime" />
+    </LinearLayout>
+
+</LinearLayout>

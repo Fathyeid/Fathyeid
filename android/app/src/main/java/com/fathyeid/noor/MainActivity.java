@@ -8,6 +8,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // خدمة التشغيل في الخلفية (الإذاعة والتلاوة والشاشة مقفولة)
         registerPlugin(BgAudioPlugin.class);
+        // ويدجت مواقيت الصلاة على الشاشة الرئيسية
+        registerPlugin(PrayerWidgetPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
