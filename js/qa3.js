@@ -19,15 +19,16 @@
   async function loadModel(cb) {
     if (ASR) return ASR;
     cb && cb('جارٍ تحميل المحرك…');
-    const T = await import(LIB);
+    let T; try { T = await import(LIB); } catch (e) { throw stage('تحميل المحرك من الإنترنت', e); }
     T.env.backends.onnx.wasm.numThreads = 1;
     const seen = {};
-    ASR = await T.pipeline('automatic-speech-recognition', MODEL, {
+    try { ASR = await T.pipeline('automatic-speech-recognition', MODEL, {
       dtype: { encoder_model: 'q4', decoder_model_merged: 'q4' }, device: 'wasm',
       progress_callback: (p) => { if (p.status === 'progress' && p.file) { seen[p.file] = p.progress; const v = Object.values(seen); cb && cb(`تحميل نموذج القرآن… ${ar(Math.round(v.reduce((a, b) => a + b, 0) / Math.max(1, v.length)))}٪`); } },
-    });
+    }); } catch (e) { ASR = null; throw stage('تحميل النموذج', e); }
     return ASR;
   }
+  const stage = (st, e) => { const x = new Error(`${st}: ${(e && (e.name && e.name !== 'Error' ? e.name + ' ' : '')) || ''}${String((e && e.message) || e).slice(0, 140)}`); x.stage = st; return x; };
   async function toPCM(blob) {
     const buf = await new (window.AudioContext || window.webkitAudioContext)().decodeAudioData(await blob.arrayBuffer());
     const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * 16000)), 16000);
@@ -52,10 +53,12 @@
     return out.length ? out.map(([a, b]) => pcm.slice(a, b)) : [pcm];
   }
   async function transcribe(blob, cb) {
+    let pcm; try { pcm = await toPCM(blob); } catch (e) { throw stage('قراءة التسجيل', e); }
+    const parts = splitPCM(pcm); const texts = [];
     const asr = await loadModel(cb);
     for (let i = 0; i < parts.length; i++) {
       cb && cb(`جارٍ تحليل تلاوتك… ${ar(i + 1)} من ${ar(parts.length)}`);
-      const o = await asr(parts[i], { language: 'arabic', task: 'transcribe', chunk_length_s: 30, stride_length_s: 5 });
+      let o; try { o = await asr(parts[i], { language: 'arabic', task: 'transcribe', chunk_length_s: 30, stride_length_s: 5 }); } catch (e) { throw stage('تحليل الصوت', e); }
       if (o.text) texts.push(o.text.trim());
     }
     return texts.join(' ');
@@ -80,7 +83,7 @@
   const listRec = () => tx('readonly', (s) => s.getAll()).then((x) => (x || []).sort((a, b) => b.t - a.t));
   const delRec = (id) => tx('readwrite', (s) => s.delete(id));
   const clearRec = () => tx('readwrite', (s) => s.clear());
-  window.QA3 = { supported, record, transcribe, saveRec };
+  window.QA3 = { supported, record, transcribe, saveRec, stage };
 
   // ---------- مقارنة بالقارئ ----------
   const RC = [['Alafasy_128kbps', 'مشاري العفاسي'], ['Husary_128kbps', 'محمود خليل الحصري'], ['Minshawy_Murattal_128kbps', 'محمد صديق المنشاوي'], ['Abdul_Basit_Murattal_192kbps', 'عبد الباسط (مرتّل)'], ['Hudhaify_128kbps', 'علي الحذيفي'], ['Abdurrahmaan_As-Sudais_192kbps', 'عبد الرحمن السديس'], ['Ghamadi_40kbps', 'سعد الغامدي']];

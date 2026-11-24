@@ -294,7 +294,7 @@
           pendingBlob = blob;
           if (!txt.trim()) { toast('لم أتبيّن كلاماً. أعد التسجيل بصوت أوضح'); draw(); return; }
           showResult(analyze(txt));
-        } catch (e) { console.warn(e); toast('تعذّر تشغيل النموذج. تأكد من الإنترنت في أول مرة، أو استخدم محرك Google'); draw(); }
+        } catch (e) { console.warn(e); toast('تعذّر تشغيل النموذج (' + String((e && e.message) || e).slice(0, 120) + '). جرّب محرك Google من إلغاء تعليم خيار النموذج'); draw(); }
         return;
       }
       const final = `${acc} ${cur}`.trim(); await cancelRec();
