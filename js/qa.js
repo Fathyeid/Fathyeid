@@ -259,7 +259,7 @@
     async function startRec() {
       acc = ''; cur = ''; text = '';
       if (useModel()) {
-        try { rec3 = await window.QA3.record(); listening = true; draw(); const l = $('#qaLive'); if (l) l.textContent = '🔴 جارٍ التسجيل… اقرأ ثم اضغط للإنهاء'; } catch (e) { console.warn(e); toast('تعذّر الوصول للميكروفون. تأكد من الإذن، وفي أندرويد قد تحتاج آخر نسخة'); rec3 = null; listening = false; draw(); }
+        try { rec3 = await window.QA3.record(); listening = true; draw(); const l = $('#qaLive'); if (l) l.textContent = '🔴 جارٍ التسجيل… اقرأ ثم اضغط للإنهاء'; } catch (e) { console.warn(e); toast('تعذّر الوصول للميكروفون (' + ((e && e.name) || 'خطأ') + '). تأكد من إذن الميكروفون للتطبيق من إعدادات الهاتف، وفي أندرويد قد تحتاج آخر نسخة'); rec3 = null; listening = false; draw(); }
         return;
       }
       try {

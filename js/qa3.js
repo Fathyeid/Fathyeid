@@ -62,8 +62,11 @@
   }
   async function record() {
     const P = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechRecognition);
-    if (P && P.requestPermissions) { try { await P.requestPermissions(); } catch { /* لا شيء */ } }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, channelCount: 1 } });
+    if (P && P.requestPermissions) { try { const c = P.checkPermissions ? await P.checkPermissions() : {}; if (c.speechRecognition !== 'granted') await P.requestPermissions(); } catch { /* لا شيء */ } }
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { const e = new Error('no-mediadevices'); e.name = 'NoMediaDevices'; throw e; }
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, channelCount: 1 } }); }
+    catch (e1) { try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e2) { throw e2; } }
     const mr = new MediaRecorder(stream); const chunks = [];
     mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
     mr.start(1000);
