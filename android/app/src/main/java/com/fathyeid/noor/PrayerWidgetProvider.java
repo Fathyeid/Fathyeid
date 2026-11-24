@@ -9,19 +9,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.SystemClock;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
 
 /**
  * ويدجت الشاشة الرئيسية: يعرض مواقيت الصلاة كلها كما يحسبها التطبيق نفسه
  * (الموقع وطريقة الحساب والتعديلات اليدوية تأتي جاهزة من التطبيق عبر PrayerWidgetPlugin).
+ * الصلاة القادمة بارزة بأيقونتها وعدّ تنازلي حي، وباقي المواقيت بأيقوناتها في صف سفلي.
  * يُحدَّث عند فتح التطبيق، وعند دخول كل وقت صلاة، وبعد منتصف الليل.
  */
 public class PrayerWidgetProvider extends AppWidgetProvider {
@@ -31,9 +37,20 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
     static final String ACTION_TICK = "com.fathyeid.noor.widget.TICK";
 
     static final String[] KEYS = {"fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"};
-    static final int[] ROWS = {R.id.row_fajr, R.id.row_sunrise, R.id.row_dhuhr, R.id.row_asr, R.id.row_maghrib, R.id.row_isha};
-    static final int[] NAMES = {R.id.name_fajr, R.id.name_sunrise, R.id.name_dhuhr, R.id.name_asr, R.id.name_maghrib, R.id.name_isha};
-    static final int[] TIMES = {R.id.time_fajr, R.id.time_sunrise, R.id.time_dhuhr, R.id.time_asr, R.id.time_maghrib, R.id.time_isha};
+    static final String[] AR = {"الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"};
+    static final int[] ICONS = {
+            R.drawable.ic_prayer_fajr, R.drawable.ic_prayer_sunrise, R.drawable.ic_prayer_dhuhr,
+            R.drawable.ic_prayer_asr, R.drawable.ic_prayer_maghrib, R.drawable.ic_prayer_isha};
+    static final int[] CELL_ICONS = {R.id.c1_icon, R.id.c2_icon, R.id.c3_icon, R.id.c4_icon, R.id.c5_icon};
+    static final int[] CELL_NAMES = {R.id.c1_name, R.id.c2_name, R.id.c3_name, R.id.c4_name, R.id.c5_name};
+    static final int[] CELL_TIMES = {R.id.c1_time, R.id.c2_time, R.id.c3_time, R.id.c4_time, R.id.c5_time};
+
+    /** موعد واحد في الخط الزمني المدمج (اليوم + الغد). */
+    static class Entry {
+        long t;
+        int keyIdx;
+        String label;
+    }
 
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
@@ -82,7 +99,8 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         SharedPreferences p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String json = p.getString(KEY, null);
 
-        JSONObject day = null;
+        // نبني خطًا زمنيًا مدمجًا من كل الأيام المحفوظة (اليوم والغد عادة)
+        ArrayList<Entry> timeline = new ArrayList<>();
         boolean stale = false;
         try {
             if (json != null) {
@@ -90,12 +108,25 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 v.setTextViewText(R.id.wg_hijri, root.optString("hijri", ""));
                 JSONArray days = root.optJSONArray("days");
                 if (days != null) {
+                    boolean hasToday = false;
                     for (int i = 0; i < days.length(); i++) {
                         JSONObject d = days.optJSONObject(i);
-                        if (d != null && today.equals(d.optString("date"))) { day = d; break; }
+                        if (d == null) continue;
+                        if (today.equals(d.optString("date"))) hasToday = true;
+                        JSONObject times = d.optJSONObject("times");
+                        JSONObject labels = d.optJSONObject("labels");
+                        if (times == null) continue;
+                        for (int k = 0; k < KEYS.length; k++) {
+                            long t = times.optLong(KEYS[k], -1);
+                            if (t <= 0) continue;
+                            Entry e = new Entry();
+                            e.t = t;
+                            e.keyIdx = k;
+                            e.label = labels != null ? labels.optString(KEYS[k], "—") : "—";
+                            timeline.add(e);
+                        }
                     }
-                    // لم يصل تحديث اليوم بعد (لم يُفتح التطبيق): نعرض أحدث يوم محفوظ مع تنبيه
-                    if (day == null && days.length() > 0) { day = days.optJSONObject(days.length() - 1); stale = true; }
+                    stale = !hasToday && days.length() > 0;
                 }
                 String loc = root.optString("location", "");
                 v.setTextViewText(R.id.wg_loc, stale
@@ -104,39 +135,69 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
             }
         } catch (Exception ignored) {
         }
+        Collections.sort(timeline, new Comparator<Entry>() {
+            @Override
+            public int compare(Entry a, Entry b) {
+                return Long.compare(a.t, b.t);
+            }
+        });
 
         if (json == null) {
             v.setTextViewText(R.id.wg_loc, ctx.getString(R.string.widget_empty));
         }
 
-        // الصلاة التالية (مثل التطبيق: الشروق لا يُحسب «صلاة تالية»)
-        long nextMs = -1;
-        int nextIdx = -1;
-        if (day != null && !stale) {
-            for (int i = 0; i < KEYS.length; i++) {
-                if ("sunrise".equals(KEYS[i])) continue;
-                long t = day.optJSONObject("times") != null ? day.optJSONObject("times").optLong(KEYS[i], -1) : -1;
-                if (t > now && (nextMs < 0 || t < nextMs)) { nextMs = t; nextIdx = i; }
-            }
+        // الصلاة القادمة (مثل التطبيق: الشروق لا يُحسب «صلاة تالية»)
+        int heroIdx = -1;
+        for (int i = 0; i < timeline.size(); i++) {
+            Entry e = timeline.get(i);
+            if (e.t > now && !"sunrise".equals(KEYS[e.keyIdx])) { heroIdx = i; break; }
         }
 
-        for (int i = 0; i < KEYS.length; i++) {
-            String label = "—";
-            try {
-                if (day != null && day.optJSONObject("labels") != null) {
-                    label = day.getJSONObject("labels").optString(KEYS[i], "—");
-                }
-            } catch (Exception ignored) {
+        if (heroIdx >= 0) {
+            Entry hero = timeline.get(heroIdx);
+            v.setTextViewText(R.id.wg_next_name, AR[hero.keyIdx]);
+            v.setTextViewText(R.id.wg_next_time, hero.label);
+            v.setImageViewResource(R.id.wg_next_icon, ICONS[hero.keyIdx]);
+            // عدّ تنازلي حي حتى دخول الوقت
+            long base = SystemClock.elapsedRealtime() + (hero.t - now);
+            v.setChronometer(R.id.wg_countdown, base, null, true);
+            v.setChronometerCountDown(R.id.wg_countdown, true);
+            v.setViewVisibility(R.id.wg_count_row, View.VISIBLE);
+            // الخمسة التالون له في الصف السفلي
+            int c = 0;
+            for (int i = heroIdx + 1; i < timeline.size() && c < 5; i++, c++) {
+                setCell(v, c, timeline.get(i));
             }
-            v.setTextViewText(TIMES[i], label);
-            if (i == nextIdx) {
-                v.setInt(ROWS[i], "setBackgroundResource", R.drawable.widget_row_next);
-                v.setTextColor(NAMES[i], 0xFF0D3B2E);
-                v.setTextColor(TIMES[i], 0xFF0D3B2E);
+            for (; c < 5; c++) clearCell(v, c);
+        } else {
+            // لا صلاة قادمة في البيانات (قديمة أو فارغة): نعرض مواقيت اليوم المعروفة دون الشروق
+            v.setTextViewText(R.id.wg_next_name, "—");
+            v.setTextViewText(R.id.wg_next_time, "");
+            v.setImageViewResource(R.id.wg_next_icon, R.drawable.ic_prayer_dhuhr);
+            v.setChronometer(R.id.wg_countdown, SystemClock.elapsedRealtime(), null, false);
+            v.setViewVisibility(R.id.wg_count_row, View.GONE);
+            int c = 0;
+            for (Entry e : timeline) {
+                if ("sunrise".equals(KEYS[e.keyIdx]) || c >= 5) continue;
+                setCell(v, c, e);
+                c++;
             }
+            for (; c < 5; c++) clearCell(v, c);
         }
 
         mgr.updateAppWidget(appWidgetId, v);
+    }
+
+    static void setCell(RemoteViews v, int c, Entry e) {
+        v.setImageViewResource(CELL_ICONS[c], ICONS[e.keyIdx]);
+        v.setTextViewText(CELL_NAMES[c], AR[e.keyIdx]);
+        v.setTextViewText(CELL_TIMES[c], e.label);
+    }
+
+    static void clearCell(RemoteViews v, int c) {
+        v.setImageViewResource(CELL_ICONS[c], android.R.color.transparent);
+        v.setTextViewText(CELL_NAMES[c], "");
+        v.setTextViewText(CELL_TIMES[c], "");
     }
 
     /** يجدول التحديث القادم: عند دخول أقرب وقت محفوظ، وبعد منتصف الليل لتبديل اليوم. */

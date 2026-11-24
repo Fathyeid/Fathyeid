@@ -6,6 +6,8 @@
     <string name="custom_url_scheme">com.fathyeid.noor</string>
     <string name="widget_prayer_desc">مواقيت الصلاة كلها على شاشتك الرئيسية من تطبيق أثر</string>
     <string name="widget_refresh">تحديث المواقيت</string>
+    <string name="widget_next">الصلاة القادمة</string>
+    <string name="widget_left">تبقى</string>
     <string name="widget_stale">📍 %1$s • افتح التطبيق لتحديث اليوم</string>
     <string name="widget_empty">افتح تطبيق أثر أولاً لتظهر المواقيت هنا</string>
 </resources>

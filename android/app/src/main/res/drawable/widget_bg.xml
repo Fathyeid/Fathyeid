@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- خلفية الودجت: تدرج أخضر داكن بهوية التطبيق مع حواف دائرية -->
+<!-- خلفية الودجت: زجاج داكن بهوية التطبيق مع إطار ذهبي خفيف وحواف دائرية -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <gradient
         android:type="linear"
         android:angle="315"
-        android:startColor="#1F7A5C"
-        android:centerColor="#0D3B2E"
-        android:endColor="#08261D" />
+        android:startColor="#E61F7A5C"
+        android:centerColor="#F20D3B2E"
+        android:endColor="#F208261D" />
+    <stroke android:width="1dp" android:color="#2EE9D9B0" />
     <corners android:radius="24dp" />
 </shape>
