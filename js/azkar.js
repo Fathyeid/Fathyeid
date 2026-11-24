@@ -348,24 +348,40 @@
   const ZIKR_FILES = ['zikr_subhan.mp3', 'zikr_alhamd.mp3', 'zikr_akbar.mp3', 'zikr_salli.mp3'];
   const ZIKR_NAMES = ['سبحان الله', 'الحمد لله', 'الله أكبر', 'الصلاة على النبي'];
   const zikrVoiced = () => N.NATIVE && window.NOOR_NATIVE_ZIKR === true;
+  // أصوات متعددة للذكر (تحتاج نسخة أندرويد بمستوى ١٠ فأعلى لأن ملفات الصوت داخل التطبيق)
+  const ZNAMES = ['subhan', 'alhamd', 'akbar', 'salli'];
+  const VOICES = [{ k: '', n: 'الصوت الأصلي' }, { k: 'sal', n: 'سلمى (امرأة، مصرية)' }, { k: 'sha', n: 'شاكر (رجل، مصري)' }, { k: 'ham', n: 'حامد (رجل، سعودي)' }, { k: 'zar', n: 'زارية (امرأة، سعودية)' }];
+  let nativeLvl = N.NATIVE ? 0 : 99;
+  if (N.NATIVE) {
+    try {
+      window.Capacitor.Plugins.App.getInfo().then((i) => { const m = /^\d+\.(\d+)\./.exec((i && i.version) || ''); nativeLvl = m ? +m[1] : 1; if (nativeLvl >= 10 && dCfg().voice) scheduleDhikr(); }).catch(() => {});
+    } catch { /* */ }
+  }
+  const voiceKey = (c) => ((c && VOICES.some((v) => v.k === c.voice) && nativeLvl >= 10) ? c.voice : '');
+  const zFile = (vk, i) => (vk ? `zikr_${vk}_${ZNAMES[i]}.mp3` : ZIKR_FILES[i]);
+  const zChan = (vk, i) => (vk ? `dhikr_${vk}_${i}` : `dhikr_${i}`);
   // أندرويد يثبّت صوت قناة الإشعارات عند إنشائها، فلكل ذكر قناة خاصة بصوته المنطوق
+  let curVk = '';
   async function dhikrChannels(ln) {
     if (zikrVoiced()) {
+      const vk = voiceKey(dCfg());
+      curVk = vk;
       for (let i = 0; i < PHRASES.length; i++) {
-        await ln.createChannel({ id: `dhikr_${i}`, name: `مذكّر الذكر (${ZIKR_NAMES[i]})`, description: 'ذكر قصير على فترات منتظمة يُقرأ بصوت مسموع', importance: 4, visibility: 1, sound: ZIKR_FILES[i] });
+        await ln.createChannel({ id: zChan(vk, i), name: `مذكّر الذكر (${ZIKR_NAMES[i]})`, description: 'ذكر قصير على فترات منتظمة يُقرأ بصوت مسموع', importance: 4, visibility: 1, sound: zFile(vk, i) });
       }
+      for (const v of VOICES) { if (v.k === vk) continue; for (let i = 0; i < PHRASES.length; i++) { try { await ln.deleteChannel({ id: zChan(v.k, i) }); } catch { /* */ } } }
       try { await ln.deleteChannel({ id: 'dhikr' }); } catch { /* القناة القديمة قد لا توجد */ }
       return true;
     }
     await ln.createChannel({ id: 'dhikr', name: 'مذكّر الذكر', description: 'ذكر قصير على فترات منتظمة', importance: 4, visibility: 1 });
     return false;
   }
-  const dhikrChannel = (slot, voiced) => (voiced ? `dhikr_${slot % PHRASES.length}` : 'dhikr');
+  const dhikrChannel = (slot, voiced) => (voiced ? zChan(curVk, slot % PHRASES.length) : 'dhikr');
   // تشغيل التسجيل المنطوق داخل التطبيق، مع الرجوع إلى قراءة الجهاز ثم النغمة عند تعذره
-  function playZikrFile(i) {
+  function playZikrFile(i, vk) {
     return new Promise((resolve) => {
       try {
-        const a = new Audio(`zikr/${ZIKR_FILES[i]}`);
+        const a = new Audio(`zikr/${zFile(vk || '', i)}`);
         let done = false;
         const fin = (ok) => { if (!done) { done = true; resolve(ok); } };
         a.onended = () => fin(true);
@@ -376,7 +392,7 @@
     });
   }
   const DHIKR_BASE = 3300;
-  const dCfg = () => Object.assign({ every: 0, sound: true, from: '00:00', to: '23:59' }, store.get('dhikr:rem', {}));
+  const dCfg = () => Object.assign({ every: 0, sound: true, voice: '', from: '00:00', to: '23:59' }, store.get('dhikr:rem', {}));
   const minsOf = (s) => { const [h, m] = String(s || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
   const inDWindow = (d, c) => { const f = minsOf(c.from), t = minsOf(c.to), x = d.getHours() * 60 + d.getMinutes(); return f <= t ? x >= f && x <= t : x >= f || x <= t; };
   let dhikrHide = null;
@@ -431,7 +447,7 @@
     if (c.sound && document.visibilityState === 'visible') {
       window.dispatchEvent(new CustomEvent('noor:audio', { detail: 'dhikr' }));
       const i = PHRASES.indexOf(z);
-      if (i < 0 || !(await playZikrFile(i))) { if (!speakDhikr(z)) chime(); }
+      if (i < 0 || !(await playZikrFile(i, voiceKey(c)))) { if (!speakDhikr(z)) chime(); }
     }
     if (!N.NATIVE && 'Notification' in window && Notification.permission === 'granted') {
       try { new Notification('أثر — مذكّر الذكر', { body: z, icon: 'icons/icon.svg' }); } catch { /* تجاهل */ }
@@ -492,6 +508,9 @@
       <p class="muted" style="font-size:.88rem;margin-top:0">ذكر قصير كل بضع دقائق بالتناوب: سبحان الله، الحمد لله، الله أكبر، اللهم صلِّ وسلم على نبينا محمد ﷺ.</p>
       <div class="seg" id="dkEvery" style="flex-wrap:wrap">${[[0, 'إيقاف'], [5, 'كل ٥ دقائق'], [10, 'كل ١٠ دقائق'], [15, 'كل ١٥ دقيقة'], [30, 'كل ٣٠ دقيقة']].map(([v, t]) => `<button data-v="${v}" class="${DC.every === v ? 'active' : ''}">${t}</button>`).join('')}</div>
       <div class="az-rem"><label><input type="checkbox" id="dkSound" ${DC.sound ? 'checked' : ''}> قراءة الذكر بصوت مسموع أثناء فتح التطبيق</label></div>
+      <p class="muted" style="font-size:.88rem;margin:10px 0 4px">صوت القارئ</p>
+      <div class="seg" id="dkVoice" style="flex-wrap:wrap">${VOICES.map((v) => `<button data-v="${v.k}" class="${(DC.voice || '') === v.k ? 'active' : ''}">${v.n}</button>`).join('')}</div>
+      ${N.NATIVE && nativeLvl < 10 ? '<small class="muted" style="display:block;margin-top:6px">الأصوات الجديدة تعمل بعد تثبيت آخر نسخة من التطبيق.</small>' : ''}
       <div class="az-rem"><span>من الساعة</span><input type="time" id="dkFrom" value="${DC.from}"></div>
       <div class="az-rem"><span>حتى الساعة</span><input type="time" id="dkTo" value="${DC.to}"></div>
       <button class="btn ghost block" id="dkTest" style="margin-top:10px">🔔 تجربة الذكر الآن</button>
@@ -503,6 +522,7 @@
     // ----- مذكّر الذكر المستمر -----
     const dSave = () => { store.set('dhikr:rem', DC); scheduleDhikr(); toast('تم حفظ مذكّر الذكر'); };
     $$('#dkEvery button').forEach((b) => { b.onclick = () => { DC.every = +b.dataset.v; $$('#dkEvery button').forEach((x) => x.classList.toggle('active', x === b)); if (DC.every && !N.NATIVE && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch { /* */ } } dSave(); }; });
+    $$('#dkVoice button').forEach((b) => { b.onclick = () => { DC.voice = b.dataset.v; $$('#dkVoice button').forEach((x) => x.classList.toggle('active', x === b)); dSave(); playZikrFile(0, voiceKey(DC)); }; });
     $('#dkSound').onchange = () => { DC.sound = $('#dkSound').checked; dSave(); };
     $('#dkFrom').onchange = () => { DC.from = $('#dkFrom').value || '00:00'; dSave(); };
     $('#dkTo').onchange = () => { DC.to = $('#dkTo').value || '23:59'; dSave(); };
