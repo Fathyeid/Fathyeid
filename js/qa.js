@@ -182,7 +182,7 @@
         <button class="btn block" data-go="qaplan">📖 احفظ آيات جديدة</button>
         <button class="btn block" data-go="qarev">🔁 راجع محفوظاتي${due.length ? ` (${ar(Math.min(due.length, 99))})` : ''}</button>
         <button class="btn block" data-go="qataj">🎓 تعلّم أحكام التجويد</button></div>
-      <div class="qa-sub"><button class="chip" data-go="qatest">📝 اختبار من الحفظ</button><button class="chip" data-go="qamap">🗺️ خريطة الحفظ</button><button class="chip" data-go="qastats">📊 التقارير</button><button class="chip" data-go="audio">🎧 المكتبة الصوتية</button><button class="chip" data-go="kids">🧒 الأطفال</button></div>
+      <div class="qa-sub"><button class="chip" data-go="qatest">📝 اختبار من الحفظ</button><button class="chip" data-go="qamap">🗺️ خريطة الحفظ</button><button class="chip" data-go="qastats">📊 التقارير</button><button class="chip" data-go="qapr">🎧 استمع ورددّ</button><button class="chip" data-go="qaask">🧑‍🏫 المعلّم</button><button class="chip" data-go="audio">📻 المكتبة الصوتية</button><button class="chip" data-go="qakids">🧒 ركن الأطفال</button></div>
       ${NOTE}`;
     bind();
   }
