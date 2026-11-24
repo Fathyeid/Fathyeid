@@ -1415,3 +1415,4 @@ button.juz-open { border: 0; background: none; color: inherit; text-align: start
 .qa-d { aspect-ratio: 1; border-radius: 6px; background: var(--border); } .qa-d.l1 { background: rgba(46, 160, 100, .4); } .qa-d.l2 { background: rgba(46, 160, 100, .65); } .qa-d.l3 { background: #2ea064; }
 .qa-ex { padding: 8px 0; border-bottom: 1px solid var(--border); }
 .qa-prog { height: 10px; border-radius: 6px; background: var(--border); margin: 10px 0 6px; overflow: hidden; } .qa-prog i { display: block; height: 100%; background: linear-gradient(90deg, #1d7a5c, var(--gold)); }
+.qa-inst { margin-top: 6px; color: #b3261e; font-weight: 700; }

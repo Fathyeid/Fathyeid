@@ -170,6 +170,13 @@
     const due = dueList(); const lastS = ses.length ? ses[ses.length - 1] : null;
     const pages = new Set(); Object.keys(S.vs).forEach((g) => { let lo = 0, hi = META.pages.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (META.pages[m] <= +g) lo = m; else hi = m - 1; } pages.add(lo); });
     const lvl = mem < 100 ? 'مبتدئ' : mem < 600 ? 'متدرّج' : mem < 2000 ? 'متوسط' : mem < 4500 ? 'متقدم' : 'متقن';
+    const quick = (() => {
+      const P = S.plan;
+      if (due.length) { const [qs, qa] = saOf(due[0]); return `<button class="card ch-today" data-go="qarev"><div><small>تابع من حيث توقفت</small><br><b>🔁 المراجعة اليومية: ${ar(Math.min(due.length, 99))} آية تنتظرك</b><br><small>تبدأ بسورة ${sName(qs)} الآية ${ar(qa)}</small></div><span class="btn">ابدأ ‹</span></button>`; }
+      if (P) { const hh = hifzStr(); for (let g = gOf(P.s, P.a); g <= gOf(P.s, P.b); g++) if (hh[g - 1] === '0') { const [ps, pa] = saOf(g); return `<button class="card ch-today" data-go="qarec/${ps}/${pa}/${Math.min(META.counts[ps - 1], pa + 4)}/1"><div><small>تابع من حيث توقفت</small><br><b>📖 ورد خطتك: سورة ${sName(ps)} من الآية ${ar(pa)}</b></div><span class="btn">ابدأ ‹</span></button>`; } }
+      if (lastS) return `<button class="card ch-today" data-go="qarec/${lastS.s}/${Math.min(META.counts[lastS.s - 1], lastS.b + 1)}/${Math.min(META.counts[lastS.s - 1], lastS.b + 5)}/0"><div><small>تابع من حيث توقفت</small><br><b>🎙️ أكمل سورة ${sName(lastS.s)} بعد الآية ${ar(lastS.b)}</b></div><span class="btn">ابدأ ‹</span></button>`;
+      return '';
+    })();
     N.view.innerHTML = `${hero('أكاديمية القرآن الكريم', 'رفيقك الذكي لحفظ القرآن الكريم وإتقان تلاوته')}
       <div class="qa-stats">
         <div><b>${lvl}</b><small>مستواك</small></div><div><b>${ar(done)}</b><small>سور مكتملة</small></div>
@@ -177,6 +184,7 @@
         <div><b>${ar(streak)}</b><small>أيام متتالية</small></div><div><b>${ses.length ? pct(acc) : '—'}</b><small>دقة التسميع</small></div></div>
       <div class="card"><small class="muted">آخر ما وصلت إليه</small><br><b>${lastS ? `سورة ${sName(lastS.s)} ${ar(lastS.a)}–${ar(lastS.b)}` : 'لم تبدأ التسميع بعد'}</b>
         <br><small class="muted">موعد المراجعة القادم: ${due.length ? `عندك ${ar(Math.min(due.length, 999))} آية مستحقة اليوم` : (mem || Object.keys(S.vs).length ? 'لا شيء مستحق الآن، بارك الله فيك' : 'أضف محفوظاتك أو سمّع لتبدأ الجدولة')}</small></div>
+      ${quick}
       <div class="qa-main">
         <button class="btn block" data-go="qarec">🎙️ ابدأ التسميع</button>
         <button class="btn block" data-go="qaplan">📖 احفظ آيات جديدة</button>
@@ -208,7 +216,8 @@
       };
     }).catch(failMsg);
   }
-  const SRC = () => { const P = (window.Capacitor && window.Capacitor.Plugins) || {}; if (P.SpeechRecognition) return 'native'; if (window.SpeechRecognition || window.webkitSpeechRecognition) return N.NATIVE ? null : 'web'; return null; };
+  const nativeSR = () => { const C = window.Capacitor; if (!C || !N.NATIVE) return null; try { if (C.Plugins && C.Plugins.SpeechRecognition) return C.Plugins.SpeechRecognition; if (C.isPluginAvailable && C.isPluginAvailable('SpeechRecognition') && C.registerPlugin) return C.registerPlugin('SpeechRecognition'); } catch { /* لا شيء */ } return null; };
+  const SRC = () => { if (nativeSR()) return 'native'; if (window.SpeechRecognition || window.webkitSpeechRecognition) return N.NATIVE ? null : 'web'; return null; };
 
   // ---------- جلسة التسميع ----------
   async function renderRec(args) {
@@ -224,20 +233,30 @@
         ${show ? `<div class="qa-ayat">${await_text()}</div>` : ''}
         <div class="qa-mic ${listening ? 'on' : ''}" id="qaMic">${listening ? '⏹' : '🎙️'}</div>
         <div class="muted" id="qaLive" style="min-height:44px;margin-top:8px">${listening ? esc(text) || 'أنا أستمع… ابدأ القراءة' : (src ? 'اضغط الميكروفون وابدأ، ثم اضغط مرة أخرى عند الانتهاء' : '')}</div>
-        ${src ? '' : '<p class="muted" style="font-size:.85rem">التسميع الصوتي غير متاح على هذا الجهاز الآن. إن كنت على أندرويد فثبّت آخر نسخة من التطبيق (تحديث واحد) ليعمل. يمكنك الآن استخدام التسميع الذاتي.</p>'}
+        ${src ? '' : (N.NATIVE ? '<p class="muted" style="font-size:.85rem">هذه النسخة المثبّتة من أثر لا تدعم التسميع الصوتي. ثبّت آخر نسخة مرة واحدة:</p><a class="btn block" href="https://github.com/Fathyeid/Fathyeid/releases/latest/download/athar.apk">⬇️ تثبيت آخر نسخة</a><p class="muted" style="font-size:.85rem">أو افتح الإعدادات ثم «التحقق من وجود تحديث». وفي الأثناء يعمل التسميع الذاتي.</p>' : '<p class="muted" style="font-size:.85rem">متصفحك لا يدعم التعرّف على الكلام (جرّب Chrome)، أو استخدم تطبيق أندرويد. يمكنك الآن استخدام التسميع الذاتي.</p>')}
+        <label class="qa-chk"><input type="checkbox" id="qaInst" ${store.get('qa:inst', false) ? 'checked' : ''}> تصحيح فوري أثناء القراءة (ينبّهك للكلمة الخاطئة وقت قراءتها)</label>
         <button class="btn ghost block" id="qaSelf" style="margin-top:10px">✍️ تسميع ذاتي (أكشف النص وأعلّم أخطائي)</button></div>${NOTE}`;
+      const ci = $('#qaInst'); if (ci) ci.onchange = () => store.set('qa:inst', ci.checked);
       const mic = $('#qaMic'); if (mic) mic.onclick = () => (listening ? stopRec() : startRec());
       $('#qaSelf').onclick = () => { if (listening) cancelRec(); selfMode(); };
     };
     const tcache = await surah(s);
     const await_text = () => { let o = ''; for (let i = a; i <= b; i++) o += `${tcache[i - 1]} <span class="qa-end">﴿${ar(i)}﴾</span> `; return o; };
-    const cancelRec = async () => { listening = false; try { const P = window.Capacitor.Plugins.SpeechRecognition; if (P) { await P.stop(); await P.removeAllListeners(); } } catch { /* لا شيء */ } try { rec && rec.abort(); } catch { /* لا شيء */ } handles = []; rec = null; };
-    const upd = () => { text = `${acc} ${cur}`.trim(); const l = $('#qaLive'); if (l) l.textContent = text || 'أنا أستمع… ابدأ القراءة'; };
+    const cancelRec = async () => { listening = false; try { const P = nativeSR(); if (P) { await P.stop(); await P.removeAllListeners(); } } catch { /* لا شيء */ } try { rec && rec.abort(); } catch { /* لا شيء */ } handles = []; rec = null; };
+    const upd = () => {
+      text = `${acc} ${cur}`.trim(); const l = $('#qaLive'); if (!l) return;
+      l.textContent = text || 'أنا أستمع… ابدأ القراءة';
+      if (store.get('qa:inst', false) && text) {
+        const A = align(E, text); let lastH = -1; A.res.forEach((r, k) => { if (r.heard) lastH = k; });
+        const k = A.res.findIndex((r, idx) => idx <= lastH && (r.st === 'subst' || r.st === 'forgot'));
+        if (k >= 0) { const m = document.createElement('div'); m.className = 'qa-inst'; m.textContent = `انتبه عند: «${E[k].w}» (آية ${ar(E[k].a)})`; l.appendChild(m); }
+      }
+    };
     async function startRec() {
       acc = ''; cur = ''; text = '';
       try {
         if (src === 'native') {
-          const P = window.Capacitor.Plugins.SpeechRecognition;
+          const P = nativeSR();
           const av = await P.available().catch(() => ({ available: true }));
           if (av && av.available === false) { toast('خدمة التعرّف على الكلام غير مثبّتة على الهاتف (Google)'); return; }
           let perm = await P.checkPermissions(); if (perm.speechRecognition !== 'granted') perm = await P.requestPermissions();
@@ -245,7 +264,7 @@
           await P.addListener('partialResults', (e) => { if (e.accumulated) acc = e.accumulated; if (e.matches && e.matches[0]) cur = e.matches[0]; else if (e.accumulated && !e.matches) cur = ''; upd(); });
           await P.addListener('listeningState', (e) => { if (e.status === 'stopped' && listening) { /* انتهت الجلسة من النظام */ if (cur) acc = `${acc} ${cur}`.trim(); cur = ''; if (listening) restart(P); } });
           listening = true; draw(); upd();
-          P.start({ language: 'ar-SA', maxResults: 1, partialResults: true, popup: false, continuousPTT: true, muteRecognizerBeep: true }).then((r) => { if (r && r.matches && r.matches[0] && !cur) cur = r.matches[0]; upd(); }).catch((e) => { if (listening) { toast('تعذّر بدء التسجيل'); console.warn(e); } });
+          P.start({ language: 'ar-SA', maxResults: 1, partialResults: true, popup: false, continuousPTT: true, muteRecognizerBeep: true, contextualStrings: [...new Set(E.map((x) => x.n))].slice(0, 150) }).then((r) => { if (r && r.matches && r.matches[0] && !cur) cur = r.matches[0]; upd(); }).catch((e) => { if (listening) { toast('تعذّر بدء التسجيل'); console.warn(e); } });
         } else if (src === 'web') {
           const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
           rec = new SR(); rec.lang = 'ar-SA'; rec.continuous = true; rec.interimResults = true;
