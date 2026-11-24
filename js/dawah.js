@@ -98,6 +98,7 @@
     return r;
   }
 
+  const notes = () => store.get('dawah:notes', []);
   const favs = () => store.get('dawah:fav', []);
   const isFav = (id) => favs().includes(id);
   const toggleFav = (id) => { const f = favs(); const i = f.indexOf(id); if (i >= 0) f.splice(i, 1); else f.unshift(id); store.set('dawah:fav', f); return i < 0; };
@@ -153,6 +154,7 @@
         ${lv ? `<div class="section-title" style="margin-top:4px">تابع المشاهدة</div>${card(lv)}` : ''}
         <div class="dw-sheikhs">${Object.entries(SHEIKHS).map(([k, s]) => `
           <button class="dw-sheikh card" data-s="${k}"><span class="aud-av big">${s.short.charAt(0)}</span><b>${s.name}</b><small class="muted">السلاسل والحلقات</small></button>`).join('')}</div>
+        <div class="chips" style="justify-content:flex-start;margin-bottom:6px"><button class="chip" data-go2="dhist">🕘 سجل المشاهدة</button><button class="chip" data-go2="dnotes">📝 ملاحظاتي (${ar(notes().length)})</button></div>
         <div class="section-title">الموضوعات</div>
         <div class="chips dw-topics">${TOPICS.map(([k, n, ic]) => `<button class="chip" data-t="${k}">${ic} ${n}${counts[k] ? ` (${arG(counts[k])})` : ''}</button>`).join('')}</div>
         <div class="seg" id="dwTabs" style="margin:16px 0 10px"><button data-t="new" class="active">آخر الإضافات</button><button data-t="fav">المفضلة (${ar(favs().length)})</button><button data-t="lists">القوائم</button></div>
@@ -160,6 +162,7 @@
         ${notice}`;
       void total;
       bindCards(N.view);
+      $$('[data-go2]').forEach((b) => b.addEventListener('click', () => go(b.dataset.go2)));
       $$('[data-s]').forEach((b) => b.addEventListener('click', () => go(`dsheikh/${b.dataset.s}`)));
       $$('[data-t]', $('.dw-topics')).forEach((b) => b.addEventListener('click', () => go(`dtopic/${b.dataset.t}`)));
       $('#dwF').addEventListener('submit', (e) => { e.preventDefault(); const qq = $('#dwQ').value.trim(); if (qq.length < 2) { toast('اكتب كلمتين على الأقل'); return; } go(`dsearch/${encodeURIComponent(qq)}`); });
@@ -288,6 +291,7 @@
           <button class="btn ghost block" id="dwList">📃 قائمة تشغيل</button>
           <button class="btn ghost block" id="dwShare">📤 مشاركة</button>
         </div>
+        <button class="btn ghost block" id="dwNote" style="margin-bottom:8px">📝 ملاحظتي عند هذه اللحظة</button>
         <button class="btn ghost block" id="dwDl" style="margin-bottom:14px">⬇ تحميل للمشاهدة دون إنترنت</button>` : ''}
         ${sim.length ? `<div class="section-title">حلقات مشابهة</div>${sim.map(card).join('')}` : ''}`;
       frame = $('#ytf');
@@ -301,6 +305,12 @@
       if (!v) return;
       $('#dwFav').onclick = (e) => { const on = toggleFav(id); e.currentTarget.textContent = on ? '★ في المفضلة' : '☆ المفضلة'; };
       $('#dwShare').onclick = () => N.shareText(`🎬 ${v.title}\n${sk ? sk.name : ''}`, { route: `dwatch/${id}`, card: { kind: `محاضرة — ${sk ? sk.name : 'المكتبة الدعوية'}`, text: v.title, ref: 'شاهدها كاملة في تطبيق أثر' } });
+      $('#dwNote').onclick = () => {
+        const cur = pos(id); const t0 = cur ? Math.floor(cur.t) : 0;
+        const sh = N.sheet(`<div class="sheet-title">ملاحظة عند ${fmtDur(t0) || '٠:٠٠'}</div><textarea class="search" id="nTx" rows="4" placeholder="اكتب فكرة أو فائدة سمعتها"></textarea><button class="btn block" id="nSv" style="margin-top:8px">حفظ</button><button class="btn ghost block" id="nAll" style="margin-top:6px">كل ملاحظاتي</button>`);
+        $('#nSv', sh.el).onclick = () => { const tx = $('#nTx', sh.el).value.trim(); if (!tx) { toast('اكتب الملاحظة'); return; } const n = notes(); n.unshift({ id: 'n' + Date.now(), v: id, t: t0, tx, at: Date.now() }); store.set('dawah:notes', n); toast('حُفظت الملاحظة'); sh.close(); };
+        $('#nAll', sh.el).onclick = () => { sh.close(); go('dnotes'); };
+      };
       $('#dwDl').onclick = () => N.sheet(`<div class="sheet-title">التحميل غير متاح حالياً</div><p class="muted" style="line-height:1.9">تحميل الحلقات داخل التطبيق يحتاج إذناً من فريق الشيخ، لأن يوتيوب لا يسمح بنقل فيديوهاته إلى تطبيقات أخرى. نسعى للحصول على الإذن، وسيُضاف التحميل فور ذلك بإذن الله.</p><p class="muted" style="line-height:1.9">يمكنك الآن حفظ الحلقة في تطبيق يوتيوب نفسه باستخدام زر «تنزيل» أسفل الفيديو.</p><a class="btn block" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">فتح في يوتيوب</a>`);
       $('#dwList').onclick = () => {
         const sh = N.sheet(`<div class="sheet-title">إضافة إلى قائمة</div>${lists().map((l) => `<button class="btn ghost block" style="margin-bottom:6px" data-pl="${l.id}">📃 ${esc(l.name)}</button>`).join('') || '<p class="muted center">لا توجد قوائم. أنشئ واحدة:</p>'}
@@ -312,7 +322,24 @@
     return () => { alive = false; window.removeEventListener('message', onMsg); };
   }
 
+  function renderHist() {
+    N.setTitle('سجل المشاهدة'); routes.dhist.back = 'dawah'; const P = store.get('dawah:pos', {}); const S = seen();
+    const rows = Object.keys(P).filter((k) => S[k]).sort((a, b) => (P[b].at || 0) - (P[a].at || 0)).slice(0, 60);
+    N.view.innerHTML = rows.length ? `<div class="card" style="padding:4px">${rows.map((k) => { const v = S[k]; const pc = P[k].d ? Math.min(100, Math.round(P[k].t * 100 / P[k].d)) : 0; return `<button class="aud-rec" data-v="${k}"><span class="aud-av">▶</span><span class="aud-info"><b>${esc(v.title)}</b><small>${SHEIKHS[v.sheikh] ? SHEIKHS[v.sheikh].short : ''} - شاهدت ${ar(pc)}٪</small></span></button>`; }).join('')}</div><button class="chip" id="hClr" style="margin-top:10px">🧹 مسح السجل</button>` : '<div class="card center muted">لا سجل بعد. يظهر هنا ما تشاهده.</div>';
+    $$('[data-v]').forEach((b) => b.addEventListener('click', () => go(`dwatch/${b.dataset.v}`)));
+    const c = $('#hClr'); if (c) c.onclick = () => { if (confirm('مسح سجل المشاهدة ومواضع الاستكمال؟')) { store.set('dawah:pos', {}); store.set('dawah:last', null); renderHist(); } };
+  }
+  function renderNotes() {
+    N.setTitle('ملاحظاتي'); routes.dnotes.back = 'dawah'; const n = notes(); const S = seen();
+    N.view.innerHTML = n.length ? n.map((x, i) => `<div class="card"><small class="muted">${esc((S[x.v] && S[x.v].title) || 'محاضرة')} - عند ${fmtDur(x.t) || '٠:٠٠'}</small><p style="margin:6px 0">${esc(x.tx)}</p><button class="chip" data-g="${x.v}&t=${x.t}">▶ اذهب</button> <button class="chip" data-d="${i}">حذف</button></div>`).join('') + '<button class="chip" id="nEx">↗️ تصدير ومشاركة الكل</button>' : '<div class="card center muted">لا ملاحظات. اضغط «ملاحظتي» أثناء المشاهدة.</div>';
+    $$('[data-g]').forEach((b) => b.addEventListener('click', () => go(`dwatch/${b.dataset.g.split('&')[0]}`)));
+    $$('[data-d]').forEach((b) => b.addEventListener('click', () => { const m = notes(); m.splice(+b.dataset.d, 1); store.set('dawah:notes', m); renderNotes(); }));
+    const e = $('#nEx'); if (e) e.onclick = () => { const t = n.map((x) => `• ${(S[x.v] && S[x.v].title) || ''} (${fmtDur(x.t)}): ${x.tx}`).join('\n'); if (N.shareText) N.shareText(t, {}); else if (navigator.share) navigator.share({ text: t }); else { navigator.clipboard && navigator.clipboard.writeText(t); toast('نُسخت'); } };
+  }
+
   Object.assign(routes, {
+    dhist: { title: 'سجل المشاهدة', render: renderHist, back: 'dawah' },
+    dnotes: { title: 'ملاحظاتي', render: renderNotes, back: 'dawah' },
     dawah: { title: 'المكتبة الدعوية', render: renderDawah, back: 'home' },
     dsheikh: { title: 'الشيخ', render: renderSheikh, back: 'dawah' },
     dseries: { title: 'سلسلة', render: renderSeries, back: 'dawah' },
